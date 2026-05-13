@@ -25,30 +25,50 @@
 
     const els = {
         intro: document.getElementById("intro-screen"),
+        introSub: document.getElementById("intro-sub"),
+        brandSubtitle: document.getElementById("brand-subtitle"),
         userChip: document.getElementById("user-chip"),
+        heroKicker: document.getElementById("hero-kicker"),
+        heroTitle: document.getElementById("hero-title"),
         categoryNav: document.getElementById("category-nav"),
         productGrid: document.getElementById("product-grid"),
         pages: document.querySelectorAll(".page"),
         tabs: document.querySelectorAll(".tab-btn"),
 
+        cartTitle: document.getElementById("cart-title"),
+        cartDesc: document.getElementById("cart-desc"),
         cartEmptyState: document.getElementById("cart-empty-state"),
         cartContent: document.getElementById("cart-content"),
         cartItems: document.getElementById("cart-items"),
+        cartTotalLabel: document.getElementById("cart-total-label"),
         cartTotal: document.getElementById("cart-total"),
         clearCartBtn: document.getElementById("clear-cart-btn"),
         checkoutBtn: document.getElementById("checkout-btn"),
+        serviceDeliveryBtn: document.getElementById("service-delivery-btn"),
+        servicePickupBtn: document.getElementById("service-pickup-btn"),
+        deliveryLabel: document.getElementById("delivery-label"),
+        pickupLabel: document.getElementById("pickup-label"),
         deliveryAddress: document.getElementById("delivery-address"),
         pickupTime: document.getElementById("pickup-time"),
         deliveryFieldGroup: document.getElementById("delivery-field-group"),
         pickupFieldGroup: document.getElementById("pickup-field-group"),
         serviceSwitch: document.getElementById("service-switch"),
 
+        historyTitle: document.getElementById("history-title"),
+        historyDesc: document.getElementById("history-desc"),
         historyList: document.getElementById("history-list"),
+        reviewsTitle: document.getElementById("reviews-title"),
+        reviewsDesc: document.getElementById("reviews-desc"),
         reviewList: document.getElementById("review-list"),
         reviewForm: document.getElementById("review-form"),
+        reviewFormTitle: document.getElementById("review-form-title"),
+        reviewAuthorLabel: document.getElementById("review-author-label"),
         reviewAuthor: document.getElementById("review-author"),
+        reviewStarsLabel: document.getElementById("review-stars-label"),
         reviewStars: document.getElementById("review-stars"),
+        reviewMessageLabel: document.getElementById("review-message-label"),
         reviewMessage: document.getElementById("review-message"),
+        reviewSubmitBtn: document.getElementById("review-submit-btn"),
         reviewRating: document.getElementById("review-rating"),
         reviewCount: document.getElementById("review-count"),
 
@@ -61,9 +81,23 @@
         profileMemberShort: document.getElementById("profile-member-short"),
         profileOrdersPreview: document.getElementById("profile-orders-preview"),
         profileOrdersRefresh: document.getElementById("profile-orders-refresh"),
+        profileStatOrders: document.getElementById("profile-stat-orders"),
+        profileStatSpent: document.getElementById("profile-stat-spent"),
+        profileStatMember: document.getElementById("profile-stat-member"),
+        profileLanguageTitle: document.getElementById("profile-language-title"),
+        profileOrdersTitle: document.getElementById("profile-orders-title"),
         languageGrid: document.getElementById("language-grid"),
 
+        infoTitle: document.getElementById("info-title"),
+        infoDesc: document.getElementById("info-desc"),
+        infoDeliveryTitle: document.getElementById("info-delivery-title"),
+        infoHoursLabel: document.getElementById("info-hours-label"),
+        infoDelayLabel: document.getElementById("info-delay-label"),
+        infoZoneLabel: document.getElementById("info-zone-label"),
+        infoContactTitle: document.getElementById("info-contact-title"),
         infoContactUsername: document.getElementById("info-contact-username"),
+        infoPaymentTitle: document.getElementById("info-payment-title"),
+        infoPaymentDesc: document.getElementById("info-payment-desc"),
         contactBtn: document.getElementById("contact-btn"),
         channelBtn: document.getElementById("channel-btn"),
 
@@ -81,6 +115,7 @@
         detailDescription: document.getElementById("detail-description"),
         detailCategoryChip: document.getElementById("detail-category-chip"),
         detailQtyGrid: document.getElementById("detail-qty-grid"),
+        detailQtyTitle: document.getElementById("detail-qty-title"),
         detailSelectedPrice: document.getElementById("detail-selected-price"),
         detailAddBtn: document.getElementById("detail-add-btn"),
         detailMuteBtn: document.getElementById("detail-mute-btn"),
@@ -92,9 +127,269 @@
     let detailTouchStartX = 0;
     let detailTouchDeltaX = 0;
 
+    const i18n = {
+        fr: {
+            introSub: "Chargement de la boutique...",
+            brandSubtitle: "Menu premium 2026",
+            greeting: "Salut {name}",
+            heroKicker: "Boutique",
+            heroTitle: "Produits classes, service rapide",
+            navHome: "Accueil",
+            navCart: "Panier",
+            navHistory: "Historique",
+            navReviews: "Avis",
+            navProfile: "Profil",
+            navInfo: "Infos",
+            categoryAll: "Tous",
+            badgeNew: "Nouveau",
+            badgePromo: "Promo",
+            fromPrice: "Des {price}",
+            view: "Voir",
+            cartTitle: "Panier",
+            cartDesc: "Finalise ta commande en quelques secondes.",
+            cartEmpty: "Panier vide.",
+            delivery: "Livraison",
+            pickup: "Sur place",
+            deliveryAddress: "Adresse de livraison",
+            pickupTime: "Heure d'arrivee",
+            deliveryPlaceholder: "Ex: 10 rue de Paris, 54000 Nancy",
+            total: "Total",
+            clear: "Vider",
+            checkout: "Commander",
+            unitSuffix: " / unite",
+            historyTitle: "Historique",
+            historyDesc: "Retrouve toutes tes commandes.",
+            noOrder: "Aucune commande pour le moment.",
+            orderWord: "Commande",
+            details: "Details",
+            reviewsTitle: "Avis",
+            reviewsDesc: "Ce que pensent les clients.",
+            basedOn: "Base sur {count} avis",
+            noReview: "Pas encore d'avis, sois le premier.",
+            leaveReview: "Laisser un avis",
+            name: "Nom",
+            rating: "Note (1-5)",
+            message: "Message",
+            publish: "Publier",
+            yourName: "Ton nom",
+            yourFeedback: "Ton retour",
+            profileLanguage: "Langue",
+            profileOrders: "Mes Commandes",
+            statOrders: "Commandes",
+            statSpent: "Depense",
+            statMember: "Membre depuis",
+            memberSincePhrase: "Membre depuis {month} {year}",
+            profileNoOrders: "Aucune commande pour le moment.",
+            infoTitle: "Infos",
+            infoDesc: "Horaires, contact et paiement.",
+            deliveryTitle: "Livraison",
+            hours: "Horaires:",
+            delay: "Delai:",
+            zone: "Zone:",
+            contact: "Contact",
+            contactBtn: "Contacter",
+            channelBtn: "Canal",
+            payment: "Paiement",
+            cashOnly: "Paiement en especes uniquement.",
+            detailBack: "← Retour",
+            detailQty: "Selectionner la Quantite",
+            add: "Ajouter",
+            slidePrev: "Media precedent",
+            slideNext: "Media suivant",
+            muteLabel: "Couper le son",
+            unmuteLabel: "Activer le son",
+            alertSelectQty: "Selectionne une quantite.",
+            alertCartEmpty: "Panier vide.",
+            alertAddress: "Adresse trop courte.",
+            alertPickupTime: "Selectionne une heure d'arrivee.",
+            alertReview: "Remplis le nom et le message.",
+            askProduct: "Salut, je veux ce produit: {name}",
+            orderText: "Nouvelle commande #{id}\nType: {type}\nDetails: {summary}\nTotal: {total}"
+        },
+        en: {
+            introSub: "Loading shop...",
+            brandSubtitle: "Premium menu 2026",
+            greeting: "Hi {name}",
+            heroKicker: "Shop",
+            heroTitle: "Premium products, fast service",
+            navHome: "Home",
+            navCart: "Cart",
+            navHistory: "History",
+            navReviews: "Reviews",
+            navProfile: "Profile",
+            navInfo: "Info",
+            categoryAll: "All",
+            badgeNew: "New",
+            badgePromo: "Promo",
+            fromPrice: "From {price}",
+            view: "View",
+            cartTitle: "Cart",
+            cartDesc: "Complete your order in seconds.",
+            cartEmpty: "Cart is empty.",
+            delivery: "Delivery",
+            pickup: "Pickup",
+            deliveryAddress: "Delivery address",
+            pickupTime: "Pickup time",
+            deliveryPlaceholder: "Ex: 10 Rue de Paris, 54000 Nancy",
+            total: "Total",
+            clear: "Clear",
+            checkout: "Order",
+            unitSuffix: " / unit",
+            historyTitle: "History",
+            historyDesc: "Find all your orders.",
+            noOrder: "No order yet.",
+            orderWord: "Order",
+            details: "Details",
+            reviewsTitle: "Reviews",
+            reviewsDesc: "What customers think.",
+            basedOn: "Based on {count} reviews",
+            noReview: "No review yet, be the first.",
+            leaveReview: "Leave a review",
+            name: "Name",
+            rating: "Rating (1-5)",
+            message: "Message",
+            publish: "Publish",
+            yourName: "Your name",
+            yourFeedback: "Your feedback",
+            profileLanguage: "Language",
+            profileOrders: "My Orders",
+            statOrders: "Orders",
+            statSpent: "Spent",
+            statMember: "Member since",
+            memberSincePhrase: "Member since {month} {year}",
+            profileNoOrders: "No order yet.",
+            infoTitle: "Info",
+            infoDesc: "Schedule, contact and payment.",
+            deliveryTitle: "Delivery",
+            hours: "Hours:",
+            delay: "Delay:",
+            zone: "Area:",
+            contact: "Contact",
+            contactBtn: "Contact",
+            channelBtn: "Channel",
+            payment: "Payment",
+            cashOnly: "Cash payment only.",
+            detailBack: "← Back",
+            detailQty: "Select Quantity",
+            add: "Add",
+            slidePrev: "Previous media",
+            slideNext: "Next media",
+            muteLabel: "Mute",
+            unmuteLabel: "Unmute",
+            alertSelectQty: "Select a quantity.",
+            alertCartEmpty: "Cart is empty.",
+            alertAddress: "Address is too short.",
+            alertPickupTime: "Select a pickup time.",
+            alertReview: "Fill name and message.",
+            askProduct: "Hi, I want this product: {name}",
+            orderText: "New order #{id}\nType: {type}\nDetails: {summary}\nTotal: {total}"
+        },
+        de: {
+            introSub: "Shop wird geladen...",
+            brandSubtitle: "Premium-Menue 2026",
+            greeting: "Hallo {name}",
+            heroKicker: "Shop",
+            heroTitle: "Premium-Produkte, schneller Service",
+            navHome: "Start",
+            navCart: "Warenkorb",
+            navHistory: "Historie",
+            navReviews: "Bewertungen",
+            navProfile: "Profil",
+            navInfo: "Infos",
+            categoryAll: "Alle",
+            badgeNew: "Neu",
+            badgePromo: "Promo",
+            fromPrice: "Ab {price}",
+            view: "Ansehen",
+            cartTitle: "Warenkorb",
+            cartDesc: "Bestellung in Sekunden abschliessen.",
+            cartEmpty: "Warenkorb ist leer.",
+            delivery: "Lieferung",
+            pickup: "Abholung",
+            deliveryAddress: "Lieferadresse",
+            pickupTime: "Abholzeit",
+            deliveryPlaceholder: "Bsp: 10 Rue de Paris, 54000 Nancy",
+            total: "Gesamt",
+            clear: "Leeren",
+            checkout: "Bestellen",
+            unitSuffix: " / Stk",
+            historyTitle: "Historie",
+            historyDesc: "Alle Bestellungen anzeigen.",
+            noOrder: "Noch keine Bestellung.",
+            orderWord: "Bestellung",
+            details: "Details",
+            reviewsTitle: "Bewertungen",
+            reviewsDesc: "Das sagen Kunden.",
+            basedOn: "Basierend auf {count} Bewertungen",
+            noReview: "Noch keine Bewertung, sei der Erste.",
+            leaveReview: "Bewertung abgeben",
+            name: "Name",
+            rating: "Bewertung (1-5)",
+            message: "Nachricht",
+            publish: "Senden",
+            yourName: "Dein Name",
+            yourFeedback: "Dein Feedback",
+            profileLanguage: "Sprache",
+            profileOrders: "Meine Bestellungen",
+            statOrders: "Bestellungen",
+            statSpent: "Ausgaben",
+            statMember: "Mitglied seit",
+            memberSincePhrase: "Mitglied seit {month} {year}",
+            profileNoOrders: "Noch keine Bestellung.",
+            infoTitle: "Infos",
+            infoDesc: "Zeiten, Kontakt und Zahlung.",
+            deliveryTitle: "Lieferung",
+            hours: "Zeiten:",
+            delay: "Dauer:",
+            zone: "Gebiet:",
+            contact: "Kontakt",
+            contactBtn: "Kontakt",
+            channelBtn: "Kanal",
+            payment: "Zahlung",
+            cashOnly: "Nur Barzahlung.",
+            detailBack: "← Zurueck",
+            detailQty: "Menge waehlen",
+            add: "Hinzufuegen",
+            slidePrev: "Vorheriges Medium",
+            slideNext: "Naechstes Medium",
+            muteLabel: "Ton aus",
+            unmuteLabel: "Ton an",
+            alertSelectQty: "Bitte Menge waehlen.",
+            alertCartEmpty: "Warenkorb ist leer.",
+            alertAddress: "Adresse ist zu kurz.",
+            alertPickupTime: "Bitte Abholzeit waehlen.",
+            alertReview: "Name und Nachricht ausfuellen.",
+            askProduct: "Hallo, ich moechte dieses Produkt: {name}",
+            orderText: "Neue Bestellung #{id}\nTyp: {type}\nDetails: {summary}\nGesamt: {total}"
+        }
+    };
+
     function sanitize(input) {
         if (typeof input !== "string") return "";
         return input.replace(/[<>"'&]/g, "").trim();
+    }
+
+    function t(key, params) {
+        const dict = i18n[state.language] || i18n.fr;
+        const fallback = i18n.fr[key] || key;
+        const template = dict[key] || fallback;
+        if (!params) return template;
+        return Object.keys(params).reduce((acc, paramKey) => {
+            return acc.replace(new RegExp(`\\{${paramKey}\\}`, "g"), String(params[paramKey]));
+        }, template);
+    }
+
+    function getLocaleCode() {
+        if (state.language === "en") return "en-GB";
+        if (state.language === "de") return "de-DE";
+        return "fr-FR";
+    }
+
+    function getMonthTexts(dateValue) {
+        const locale = getLocaleCode();
+        const monthLong = new Intl.DateTimeFormat(locale, { month: "long" }).format(dateValue);
+        const monthShort = new Intl.DateTimeFormat(locale, { month: "short" }).format(dateValue).replace(".", "");
+        return { monthLong, monthShort };
     }
 
     function toPrice(value) {
@@ -193,26 +488,35 @@
         const username = user && user.username ? `@${sanitize(user.username)}` : "-";
         const avatarLetter = firstName.charAt(0).toUpperCase() || "U";
         const createdAt = user && user.id ? new Date((1704067200000 + (user.id % 220) * 86400000)) : new Date(2026, 3, 1);
-        const month = new Intl.DateTimeFormat("fr-FR", { month: "long" }).format(createdAt);
+        const monthData = getMonthTexts(createdAt);
         const year = createdAt.getFullYear();
-        const monthShort = new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(createdAt).replace(".", "");
 
-        els.userChip.textContent = `Salut ${firstName}`;
+        els.userChip.textContent = t("greeting", { name: firstName });
         els.profileName.textContent = firstName;
         els.profileUsername.textContent = username;
         els.profileAvatar.textContent = avatarLetter;
-        els.profileMemberFull.textContent = `Membre depuis ${month} ${year}`;
-        els.profileMemberShort.textContent = `${monthShort}. ${String(year).slice(-2)}`;
+        els.profileMemberFull.textContent = t("memberSincePhrase", { month: monthData.monthLong, year });
+        els.profileMemberShort.textContent = `${monthData.monthShort}. ${String(year).slice(-2)}`;
 
         const adminUser = state.config && state.config.admin ? state.config.admin.telegram_username : "peakyblinders540";
         els.infoContactUsername.textContent = `Telegram: @${adminUser}`;
     }
 
     function renderCategories() {
-        let html = `<button class="category-btn ${state.category === "all" ? "active" : ""}" data-category="all">Tout</button>`;
+        let html = `
+            <button class="category-btn ${state.category === "all" ? "active" : ""}" data-category="all" type="button">
+                <span class="cat-emoji">◉</span>
+                <span class="cat-label">${t("categoryAll")}</span>
+            </button>
+        `;
         state.categories.forEach((catId) => {
             const meta = getCategoryMeta(catId);
-            html += `<button class="category-btn ${state.category === catId ? "active" : ""}" data-category="${catId}">${sanitize(meta.emoji || "📦")} ${sanitize(meta.name || catId)}</button>`;
+            html += `
+                <button class="category-btn ${state.category === catId ? "active" : ""}" data-category="${catId}" type="button">
+                    <span class="cat-emoji">${sanitize(meta.emoji || "◉")}</span>
+                    <span class="cat-label">${sanitize(meta.name || catId)}</span>
+                </button>
+            `;
         });
         els.categoryNav.innerHTML = html;
 
@@ -227,13 +531,13 @@
 
     function productCardTemplate(product) {
         const img = sanitize(product.image || "");
-        const name = sanitize(product.name || "Produit");
+        const name = sanitize(product.name || "Product");
         const desc = sanitize(product.description || "");
         const start = getStartingPrice(product);
 
         let badge = "";
-        if (product.isNew) badge = `<span class="badge new">Nouveau</span>`;
-        else if (product.isPromo) badge = `<span class="badge promo">Promo</span>`;
+        if (product.isNew) badge = `<span class="badge new">${t("badgeNew")}</span>`;
+        else if (product.isPromo) badge = `<span class="badge promo">${t("badgePromo")}</span>`;
 
         return `
             <article class="product-card" data-product-id="${product.id}">
@@ -245,8 +549,8 @@
                     <h3 class="product-title">${name}</h3>
                     <p class="product-desc">${desc}</p>
                     <div class="product-foot">
-                        <span class="price-chip">Des ${formatEUR(start)}</span>
-                        <button class="btn primary" type="button">Voir</button>
+                        <span class="price-chip">${t("fromPrice", { price: formatEUR(start) })}</span>
+                        <button class="btn primary" type="button">${t("view")}</button>
                     </div>
                 </div>
             </article>
@@ -294,6 +598,7 @@
         if (!state.cart.length) {
             els.cartEmptyState.style.display = "block";
             els.cartContent.style.display = "none";
+            els.cartEmptyState.textContent = t("cartEmpty");
             els.cartTotal.textContent = formatEUR(0);
             renderProfileStats();
             return;
@@ -310,7 +615,7 @@
                 <div class="cart-row">
                     <div>
                         <h4>${sanitize(item.name)}</h4>
-                        <p class="muted">${formatEUR(item.unitPrice)} / unite</p>
+                        <p class="muted">${formatEUR(item.unitPrice)}${t("unitSuffix")}</p>
                     </div>
                     <div class="cart-controls">
                         <button class="qty-btn" data-id="${item.id}" data-op="minus" type="button">-</button>
@@ -366,7 +671,7 @@
 
     function renderHistory() {
         if (!state.orders.length) {
-            els.historyList.innerHTML = `<div class="card panel">Aucune commande pour le moment.</div>`;
+            els.historyList.innerHTML = `<div class="card panel">${t("noOrder")}</div>`;
             return;
         }
 
@@ -374,12 +679,13 @@
             .slice()
             .reverse()
             .map((order) => {
-                const date = new Date(order.timestamp).toLocaleString("fr-FR");
+                const date = new Date(order.timestamp).toLocaleString(getLocaleCode());
+                const orderTypeText = order.type === "pickup" ? t("pickup") : t("delivery");
                 return `
                     <article class="card panel">
-                        <h3>Commande #${order.id}</h3>
-                        <p class="muted">${date} - ${order.type === "pickup" ? "Sur place" : "Livraison"}</p>
-                        <p><strong>Total:</strong> ${formatEUR(order.total)}</p>
+                        <h3>${t("orderWord")} #${order.id}</h3>
+                        <p class="muted">${date} - ${orderTypeText}</p>
+                        <p><strong>${t("total")}:</strong> ${formatEUR(order.total)}</p>
                         <p class="muted">${sanitize(order.summary)}</p>
                     </article>
                 `;
@@ -391,15 +697,15 @@
 
     function renderReviews() {
         if (!state.reviews.length) {
-            els.reviewList.innerHTML = `<div class="card panel">Pas encore d'avis, sois le premier.</div>`;
+            els.reviewList.innerHTML = `<div class="card panel">${t("noReview")}</div>`;
             els.reviewRating.textContent = "4.9 / 5";
-            els.reviewCount.textContent = "Base sur 0 avis";
+            els.reviewCount.textContent = t("basedOn", { count: 0 });
             return;
         }
 
         const avg = state.reviews.reduce((s, r) => s + r.stars, 0) / state.reviews.length;
         els.reviewRating.textContent = `${avg.toFixed(1)} / 5`;
-        els.reviewCount.textContent = `Base sur ${state.reviews.length} avis`;
+        els.reviewCount.textContent = t("basedOn", { count: state.reviews.length });
 
         const html = state.reviews
             .slice()
@@ -435,14 +741,14 @@
 
     function renderProfileOrdersPreview() {
         if (!state.orders.length) {
-            els.profileOrdersPreview.innerHTML = `<div class="muted">Aucune commande pour le moment.</div>`;
+            els.profileOrdersPreview.innerHTML = `<div class="muted">${t("profileNoOrders")}</div>`;
             return;
         }
 
         const recent = state.orders.slice().reverse().slice(0, 2);
         els.profileOrdersPreview.innerHTML = recent
             .map((order) => {
-                const date = new Date(order.timestamp).toLocaleDateString("fr-FR", {
+                const date = new Date(order.timestamp).toLocaleDateString(getLocaleCode(), {
                     day: "2-digit",
                     month: "2-digit",
                     year: "2-digit"
@@ -457,6 +763,84 @@
         els.languageGrid.querySelectorAll(".lang-option").forEach((btn) => {
             btn.classList.toggle("active", btn.dataset.lang === state.language);
         });
+    }
+
+    function applyTranslations() {
+        console.log("[i18n] applying language:", state.language);
+        document.documentElement.lang = state.language;
+
+        if (els.introSub) els.introSub.textContent = t("introSub");
+        if (els.brandSubtitle) els.brandSubtitle.textContent = t("brandSubtitle");
+        if (els.heroKicker) els.heroKicker.textContent = t("heroKicker");
+        if (els.heroTitle) els.heroTitle.textContent = t("heroTitle");
+
+        if (els.cartTitle) els.cartTitle.textContent = t("cartTitle");
+        if (els.cartDesc) els.cartDesc.textContent = t("cartDesc");
+        if (els.cartEmptyState && !state.cart.length) els.cartEmptyState.textContent = t("cartEmpty");
+        if (els.serviceDeliveryBtn) els.serviceDeliveryBtn.textContent = t("delivery");
+        if (els.servicePickupBtn) els.servicePickupBtn.textContent = t("pickup");
+        if (els.deliveryLabel) els.deliveryLabel.textContent = t("deliveryAddress");
+        if (els.pickupLabel) els.pickupLabel.textContent = t("pickupTime");
+        if (els.deliveryAddress) els.deliveryAddress.placeholder = t("deliveryPlaceholder");
+        if (els.cartTotalLabel) els.cartTotalLabel.textContent = t("total");
+        if (els.clearCartBtn) els.clearCartBtn.textContent = t("clear");
+        if (els.checkoutBtn) els.checkoutBtn.textContent = t("checkout");
+
+        if (els.historyTitle) els.historyTitle.textContent = t("historyTitle");
+        if (els.historyDesc) els.historyDesc.textContent = t("historyDesc");
+        if (els.reviewsTitle) els.reviewsTitle.textContent = t("reviewsTitle");
+        if (els.reviewsDesc) els.reviewsDesc.textContent = t("reviewsDesc");
+        if (els.reviewFormTitle) els.reviewFormTitle.textContent = t("leaveReview");
+        if (els.reviewAuthorLabel) els.reviewAuthorLabel.textContent = t("name");
+        if (els.reviewStarsLabel) els.reviewStarsLabel.textContent = t("rating");
+        if (els.reviewMessageLabel) els.reviewMessageLabel.textContent = t("message");
+        if (els.reviewSubmitBtn) els.reviewSubmitBtn.textContent = t("publish");
+        if (els.reviewAuthor) els.reviewAuthor.placeholder = t("yourName");
+        if (els.reviewMessage) els.reviewMessage.placeholder = t("yourFeedback");
+
+        if (els.profileStatOrders) els.profileStatOrders.textContent = t("statOrders");
+        if (els.profileStatSpent) els.profileStatSpent.textContent = t("statSpent");
+        if (els.profileStatMember) els.profileStatMember.textContent = t("statMember");
+        if (els.profileLanguageTitle) els.profileLanguageTitle.textContent = t("profileLanguage");
+        if (els.profileOrdersTitle) els.profileOrdersTitle.textContent = t("profileOrders");
+
+        if (els.infoTitle) els.infoTitle.textContent = t("infoTitle");
+        if (els.infoDesc) els.infoDesc.textContent = t("infoDesc");
+        if (els.infoDeliveryTitle) els.infoDeliveryTitle.textContent = t("deliveryTitle");
+        if (els.infoHoursLabel) els.infoHoursLabel.textContent = t("hours");
+        if (els.infoDelayLabel) els.infoDelayLabel.textContent = t("delay");
+        if (els.infoZoneLabel) els.infoZoneLabel.textContent = t("zone");
+        if (els.infoContactTitle) els.infoContactTitle.textContent = t("contact");
+        if (els.contactBtn) els.contactBtn.textContent = t("contactBtn");
+        if (els.channelBtn) els.channelBtn.textContent = t("channelBtn");
+        if (els.infoPaymentTitle) els.infoPaymentTitle.textContent = t("payment");
+        if (els.infoPaymentDesc) els.infoPaymentDesc.textContent = t("cashOnly");
+
+        if (els.detailCloseBtn) els.detailCloseBtn.textContent = t("detailBack");
+        if (els.detailQtyTitle) els.detailQtyTitle.textContent = t("detailQty");
+        if (els.detailAddBtn) els.detailAddBtn.textContent = t("add");
+        if (els.detailPrevBtn) els.detailPrevBtn.setAttribute("aria-label", t("slidePrev"));
+        if (els.detailNextBtn) els.detailNextBtn.setAttribute("aria-label", t("slideNext"));
+
+        els.tabs.forEach((tab) => {
+            const labels = {
+                home: t("navHome"),
+                cart: t("navCart"),
+                history: t("navHistory"),
+                reviews: t("navReviews"),
+                profile: t("navProfile"),
+                info: t("navInfo")
+            };
+            tab.textContent = labels[tab.dataset.page] || tab.textContent;
+        });
+
+        renderCategories();
+        renderProducts();
+        renderCart();
+        renderHistory();
+        renderReviews();
+        renderProfileStats();
+        renderUser();
     }
 
     function getPlayableVideo(video) {
@@ -567,6 +951,9 @@
             els.detailMuteBtn.style.display = "none";
             els.detailMuteBtn.textContent = "🔈";
         }
+        if (els.detailMuteBtn) {
+            els.detailMuteBtn.setAttribute("aria-label", t("muteLabel"));
+        }
     }
 
     function toggleActiveVideoMute() {
@@ -574,6 +961,7 @@
         if (!video) return;
         video.muted = !video.muted;
         els.detailMuteBtn.textContent = video.muted ? "🔈" : "🔇";
+        els.detailMuteBtn.setAttribute("aria-label", video.muted ? t("muteLabel") : t("unmuteLabel"));
     }
 
     function openProductDetail(product) {
@@ -585,7 +973,7 @@
         detailSlideIndex = 0;
 
         const categoryMeta = getCategoryMeta(product.category);
-        els.detailName.textContent = sanitize(product.name || "Produit");
+        els.detailName.textContent = sanitize(product.name || "Product");
         els.detailDescription.textContent = sanitize(product.description || "");
         els.detailCategoryChip.textContent = `${sanitize(categoryMeta.emoji || "📦")} ${sanitize(categoryMeta.name || product.category)}`;
         els.detailBrandImage.src = sanitize(product.image || "https://picsum.photos/seed/brand-red/260/260");
@@ -637,7 +1025,7 @@
 
     function onCheckout() {
         if (!state.cart.length) {
-            alert("Panier vide.");
+            alert(t("alertCartEmpty"));
             return;
         }
 
@@ -645,13 +1033,13 @@
         if (state.orderType === "delivery") {
             const address = sanitize(els.deliveryAddress.value || "");
             if (address.length < 10) {
-                alert("Adresse trop courte.");
+                alert(t("alertAddress"));
                 return;
             }
         } else {
             const time = sanitize(els.pickupTime.value || "");
             if (!time) {
-                alert("Selectionne une heure d'arrivee.");
+                alert(t("alertPickupTime"));
                 return;
             }
         }
@@ -668,12 +1056,12 @@
         });
 
         const username = state.config && state.config.admin ? state.config.admin.telegram_username : "peakyblinders540";
-        const text = encodeURIComponent(
-            `Nouvelle commande #${orderId}\n` +
-            `Type: ${state.orderType === "pickup" ? "Sur place" : "Livraison"}\n` +
-            `Details: ${summary}\n` +
-            `Total: ${formatEUR(total)}`
-        );
+        const text = encodeURIComponent(t("orderText", {
+            id: orderId,
+            type: state.orderType === "pickup" ? t("pickup") : t("delivery"),
+            summary,
+            total: formatEUR(total)
+        }));
         const url = `https://t.me/${username}?text=${text}`;
 
         if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
@@ -726,7 +1114,7 @@
             const stars = Math.max(1, Math.min(5, parseInt(els.reviewStars.value, 10) || 5));
             const message = sanitize(els.reviewMessage.value || "");
             if (!author || !message) {
-                alert("Remplis le nom et le message.");
+                alert(t("alertReview"));
                 return;
             }
             addReview(author, stars, message);
@@ -755,7 +1143,7 @@
 
         els.detailAddBtn.addEventListener("click", () => {
             if (!state.selectedProduct || !state.selectedQty || !state.selectedPrice) {
-                alert("Selectionne une quantite.");
+                alert(t("alertSelectQty"));
                 return;
             }
             addToCart(state.selectedProduct, state.selectedQty, state.selectedPrice);
@@ -770,8 +1158,8 @@
         if (els.detailTeleBtn) {
             els.detailTeleBtn.addEventListener("click", () => {
                 const username = state.config && state.config.admin ? state.config.admin.telegram_username : "peakyblinders540";
-                const productName = state.selectedProduct ? sanitize(state.selectedProduct.name) : "produit";
-                const url = `https://t.me/${username}?text=${encodeURIComponent(`Salut, je veux ce produit: ${productName}`)}`;
+                const productName = state.selectedProduct ? sanitize(state.selectedProduct.name) : "product";
+                const url = `https://t.me/${username}?text=${encodeURIComponent(t("askProduct", { name: productName }))}`;
                 if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
                 else window.open(url, "_blank");
             });
@@ -782,12 +1170,16 @@
         });
 
         if (els.languageGrid) {
-            els.languageGrid.querySelectorAll(".lang-option").forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    state.language = btn.dataset.lang;
-                    renderLanguageSelection();
-                    saveLocal();
-                });
+            els.languageGrid.addEventListener("click", (event) => {
+                const target = event.target.closest(".lang-option");
+                if (!target) return;
+                const nextLang = target.dataset.lang;
+                if (!["fr", "en", "de"].includes(nextLang)) return;
+                if (nextLang === state.language) return;
+                state.language = nextLang;
+                renderLanguageSelection();
+                applyTranslations();
+                saveLocal();
             });
         }
 
@@ -810,6 +1202,7 @@
             renderReviews();
             renderProfileStats();
             renderLanguageSelection();
+            applyTranslations();
             attachNavigation();
             bindActions();
         } catch (error) {

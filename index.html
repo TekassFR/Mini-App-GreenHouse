@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GreenHouse Mini App</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260514b">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -12,7 +12,7 @@
         <div class="intro-card">
             <p class="intro-kicker">Telegram Mini App</p>
             <h1>GREENHOUSE</h1>
-            <p class="intro-sub">Chargement de la boutique...</p>
+            <p class="intro-sub" id="intro-sub">Chargement de la boutique...</p>
         </div>
     </div>
 
@@ -20,7 +20,7 @@
         <header class="app-header">
             <div class="brand-wrap">
                 <h1 class="brand-title">Chez Peaky</h1>
-                <p class="brand-subtitle">Menu premium 2026</p>
+                <p class="brand-subtitle" id="brand-subtitle">Menu premium 2026</p>
             </div>
             <div class="user-chip" id="user-chip">Bienvenue</div>
         </header>
@@ -28,8 +28,8 @@
         <main class="app-main">
             <section class="page active" id="page-home">
                 <div class="hero">
-                    <p class="hero-kicker">Boutique</p>
-                    <h2>Produits classes, service rapide</h2>
+                    <p class="hero-kicker" id="hero-kicker">Boutique</p>
+                    <h2 id="hero-title">Produits classes, service rapide</h2>
                 </div>
 
                 <nav class="category-nav" id="category-nav"></nav>
@@ -39,8 +39,8 @@
 
             <section class="page" id="page-cart">
                 <div class="page-head">
-                    <h2>Panier</h2>
-                    <p>Finalise ta commande en quelques secondes.</p>
+                    <h2 id="cart-title">Panier</h2>
+                    <p id="cart-desc">Finalise ta commande en quelques secondes.</p>
                 </div>
 
                 <div class="card panel" id="cart-empty-state">Panier vide.</div>
@@ -50,23 +50,23 @@
 
                     <div class="card panel checkout-panel">
                         <div class="service-switch" id="service-switch">
-                            <button class="service-btn active" data-service="delivery" type="button">Livraison</button>
-                            <button class="service-btn" data-service="pickup" type="button">Sur place</button>
+                            <button class="service-btn active" data-service="delivery" id="service-delivery-btn" type="button">Livraison</button>
+                            <button class="service-btn" data-service="pickup" id="service-pickup-btn" type="button">Sur place</button>
                         </div>
 
                         <div class="field-group" id="delivery-field-group">
-                            <label for="delivery-address">Adresse de livraison</label>
+                            <label for="delivery-address" id="delivery-label">Adresse de livraison</label>
                             <textarea id="delivery-address" rows="3" placeholder="Ex: 10 rue de Paris, 54000 Nancy"></textarea>
                         </div>
 
                         <div class="field-group" id="pickup-field-group" style="display: none;">
-                            <label for="pickup-time">Heure d'arrivee</label>
+                            <label for="pickup-time" id="pickup-label">Heure d'arrivee</label>
                             <input id="pickup-time" type="time">
                         </div>
 
                         <div class="checkout-row">
                             <div>
-                                <p class="muted">Total</p>
+                                <p class="muted" id="cart-total-label">Total</p>
                                 <p class="checkout-total" id="cart-total">0.00 EUR</p>
                             </div>
                             <div class="checkout-actions">
@@ -80,16 +80,16 @@
 
             <section class="page" id="page-history">
                 <div class="page-head">
-                    <h2>Historique</h2>
-                    <p>Retrouve toutes tes commandes.</p>
+                    <h2 id="history-title">Historique</h2>
+                    <p id="history-desc">Retrouve toutes tes commandes.</p>
                 </div>
                 <div class="stack" id="history-list"></div>
             </section>
 
             <section class="page" id="page-reviews">
                 <div class="page-head">
-                    <h2>Avis</h2>
-                    <p>Ce que pensent les clients.</p>
+                    <h2 id="reviews-title">Avis</h2>
+                    <p id="reviews-desc">Ce que pensent les clients.</p>
                 </div>
 
                 <div class="review-score card panel">
@@ -100,17 +100,17 @@
                 <div class="stack" id="review-list"></div>
 
                 <form class="card panel review-form" id="review-form">
-                    <h3>Laisser un avis</h3>
-                    <label for="review-author">Nom</label>
+                    <h3 id="review-form-title">Laisser un avis</h3>
+                    <label for="review-author" id="review-author-label">Nom</label>
                     <input id="review-author" type="text" maxlength="30" placeholder="Ton nom">
 
-                    <label for="review-stars">Note (1-5)</label>
+                    <label for="review-stars" id="review-stars-label">Note (1-5)</label>
                     <input id="review-stars" type="number" min="1" max="5" value="5">
 
-                    <label for="review-message">Message</label>
+                    <label for="review-message" id="review-message-label">Message</label>
                     <textarea id="review-message" rows="3" maxlength="160" placeholder="Ton retour"></textarea>
 
-                    <button class="btn primary" type="submit">Publier</button>
+                    <button class="btn primary" id="review-submit-btn" type="submit">Publier</button>
                 </form>
             </section>
 
@@ -130,21 +130,21 @@
                     <div class="profile-stats-grid">
                         <article class="card panel profile-stat-card">
                             <p class="profile-stat-value" id="profile-order-count">0</p>
-                            <p class="profile-stat-label">Commandes</p>
+                            <p class="profile-stat-label" id="profile-stat-orders">Commandes</p>
                         </article>
                         <article class="card panel profile-stat-card">
                             <p class="profile-stat-value" id="profile-total-spent">0 EUR</p>
-                            <p class="profile-stat-label">Depense</p>
+                            <p class="profile-stat-label" id="profile-stat-spent">Depense</p>
                         </article>
                         <article class="card panel profile-stat-card">
                             <p class="profile-stat-value" id="profile-member-short">avr. 26</p>
-                            <p class="profile-stat-label">Membre depuis</p>
+                            <p class="profile-stat-label" id="profile-stat-member">Membre depuis</p>
                         </article>
                     </div>
 
                     <article class="card panel profile-language-card">
                         <div class="profile-section-head">
-                            <h4>Langue</h4>
+                            <h4 id="profile-language-title">Langue</h4>
                         </div>
                         <div class="lang-grid" id="language-grid">
                             <button class="lang-option active" data-lang="fr" type="button">
@@ -164,7 +164,7 @@
 
                     <article class="card panel profile-orders-card">
                         <div class="profile-section-head">
-                            <h4>Mes Commandes</h4>
+                            <h4 id="profile-orders-title">Mes Commandes</h4>
                             <button class="refresh-chip" id="profile-orders-refresh" type="button">↻</button>
                         </div>
                         <div class="stack" id="profile-orders-preview"></div>
@@ -174,20 +174,20 @@
 
             <section class="page" id="page-info">
                 <div class="page-head">
-                    <h2>Infos</h2>
-                    <p>Horaires, contact et paiement.</p>
+                    <h2 id="info-title">Infos</h2>
+                    <p id="info-desc">Horaires, contact et paiement.</p>
                 </div>
 
                 <div class="stack">
                     <article class="card panel">
-                        <h3>Livraison</h3>
-                        <p><strong>Horaires:</strong> 8H-02H Lun-Jeu / 10H-05H Ven-Dim</p>
-                        <p><strong>Delai:</strong> 30-45 min</p>
-                        <p><strong>Zone:</strong> 54 / 57 / 55 / 88 / Luxembourg</p>
+                        <h3 id="info-delivery-title">Livraison</h3>
+                        <p><strong id="info-hours-label">Horaires:</strong> 8H-02H Lun-Jeu / 10H-05H Ven-Dim</p>
+                        <p><strong id="info-delay-label">Delai:</strong> 30-45 min</p>
+                        <p><strong id="info-zone-label">Zone:</strong> 54 / 57 / 55 / 88 / Luxembourg</p>
                     </article>
 
                     <article class="card panel">
-                        <h3>Contact</h3>
+                        <h3 id="info-contact-title">Contact</h3>
                         <p id="info-contact-username">Telegram: @peakyblinders540</p>
                         <div class="inline-actions">
                             <button class="btn primary" id="contact-btn" type="button">Contacter</button>
@@ -196,8 +196,8 @@
                     </article>
 
                     <article class="card panel">
-                        <h3>Paiement</h3>
-                        <p>Paiement en especes uniquement.</p>
+                        <h3 id="info-payment-title">Paiement</h3>
+                        <p id="info-payment-desc">Paiement en especes uniquement.</p>
                     </article>
                 </div>
             </section>
@@ -240,7 +240,7 @@
                 <p class="detail-desc-box" id="detail-description">Description</p>
 
                 <article class="detail-quantity-card">
-                    <h3>Selectionner la Quantite</h3>
+                    <h3 id="detail-qty-title">Selectionner la Quantite</h3>
                     <div class="qty-grid" id="detail-qty-grid"></div>
                 </article>
             </section>
@@ -255,6 +255,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=20260514b"></script>
 </body>
 </html>
