@@ -661,16 +661,16 @@ input {
 }
 
 .detail-topbar {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
+    position: relative;
+    display: flex;
     align-items: center;
+    justify-content: flex-start;
+    min-height: 48px;
     margin-bottom: 10px;
 }
 
 .top-pill {
     border: 1px solid rgba(146, 155, 176, 0.22);
-    justify-self: start;
     min-height: 42px;
     padding: 0 14px;
     border-radius: 999px;
@@ -679,10 +679,15 @@ input {
     color: var(--text);
     background: rgba(20, 23, 31, 0.94);
     cursor: pointer;
+    position: relative;
+    z-index: 2;
 }
 
 
 .detail-logo-box {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     width: 174px;
     max-width: 42vw;
     aspect-ratio: 1;
