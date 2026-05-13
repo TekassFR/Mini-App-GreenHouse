@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🕵🏻 Peaky - Menus</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div id="intro-screen" class="intro-screen">
+        <div class="intro-content">
+            <p class="intro-kicker">Telegram Mini App</p>
+            <h1 class="intro-title">GREENHOUSE</h1>
+            <p class="intro-subtitle">Chargement de la vitrine...</p>
+        </div>
+    </div>
+    <div class="container">
+        <header>
+            <div class="banner-container">
+                <div class="banner-background"></div>
+                <div class="banner-content">
+                    <div class="logo-section">
+                        <div class="logo-icon"><img src="https://picsum.photos/seed/greenhouse-logo/120/120" alt="Logo" class="logo-img" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/56/56?random=88'" /></div>
+                        <h1 class="brand-name">CHEZ PEAKY</h1>
+                        <div class="brand-tagline">Notre Menus 2026</div>
+                    </div>
+                    <div class="user-section">
+                        <p id="user-info" class="user-welcome">Chargement...</p>
+                    </div>
+                </div>
+                <div class="banner-overlay"></div>
+
+            </div>
+        </header>
+        
+        <!-- Panier -->
+        <div class="cart-summary" id="cart-summary" style="display: none;">
+            <div class="cart-header">
+                <h3>🛒 Votre commande</h3>
+                <span class="cart-total" id="cart-total">0.00€</span>
+            </div>
+            <div class="cart-items" id="cart-items"></div>
+            <div class="cart-actions">
+                <button class="btn btn-clear" id="clear-cart-btn" onclick="clearCart()">🗑️ Vider</button>
+                <button class="btn btn-success" id="checkout-btn">📤 Commander</button>
+            </div>
+        </div>
+        
+        <!-- Navigation des catégories -->
+        <nav class="category-nav">
+            <!-- Les boutons seront générés dynamiquement par JavaScript -->
+        </nav>
+        
+        <main>
+            
+            <!-- Menu des produits -->
+            <div class="menu-grid" id="menu-grid">
+                <!-- Les produits seront générés dynamiquement -->
+            </div>
+        </main>
+        
+        <!-- Page de détail produit -->
+        <div class="product-detail-page" id="product-detail-page" style="display: none;">
+            <div class="product-detail-content">
+                <button class="back-btn" onclick="closeProductDetail()">← Retour</button>
+                <div class="product-detail-header">
+                    <div class="product-detail-image">
+                        <img id="detail-product-img" src="" alt="" class="detail-img">
+                        <div id="detail-product-emoji" class="detail-emoji" style="display: none;"></div>
+                    </div>
+                    <div class="product-detail-info">
+                        <h2 id="detail-product-name"></h2>
+                        <p id="detail-product-description"></p>
+                        <div class="detail-price-section">
+                            <!-- Sélecteur de service (delivery/pickup) pour Cali USA Garry Payton -->
+                            <div id="service-selector" class="service-selector" style="display: none;">
+                                <h4>Choisissez votre service :</h4>
+                                <div class="service-buttons">
+                                    <button id="service-delivery-btn" class="service-btn service-btn-active" onclick="changeProductService('delivery')">
+                                        📦 Livraison
+                                    </button>
+                                    <button id="service-pickup-btn" class="service-btn" onclick="changeProductService('pickup')">
+                                        🏪 Sur place
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="quantity-selector">
+                                <h4>Choisissez votre quantité :</h4>
+                                <div class="quantity-bubbles">
+                                    <!-- Les bulles seront générées dynamiquement par JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="product-video-section">
+                    <h3>🎥 Présentation du produit</h3>
+                    <div class="video-container">
+                        <video id="product-video" controls preload="metadata" poster="">
+                            <source id="video-source" src="" type="video/mp4">
+                            Votre navigateur ne supporte pas la lecture de vidéos.
+                        </video>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page d'informations -->
+        <div class="info-page" id="info-page" style="display: none;">
+            <div class="info-content">
+                <h2>📋 Informations</h2>
+                
+                <div class="info-section">
+                    <h3>🚚 Livraison</h3>
+                    <p><strong>Horaires :</strong> 8H - 02H Lundi Jeudi / 10H - 05H Vendredi Dimanche</p>
+                    <p><strong>Délai :</strong> 30-45 minutes</p>
+                    <p><strong>Minimum :</strong> à partir de 50€ (54) & 100€ alentours</p>
+                    <p><strong>Zone :</strong> 54 / 57 / 55 / 88 / Luxembourg selon commande</p>
+                </div>
+                
+                <div class="info-section">
+                    <h3>📞 Contact</h3>
+                    <p><strong>Snapchat :</strong> PAS DISPONIBLE</p>
+                    <p><strong>Telegram :</strong> @peakyblinders540</p>
+                </div>
+                
+                <div class="info-section">
+                    <h3>💳 Paiement</h3>
+                    <p><strong>Modes acceptés :</strong> Espèces uniquement</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Admin -->
+        <div class="admin-page" id="admin-page" style="display: none;">
+            <div class="admin-content">
+                <h2>⚙️ Panel Admin</h2>
+                
+                <!-- Navigation Admin -->
+                <div class="admin-nav-tabs">
+                    <button class="admin-tab active" data-tab="products">📦 Produits</button>
+                    <button class="admin-tab" data-tab="categories">📁 Catégories</button>
+                    <button class="admin-tab" data-tab="settings">⚙️ Paramètres</button>
+                </div>
+
+                <!-- Section Produits -->
+                <div class="admin-section" id="admin-products">
+                    <div class="admin-section-header">
+                        <h3>📦 Gestion des Produits</h3>
+                        <button class="btn btn-success" onclick="openAddProductModal()">+ Ajouter</button>
+                    </div>
+                    <div class="admin-list" id="products-list"></div>
+                </div>
+
+                <!-- Section Catégories -->
+                <div class="admin-section" id="admin-categories" style="display: none;">
+                    <div class="admin-section-header">
+                        <h3>📁 Gestion des Catégories</h3>
+                        <button class="btn btn-success" onclick="openAddCategoryModal()">+ Ajouter</button>
+                    </div>
+                    <div class="admin-list" id="categories-list"></div>
+                </div>
+
+                <!-- Section Paramètres -->
+                <div class="admin-section" id="admin-settings" style="display: none;">
+                    <h3>⚙️ Paramètres</h3>
+                    
+                    <div class="admin-form">
+                        <div class="form-group">
+                            <label>Username Telegram</label>
+                            <input type="text" id="admin-telegram-username" placeholder="LEMIEL54">
+                        </div>
+                        <div class="form-group">
+                            <label>Lien du Canal</label>
+                            <input type="text" id="admin-channel-link" placeholder="https://t.me/...">
+                        </div>
+                        <button type="button" id="admin-save-settings-btn" class="btn btn-success" onclick="saveAdminSettings()">💾 Sauvegarder</button>
+                    </div>
+                    
+                    <div style="margin-top: 30px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4>👥 Administrateurs</h4>
+                            <button class="admin-btn admin-btn-edit" onclick="openAddAdminModal()">➕ Ajouter</button>
+                        </div>
+                        <div id="admins-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Barre de navigation en bas -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-page="menu">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Menu</span>
+            </button>
+            <button class="nav-item" data-page="info">
+                <span class="nav-icon">ℹ️</span>
+                <span class="nav-label">Infos</span>
+            </button>
+            <button class="nav-item" data-page="canal">
+                <span class="nav-icon">✈️</span>
+                <span class="nav-label">Canal</span>
+            </button>
+            <button class="nav-item" data-page="contact">
+                <span class="nav-icon">✉️</span>
+                <span class="nav-label">Contact</span>
+            </button>
+            <button class="nav-item admin-nav-item" data-page="admin" style="display: none;">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Admin</span>
+            </button>
+        </nav>
+    </div>
+    
+    <script src="script.js"></script>
+    <!-- Modal pour choisir le type de commande -->
+    <div id="order-type-modal" class="order-type-modal">
+        <div class="order-type-modal-content">
+            <div class="order-type-modal-header">
+                <h3>📦 Type de commande</h3>
+            </div>
+            <div class="order-type-modal-body">
+                <p class="order-type-description">Comment souhaitez-vous récupérer votre commande ?</p>
+                <div class="order-type-buttons">
+                    <button id="pickup-btn" class="order-type-btn pickup-btn">
+                        <span class="btn-emoji">🏪</span>
+                        <span class="btn-text">Sur place</span>
+                    </button>
+                    <button id="delivery-btn" class="order-type-btn delivery-btn">
+                        <span class="btn-emoji">🚚</span>
+                        <span class="btn-text">Livraison</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour l'heure d'arrivée (Sur place) -->
+    <div id="arrival-time-modal" class="arrival-time-modal">
+        <div class="arrival-time-modal-content">
+            <div class="arrival-time-modal-header">
+                <h3>🕐 Heure d'arrivée</h3>
+            </div>
+            <div class="arrival-time-modal-body">
+                <div class="time-input-group">
+                    <label for="arrival-time-input">À quelle heure souhaitez-vous arriver ?</label>
+                    <input type="time" id="arrival-time-input" class="time-input">
+                </div>
+            </div>
+            <div class="arrival-time-modal-footer">
+                <button id="cancel-time" class="btn-cancel">❌ Annuler</button>
+                <button id="confirm-time" class="btn-confirm">✅ Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ajouter cette modal avant la fermeture du body -->
+    <div id="address-modal" class="address-modal">
+        <div class="address-modal-content">
+            <div class="address-modal-header">
+                <h3>📍 Adresse de livraison</h3>
+            </div>
+            <div class="address-modal-body">
+                <div class="address-input-group">
+                    <label for="address-input">Où souhaitez-vous être livré ?</label>
+                    <textarea id="address-input" placeholder="Entrez votre adresse complète...&#10;Ex: 123 Rue de la Paix, 75001 Paris" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="address-modal-footer">
+                <button id="cancel-address" class="btn-cancel">❌ Annuler</button>
+                <button id="confirm-address" class="btn-confirm">✅ Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Produit -->
+    <div id="product-modal" class="admin-modal" style="display: none;">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h3 id="product-modal-title">Ajouter un Produit</h3>
+            </div>
+            <div class="admin-modal-body">
+                <div class="form-group">
+                    <label>Nom</label>
+                    <input type="text" id="product-name" placeholder="Nom du produit">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="product-description" placeholder="Description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Prix de base (€)</label>
+                    <input type="number" id="product-price" step="0.01" placeholder="10.00">
+                </div>
+                <div class="form-group">
+                    <label>Emoji</label>
+                    <input type="text" id="product-emoji" placeholder="🍕">
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="text" id="product-image" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Vidéo URL</label>
+                    <input type="text" id="product-video-url" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Catégorie</label>
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select" id="product-category-select">
+                            <div class="custom-select-trigger">
+                                <span id="product-category-display">-- Sélectionner une catégorie --</span>
+                                <span class="custom-select-arrow">▼</span>
+                            </div>
+                            <div class="custom-select-options" id="product-category-options" style="display: none;">
+                            </div>
+                        </div>
+                        <select id="product-category" style="display: none;"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="product-isNew"> Nouveau
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="product-isPromo"> Promo
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Prix personnalisés (format: quantité=prix, séparés par des virgules)</label>
+                    <input type="text" id="product-custom-prices" placeholder="1=10, 2=18, 5=40">
+                </div>
+            </div>
+            <div class="admin-modal-footer">
+                <button class="btn-cancel" onclick="closeProductModal()">❌ Annuler</button>
+                <button class="btn-confirm" onclick="saveProduct()">✅ Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Admin -->
+    <div id="admin-modal" class="admin-modal" style="display: none;">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h3 id="admin-modal-title">Ajouter un Administrateur</h3>
+            </div>
+            <div class="admin-modal-body">
+                <div class="form-group">
+                    <label>Username Telegram (sans @)</label>
+                    <input type="text" id="admin-username-input" placeholder="username">
+                </div>
+            </div>
+            <div class="admin-modal-footer">
+                <button class="btn-cancel" onclick="closeAdminModal()">❌ Annuler</button>
+                <button class="btn-confirm" onclick="saveAdmin()">✅ Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Catégorie -->
+    <div id="category-modal" class="admin-modal" style="display: none;">
+        <div class="admin-modal-content">
+            <div class="admin-modal-header">
+                <h3 id="category-modal-title">Ajouter une Catégorie</h3>
+            </div>
+            <div class="admin-modal-body">
+                <div class="form-group">
+                    <label>ID (clé technique, ex: pizza)</label>
+                    <input type="text" id="category-id" placeholder="pizza">
+                </div>
+                <div class="form-group">
+                    <label>Nom</label>
+                    <input type="text" id="category-name" placeholder="Hash">
+                </div>
+                <div class="form-group">
+                    <label>Emoji</label>
+                    <input type="text" id="category-emoji" placeholder="🍫">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="category-description" placeholder="Description" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="admin-modal-footer">
+                <button class="btn-cancel" onclick="closeCategoryModal()">❌ Annuler</button>
+                <button class="btn-confirm" onclick="saveCategory()">✅ Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

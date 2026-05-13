@@ -1,0 +1,140 @@
+{
+  "restaurant": {
+    "name": "Restaurant Menu",
+    "description": "Mini-App Telegram pour commandes en ligne",
+    "currency": "€",
+    "delivery_fee": 2.50,
+    "min_order": 15.00
+  },
+  "admin": {
+    "telegram_username": "peakyblinders540",
+    "channel_link": "https://t.me/+1ucagzAd9_YxZDE0",
+    "whitelist": ["peakyblinders540"]
+  },
+  "categories": {
+    "pizza": {
+      "name": "Hash",
+      "emoji": "🍫",
+      "description": "Nos produits en Hash"
+    },
+    "pasta": {
+      "name": "Weed",
+      "emoji": "🌿",
+      "description": "Nos produits en Weed"
+    }
+  },
+  "products": {
+    "pizza": [
+      {
+        "id": 4,
+        "name": "Sushi Static",
+        "description": "Sushi Static est un produit de haute qualité, parfait pour les amateurs de saveurs uniques.",
+        "price": 10.00,
+        "emoji": "🍫",
+        "image": "https://picsum.photos/seed/strain-4/900/700",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/1Bl1BqO.mp4",
+          "customPrices": {
+            "5": 50.00,
+            "10": 100.00,
+            "50": 300.00
+          }
+      },
+      {
+          "id": 3,
+          "name": "Frozen Sour Tsunami",
+          "description": "Frozen de très bonne qualité, je te laisse faire ton propre avis.",
+          "price": 10.00,
+          "emoji": "🍫",
+          "image": "https://picsum.photos/seed/strain-3/900/700",
+          "category": "pizza",
+          "isNew": true,
+          "isPromo": false,
+          "video": "https://i.imgur.com/L4hl2bp.mp4",
+          "customPrices": {
+            "5": 50.00,
+            "10": 100.00,
+            "50": 350.00
+          }
+      }
+    ],
+    "pasta": [
+      {
+        "id": 8,
+        "name": "Hyper Space Cats",
+        "description": "La Hyper Space Cats est un extraordinaire cannabis une variété qui captive l'imagination avec son profil de saveur unique et ses effets puissants.",
+        "price": 10.00,
+        "emoji": "🌿",
+        "image": "https://picsum.photos/seed/strain-8/900/700",
+        "category": "pasta",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/BCbTf9t.mp4",
+        "customPrices": {
+            "5": 60.00,
+            "10": 120.00,
+            "50": 450.00
+          }
+      },
+      {
+        "id": 7,
+        "name": "Slush Mint Cake",
+        "description": "La Slush Mint Cake est une hybride américaine extrêmement puissante, dotée d'un profil terpénique intense et d'un taux de THC très élevé, compris entre 23-27% en moyenne.",
+        "price": 10.00,
+        "emoji": "🌿",
+        "image": "https://picsum.photos/seed/strain-7/900/700",
+        "category": "pasta",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/z5yirEn.mp4",
+        "customPrices": {
+            "5": 60.00,
+            "10": 120.00,
+            "50": 450.00
+          }
+      },
+      {
+        "id": 5,
+        "name": "Cali USA Cherry Runtz",
+        "description": "Cali USA Cherry Runtz est un hybride américain qui conquiert l'Europe.",
+        "price": 15.00,
+        "emoji": "🌿",
+        "image": "https://picsum.photos/seed/strain-5/900/700",
+        "category": "pasta",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/YTiElWE.mp4",
+        "customPrices": {
+          "2": 30.00,
+          "5": 60.00,
+          "10": 120.00,
+          "50": 450.00
+        }
+      },
+      {
+        "id": 6,
+        "name": "Cali USA Garry Payton",
+        "description": "Cali USA Garry Payton, une variété premium de Californie avec une puissance exceptionnelle.",
+        "price": 10.00,
+        "emoji": "🌿",
+        "image": "https://picsum.photos/seed/strain-6/900/700",
+        "category": "pasta",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/ePIAER7.mp4",
+        "customPrices": {
+          "5": {
+            "delivery": 60.00,
+            "pickup": 50.00
+          },
+          "10": {
+            "delivery": 120.00,
+            "pickup": 100.00
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+    "name": "Ma Mini-App Telegram",
+    "short_name": "MiniApp",
+    "description": "Une Mini-App de démonstration pour Telegram",
+    "version": "1.0.0",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#007bff",
+    "orientation": "portrait",
+    "icons": [
+      {
+        "src": "icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ],
+    "telegram": {
+      "bot_username": "Peaky54000_Bot",
+      "web_app_url": "https://miniapp-peaky.vercel.app/"
+    }
+  }
