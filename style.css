@@ -662,7 +662,7 @@ input {
 
 .detail-topbar {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr auto;
     gap: 10px;
     align-items: center;
     margin-bottom: 10px;
@@ -681,11 +681,6 @@ input {
     cursor: pointer;
 }
 
-.top-pill.ghost {
-    justify-self: end;
-    min-width: 52px;
-    padding: 0 12px;
-}
 
 .detail-logo-box {
     width: 174px;
@@ -966,6 +961,7 @@ input {
 }
 
 .detail-price-floating {
+    display: none;
     position: sticky;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
     z-index: 41;
@@ -1088,10 +1084,6 @@ body.detail-open .bottom-nav {
         min-height: 44px;
         font-size: 0.95rem;
         padding: 0 14px;
-    }
-
-    .top-pill.ghost {
-        min-width: 62px;
     }
 
     .detail-media-strip {
