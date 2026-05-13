@@ -991,6 +991,7 @@
         renderDetailCarousel();
 
         renderDetailQuantities(product);
+        els.detailOverlay.scrollTop = 0;
         els.detailOverlay.style.display = "block";
         document.body.style.overflow = "hidden";
         document.body.classList.add("detail-open");
