@@ -31,6 +31,10 @@
         heroKicker: document.getElementById("hero-kicker"),
         heroTitle: document.getElementById("hero-title"),
         categoryNav: document.getElementById("category-nav"),
+        categoryKeyLabel: document.getElementById("category-key-label"),
+        categoryNameLabel: document.getElementById("category-name-label"),
+        categoryKeySelect: document.getElementById("category-key-select"),
+        categoryNameSelect: document.getElementById("category-name-select"),
         productGrid: document.getElementById("product-grid"),
         pages: document.querySelectorAll(".page"),
         tabs: document.querySelectorAll(".tab-btn"),
@@ -141,6 +145,8 @@
             navProfile: "Profil",
             navInfo: "Infos",
             categoryAll: "Tous",
+            categoryKeyLabel: "Categorie",
+            categoryTypeLabel: "Type",
             badgeNew: "Nouveau",
             badgePromo: "Promo",
             fromPrice: "Des {price}",
@@ -219,6 +225,8 @@
             navProfile: "Profile",
             navInfo: "Info",
             categoryAll: "All",
+            categoryKeyLabel: "Category",
+            categoryTypeLabel: "Type",
             badgeNew: "New",
             badgePromo: "Promo",
             fromPrice: "From {price}",
@@ -297,6 +305,8 @@
             navProfile: "Profil",
             navInfo: "Infos",
             categoryAll: "Alle",
+            categoryKeyLabel: "Kategorie",
+            categoryTypeLabel: "Typ",
             badgeNew: "Neu",
             badgePromo: "Promo",
             fromPrice: "Ab {price}",
@@ -503,30 +513,24 @@
     }
 
     function renderCategories() {
-        let html = `
-            <button class="category-btn ${state.category === "all" ? "active" : ""}" data-category="all" type="button">
-                <span class="cat-emoji">◉</span>
-                <span class="cat-label">${t("categoryAll")}</span>
-            </button>
-        `;
-        state.categories.forEach((catId) => {
-            const meta = getCategoryMeta(catId);
-            html += `
-                <button class="category-btn ${state.category === catId ? "active" : ""}" data-category="${catId}" type="button">
-                    <span class="cat-emoji">${sanitize(meta.emoji || "◉")}</span>
-                    <span class="cat-label">${sanitize(meta.name || catId)}</span>
-                </button>
-            `;
-        });
-        els.categoryNav.innerHTML = html;
+        if (!els.categoryKeySelect || !els.categoryNameSelect) return;
 
-        els.categoryNav.querySelectorAll(".category-btn").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                state.category = btn.dataset.category;
-                renderCategories();
-                renderProducts();
-            });
-        });
+        const allOption = `<option value="all">${t("categoryAll")}</option>`;
+        const keyOptions = state.categories
+            .map((catId) => `<option value="${catId}">${sanitize(catId)}</option>`)
+            .join("");
+        const typeOptions = state.categories
+            .map((catId) => {
+                const meta = getCategoryMeta(catId);
+                const label = sanitize(meta.name || catId);
+                return `<option value="${catId}">${label}</option>`;
+            })
+            .join("");
+
+        els.categoryKeySelect.innerHTML = allOption + keyOptions;
+        els.categoryNameSelect.innerHTML = allOption + typeOptions;
+        els.categoryKeySelect.value = state.category;
+        els.categoryNameSelect.value = state.category;
     }
 
     function productCardTemplate(product) {
@@ -773,6 +777,8 @@
         if (els.brandSubtitle) els.brandSubtitle.textContent = t("brandSubtitle");
         if (els.heroKicker) els.heroKicker.textContent = t("heroKicker");
         if (els.heroTitle) els.heroTitle.textContent = t("heroTitle");
+        if (els.categoryKeyLabel) els.categoryKeyLabel.textContent = t("categoryKeyLabel");
+        if (els.categoryNameLabel) els.categoryNameLabel.textContent = t("categoryTypeLabel");
 
         if (els.cartTitle) els.cartTitle.textContent = t("cartTitle");
         if (els.cartDesc) els.cartDesc.textContent = t("cartDesc");
@@ -946,9 +952,13 @@
         if (activeType === "video") {
             const activeVideo = els.detailMediaTrack.querySelector(`.slide-item[data-slide-index="${detailSlideIndex}"] video`);
             if (activeVideo) activeVideo.play().catch(() => {});
-            if (els.detailMuteBtn) els.detailMuteBtn.style.display = "grid";
+            if (els.detailMuteBtn) {
+                els.detailMuteBtn.disabled = false;
+                els.detailMuteBtn.style.opacity = "1";
+            }
         } else if (els.detailMuteBtn) {
-            els.detailMuteBtn.style.display = "none";
+            els.detailMuteBtn.disabled = true;
+            els.detailMuteBtn.style.opacity = "0.45";
             els.detailMuteBtn.textContent = "🔈";
         }
         if (els.detailMuteBtn) {
@@ -1094,6 +1104,22 @@
                 els.pickupFieldGroup.style.display = isDelivery ? "none" : "grid";
             });
         });
+
+        if (els.categoryKeySelect) {
+            els.categoryKeySelect.addEventListener("change", () => {
+                state.category = els.categoryKeySelect.value;
+                if (els.categoryNameSelect) els.categoryNameSelect.value = state.category;
+                renderProducts();
+            });
+        }
+
+        if (els.categoryNameSelect) {
+            els.categoryNameSelect.addEventListener("change", () => {
+                state.category = els.categoryNameSelect.value;
+                if (els.categoryKeySelect) els.categoryKeySelect.value = state.category;
+                renderProducts();
+            });
+        }
 
         els.contactBtn.addEventListener("click", () => {
             const username = state.config && state.config.admin ? state.config.admin.telegram_username : "peakyblinders540";
