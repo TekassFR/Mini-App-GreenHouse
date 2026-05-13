@@ -901,12 +901,18 @@
             }
             const type = item.type === "video" ? "video" : "image";
             const src = type === "video" ? getPlayableVideo(item.src || "") : sanitize(item.src || "");
-            if (src) slides.push({ type, src });
+            if (!src) return;
+            if (type === "video") {
+                const thumb = sanitize(item.thumb || item.poster || product.image || "");
+                slides.push({ type, src, thumb });
+                return;
+            }
+            slides.push({ type, src });
         });
 
         if (product.image) slides.unshift({ type: "image", src: sanitize(product.image) });
         const videoUrl = getPlayableVideo(product.video);
-        if (videoUrl) slides.push({ type: "video", src: videoUrl });
+        if (videoUrl) slides.push({ type: "video", src: videoUrl, thumb: sanitize(product.image || "") });
 
         const dedup = [];
         const seen = new Set();
@@ -936,7 +942,9 @@
             .map((slide, idx) => {
                 const marker = slide.type === "video" ? "▶" : "";
                 const thumbMedia = slide.type === "video"
-                    ? `<video src="${slide.src}" muted playsinline preload="metadata"></video>`
+                    ? (slide.thumb
+                        ? `<img src="${slide.thumb}" alt="Miniature video ${idx + 1}" loading="lazy" referrerpolicy="no-referrer">`
+                        : `<video src="${slide.src}" muted playsinline preload="metadata"></video>`)
                     : `<img src="${slide.src}" alt="Miniature ${idx + 1}" loading="lazy" referrerpolicy="no-referrer">`;
                 return `<button class="detail-thumb ${idx === 0 ? "active" : ""}" data-slide-index="${idx}" type="button">${thumbMedia}<span>${marker}</span></button>`;
             })
