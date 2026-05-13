@@ -318,10 +318,10 @@ header {
 /* Navigation des catégories avec effets 3D */
 .category-nav {
     display: flex;
-    gap: 12px;
-    margin-bottom: 25px;
+    gap: 10px;
+    margin-bottom: 18px;
     overflow-x: auto;
-    padding: 15px 0;
+    padding: 6px 0 10px;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -331,63 +331,44 @@ header {
 }
 
 .category-btn {
-    background: 
-        linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(10, 10, 10, 0.8) 100%);
-    color: #f8fafc;
-    border: 1px solid rgba(60, 60, 60, 0.6);
-    padding: 14px 28px;
-    border-radius: 30px;
+    background: rgba(2, 15, 8, 0.72);
+    color: #dbeee2;
+    border: 1px solid rgba(111, 184, 137, 0.32);
+    padding: 10px 18px;
+    border-radius: 14px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    font-weight: 500;
-
-    box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.4),
-        0 2px 10px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(60, 60, 60, 0.2);
+    transition: all 0.22s ease;
+    font-weight: 600;
     position: relative;
     overflow: hidden;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.01em;
     white-space: nowrap;
     min-width: fit-content;
-    font-size: 0.9rem;
+    font-size: 0.86rem;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
 }
 
 .category-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(60, 60, 60, 0.3), transparent);
-    transition: left 0.5s;
+    display: none;
 }
 
 .category-btn:hover::before {
-    left: 100%;
+    left: 0;
 }
 
 .category-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 
-        0 8px 30px rgba(0, 0, 0, 0.4),
-        0 4px 15px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(60, 60, 60, 0.3);
-    background: 
-        linear-gradient(135deg, rgba(40, 40, 40, 0.8) 0%, rgba(60, 60, 60, 0.8) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+    background: rgba(6, 26, 14, 0.84);
     color: white;
-    border-color: rgba(60, 60, 60, 0.8);
+    border-color: rgba(151, 234, 181, 0.45);
 }
 
 .category-btn.active {
-    background: linear-gradient(135deg, #333333 0%, #111111 100%);
-    color: white;
-    box-shadow: 
-        0 6px 25px rgba(0, 0, 0, 0.5),
-        0 3px 12px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    border-color: rgba(60, 60, 60, 0.8);
+    background: linear-gradient(145deg, #1f6c3f, #175232);
+    color: #ecfff3;
+    border-color: rgba(188, 255, 212, 0.55);
+    box-shadow: 0 10px 22px rgba(7, 30, 18, 0.5);
 }
 
 main {
@@ -655,40 +636,26 @@ main {
 /* Grille des produits avec effets 3D */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 25px;
-    margin-bottom: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
 }
 
 .product-card {
-    background: 
-        linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(20, 20, 20, 0.6) 100%);
-    border-radius: 20px;
-    padding: 18px;
-    text-align: center;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(40, 40, 40, 0.5);
-
+    background: linear-gradient(165deg, rgba(8, 19, 12, 0.86), rgba(6, 15, 10, 0.86));
+    border-radius: 22px;
+    padding: 0;
+    text-align: left;
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    border: 1px solid rgba(147, 226, 173, 0.2);
     position: relative;
     overflow: hidden;
-    box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.4),
-        0 2px 10px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(60, 60, 60, 0.2);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
     animation: fadeInUp 0.6s ease-out;
 }
 
 .product-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent, rgba(40, 40, 40, 0.08), transparent);
-    transform: translateX(-100%) skewX(-15deg);
-    transition: transform 0.6s;
-    z-index: 1;
+    display: none;
 }
 
 .product-card:hover::before {
@@ -696,12 +663,9 @@ main {
 }
 
 .product-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 
-        0 12px 40px rgba(0, 0, 0, 0.5),
-        0 6px 20px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(60, 60, 60, 0.3);
-    border-color: rgba(60, 60, 60, 0.6);
+    transform: translateY(-4px);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.42);
+    border-color: rgba(182, 255, 208, 0.38);
 }
 
 .product-card.hidden {
@@ -710,31 +674,31 @@ main {
 
 .product-image {
     width: 100%;
-    height: 200px;
-    background: linear-gradient(45deg, #000000, #0a0a0a);
+    height: 190px;
+    background: linear-gradient(45deg, #08130c, #10281a);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 4rem;
     position: relative;
     overflow: hidden;
-    border-bottom: 1px solid rgba(60, 60, 60, 0.4);
-    border-radius: 15px 15px 0 0;
+    border-bottom: 1px solid rgba(131, 216, 159, 0.25);
+    border-radius: 22px 22px 0 0;
 }
 
 .product-img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
-    transition: all 0.4s ease;
-    filter: brightness(0.9) contrast(1.1);
+    transition: transform 0.3s ease;
+    filter: none;
     background: rgba(0, 0, 0, 0.1);
 }
 
 .product-card:hover .product-img {
-    transform: rotate(2deg);
-    filter: brightness(1.1) contrast(1.2);
+    transform: scale(1.04);
+    filter: none;
 }
 
 .product-emoji-fallback {
@@ -758,7 +722,7 @@ main {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(40, 40, 40, 0.1), rgba(60, 60, 60, 0.1));
+    background: linear-gradient(180deg, transparent 56%, rgba(0, 0, 0, 0.4));
     z-index: 1;
     pointer-events: none;
 }
@@ -830,8 +794,9 @@ main {
 /* Badge Nouveau */
 .new-badge {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 12px;
+    left: 12px;
+    right: auto;
     background: linear-gradient(145deg, #4CAF50, #45a049);
     color: white;
     padding: 8px 15px;
@@ -842,8 +807,8 @@ main {
     box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3),
                 -2px -2px 5px rgba(255, 255, 255, 0.1),
                 0 0 15px rgba(76, 175, 80, 0.5);
-    transform: perspective(500px) rotateX(15deg);
-    animation: newBadgeGlow 3s infinite;
+    transform: none;
+    animation: none;
 }
 
 @keyframes newBadgeGlow {
@@ -854,8 +819,9 @@ main {
 /* Badge Promo */
 .promo-badge {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 12px;
+    left: 12px;
+    right: auto;
     background: linear-gradient(145deg, #FF9800, #F57C00);
     color: white;
     padding: 8px 15px;
@@ -866,8 +832,8 @@ main {
     box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3),
                 -2px -2px 5px rgba(255, 255, 255, 0.1),
                 0 0 15px rgba(255, 152, 0, 0.5);
-    transform: perspective(500px) rotateX(15deg);
-    animation: promoBadgeBounce 2s infinite;
+    transform: none;
+    animation: none;
 }
 
 @keyframes promoBadgeBounce {
@@ -876,30 +842,46 @@ main {
 }
 
 .product-info {
-    padding: 20px;
+    padding: 14px 14px 16px;
     position: relative;
     z-index: 2;
 }
 
 .product-name {
-    font-size: 1.4rem;
-    font-weight: 600;
-    margin-bottom: 10px;
+    font-size: 1.12rem;
+    font-weight: 700;
+    margin-bottom: 6px;
     color: #ffffff;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    text-shadow: none;
+    line-height: 1.3;
 }
 
 .product-description {
-    color: #cccccc;
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-    line-height: 1.4;
+    color: rgba(225, 241, 233, 0.78);
+    font-size: 0.86rem;
+    margin-bottom: 12px;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .product-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.product-footer-modern {
+    gap: 10px;
+}
+
+.product-starting-price {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #7ff0a8;
+    letter-spacing: 0.01em;
 }
 
 .product-price {
@@ -910,35 +892,29 @@ main {
 }
 
 .add-to-cart-btn {
-    padding: 12px 25px;
-    background: linear-gradient(145deg, #333333, #111111);
-    color: #ffffff;
-    border: none;
-    border-radius: 25px;
-    font-weight: 600;
+    padding: 10px 14px;
+    background: linear-gradient(145deg, #1f6f42, #165333);
+    color: #f3fff7;
+    border: 1px solid rgba(204, 255, 221, 0.3);
+    border-radius: 12px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 8px;
-    box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.5),
-                -8px -8px 16px rgba(40, 40, 40, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
-    transform: perspective(500px) rotateX(10deg);
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 8px 18px rgba(11, 43, 26, 0.4);
+    text-shadow: none;
+    transform: none;
     position: relative;
     overflow: hidden;
+    font-size: 0.86rem;
+    min-width: 116px;
 }
 
 .add-to-cart-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    transition: left 0.5s;
+    display: none;
 }
 
 .add-to-cart-btn:hover::before {
@@ -946,10 +922,9 @@ main {
 }
 
 .add-to-cart-btn:hover {
-    transform: perspective(500px) rotateX(0deg) translateY(-3px);
-    box-shadow: 12px 12px 24px rgba(0, 0, 0, 0.6),
-                -12px -12px 24px rgba(40, 40, 40, 0.15),
-    0 5px 15px rgba(0, 0, 0, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(12, 46, 28, 0.52);
+    background: linear-gradient(145deg, #25834e, #1b613b);
 }
 
 /* Bouton de commande avec effets 3D */
@@ -1571,7 +1546,7 @@ footer:hover {
 @media (max-width: 768px) {
     .menu-grid {
         grid-template-columns: 1fr;
-        gap: 20px;
+        gap: 14px;
     }
     
     .category-nav {
@@ -1579,7 +1554,7 @@ footer:hover {
     }
     
     .category-btn {
-        padding: 12px 18px;
+        padding: 9px 14px;
         font-size: 0.8rem;
     }
     
@@ -1587,12 +1562,8 @@ footer:hover {
         font-size: 2rem;
     }
     
-    .product-card {
-        transform: perspective(1000px) rotateX(5deg);
-    }
-    
-    .product-card:hover {
-        transform: perspective(1000px) rotateX(0deg) translateY(-5px);
+    .product-image {
+        height: 180px;
     }
 }
 
@@ -1602,7 +1573,7 @@ footer:hover {
     }
     
     .product-info {
-        padding: 20px;
+        padding: 12px;
     }
     
     .address-modal-content {

@@ -302,6 +302,20 @@ function createProductCard(product) {
     const safeDescription = window.SecurityUtils.sanitizeInput(product.description);
     const safePrice = parseFloat(product.price) || 0;
     const safeEmoji = window.SecurityUtils.sanitizeInput(product.emoji);
+    const customPriceValues = Object.values(product.customPrices || {})
+        .map((value) => {
+            if (typeof value === 'object' && value !== null) {
+                const delivery = parseFloat(value.delivery);
+                const pickup = parseFloat(value.pickup);
+                const candidates = [delivery, pickup].filter(Number.isFinite);
+                return candidates.length ? Math.min(...candidates) : NaN;
+            }
+
+            const parsed = parseFloat(value);
+            return Number.isFinite(parsed) ? parsed : NaN;
+        })
+        .filter(Number.isFinite);
+    const startPrice = customPriceValues.length ? Math.min(...customPriceValues) : safePrice;
     
     // Déterminer quel badge afficher
     let badgeHtml = '';
@@ -325,9 +339,10 @@ function createProductCard(product) {
             <div class="product-info">
                 <h3 class="product-name" onclick="openProductDetail(${product.id})" style="cursor: pointer;">${safeName}</h3>
                 <p class="product-description">${safeDescription}</p>
-                <div class="product-footer">
-                    <button class="add-to-cart-btn" onclick="openProductDetail(${product.id})" style="width: 100%;">
-                        👁️ Voir détails
+                <div class="product-footer product-footer-modern">
+                    <span class="product-starting-price">Dès ${startPrice.toFixed(2)}€</span>
+                    <button class="add-to-cart-btn" onclick="openProductDetail(${product.id})">
+                        Voir détails
                     </button>
                 </div>
             </div>

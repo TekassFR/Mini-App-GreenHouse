@@ -13,7 +13,7 @@ import aiohttp
 
 # Configuration sécurisée
 BOT_TOKEN = "8123913668:AAF2_Or8mhbbUXns9Ip_EZQeobbLzjgWZSI" # Remplacez par votre token réel
-WEB_APP_URL = "https://miniapp-peaky.vercel.app/"  # Remplacez par l'URL réelle de votre Mini-App
+WEB_APP_URL = "https://mini-app-green-house.vercel.app/"  # Remplacez par l'URL réelle de votre Mini-App
 
 # Variables de sécurité intégrées
 SECURITY_CONFIG = {
