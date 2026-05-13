@@ -889,6 +889,24 @@
         return v;
     }
 
+    function getVideoPreviewImage(videoUrl) {
+        if (!videoUrl) return "";
+        const v = String(videoUrl).trim();
+        if (!v) return "";
+
+        let id = "";
+        const iImgurMatch = v.match(/i\.imgur\.com\/([a-zA-Z0-9]+)\.(mp4|gifv)(\?.*)?$/i);
+        if (iImgurMatch && iImgurMatch[1]) id = iImgurMatch[1];
+
+        if (!id) {
+            const imgurMatch = v.match(/imgur\.com\/(?:a\/)?([a-zA-Z0-9]+)(\?.*)?$/i);
+            if (imgurMatch && imgurMatch[1]) id = imgurMatch[1];
+        }
+
+        if (!id) return "";
+        return `https://i.imgur.com/${id}.jpg`;
+    }
+
     function buildMediaSlides(product) {
         const slides = [];
         const gallery = Array.isArray(product.gallery) ? product.gallery : [];
@@ -903,8 +921,9 @@
             const src = type === "video" ? getPlayableVideo(item.src || "") : sanitize(item.src || "");
             if (!src) return;
             if (type === "video") {
-                const thumb = sanitize(item.thumb || item.poster || product.image || "");
-                slides.push({ type, src, thumb });
+                const fallbackThumb = sanitize(product.image || "");
+                const thumb = sanitize(item.thumb || item.poster || getVideoPreviewImage(src) || fallbackThumb);
+                slides.push({ type, src, thumb, fallbackThumb });
                 return;
             }
             slides.push({ type, src });
@@ -912,7 +931,11 @@
 
         if (product.image) slides.unshift({ type: "image", src: sanitize(product.image) });
         const videoUrl = getPlayableVideo(product.video);
-        if (videoUrl) slides.push({ type: "video", src: videoUrl, thumb: sanitize(product.image || "") });
+        if (videoUrl) {
+            const fallbackThumb = sanitize(product.image || "");
+            const thumb = sanitize(getVideoPreviewImage(videoUrl) || fallbackThumb);
+            slides.push({ type: "video", src: videoUrl, thumb, fallbackThumb });
+        }
 
         const dedup = [];
         const seen = new Set();
@@ -943,12 +966,19 @@
                 const marker = slide.type === "video" ? "▶" : "";
                 const thumbMedia = slide.type === "video"
                     ? (slide.thumb
-                        ? `<img src="${slide.thumb}" alt="Miniature video ${idx + 1}" loading="lazy" referrerpolicy="no-referrer">`
+                        ? `<img src="${slide.thumb}" alt="Miniature video ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" data-fallback="${slide.fallbackThumb || ""}">`
                         : `<video src="${slide.src}" muted playsinline preload="metadata"></video>`)
                     : `<img src="${slide.src}" alt="Miniature ${idx + 1}" loading="lazy" referrerpolicy="no-referrer">`;
                 return `<button class="detail-thumb ${idx === 0 ? "active" : ""}" data-slide-index="${idx}" type="button">${thumbMedia}<span>${marker}</span></button>`;
             })
             .join("");
+
+        els.detailThumbs.querySelectorAll("img[data-fallback]").forEach((img) => {
+            img.addEventListener("error", () => {
+                const fallback = img.getAttribute("data-fallback") || "";
+                if (fallback && img.src !== fallback) img.src = fallback;
+            }, { once: true });
+        });
 
         els.detailThumbs.querySelectorAll(".detail-thumb").forEach((btn) => {
             btn.addEventListener("click", () => {
