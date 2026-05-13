@@ -744,7 +744,7 @@ input {
     position: fixed;
     inset: 0;
     z-index: 3000;
-    background: rgba(6, 8, 12, 0.92);
+    background: rgba(6, 10, 9, 0.92);
     backdrop-filter: blur(8px);
     overflow-y: auto;
 }
@@ -765,7 +765,7 @@ input {
 }
 
 .top-pill {
-    border: 1px solid rgba(146, 155, 176, 0.22);
+    border: 1px solid rgba(96, 227, 154, 0.2);
     justify-self: start;
     min-height: 42px;
     padding: 0 14px;
@@ -773,7 +773,7 @@ input {
     font-size: 0.92rem;
     font-weight: 700;
     color: var(--text);
-    background: rgba(20, 23, 31, 0.94);
+    background: rgba(15, 22, 19, 0.94);
     cursor: pointer;
 }
 
@@ -786,7 +786,7 @@ input {
     aspect-ratio: 1;
     border-radius: 12px;
     overflow: hidden;
-    border: 1px solid rgba(146, 155, 176, 0.24);
+    border: 1px solid rgba(96, 227, 154, 0.18);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
 }
 
@@ -797,13 +797,23 @@ input {
 }
 
 .detail-stage {
+    position: relative;
     max-width: 780px;
     margin: 0 auto;
-    background: linear-gradient(160deg, rgba(18, 22, 31, 0.97), rgba(14, 18, 26, 0.97));
+    background: linear-gradient(160deg, rgba(14, 21, 18, 0.97), rgba(11, 17, 15, 0.97));
     border-radius: 20px;
-    border: 1px solid rgba(146, 155, 176, 0.16);
+    border: 1px solid rgba(96, 227, 154, 0.14);
     padding: 14px;
     box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32);
+}
+
+.detail-stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 20px;
+    background: radial-gradient(circle at 82% 10%, rgba(96, 227, 154, 0.08), transparent 40%);
 }
 
 .detail-media-strip {
@@ -814,8 +824,8 @@ input {
 }
 
 .slide-nav {
-    border: 1px solid rgba(146, 155, 176, 0.2);
-    background: rgba(18, 22, 31, 0.94);
+    border: 1px solid rgba(96, 227, 154, 0.16);
+    background: rgba(14, 21, 18, 0.94);
     color: #c9d1e2;
     width: 40px;
     height: 64px;
@@ -826,14 +836,14 @@ input {
 }
 
 .slide-nav:hover {
-    background: rgba(25, 30, 40, 0.96);
-    border-color: rgba(176, 190, 216, 0.36);
+    background: rgba(18, 27, 22, 0.96);
+    border-color: rgba(96, 227, 154, 0.34);
 }
 
 .detail-media-window {
     overflow: hidden;
     border-radius: 16px;
-    border: 1px solid rgba(146, 155, 176, 0.2);
+    border: 1px solid rgba(96, 227, 154, 0.16);
     background: #0b1018;
 }
 
@@ -878,7 +888,7 @@ input {
     width: 56px;
     height: 56px;
     border-radius: 10px;
-    border: 1px solid rgba(146, 155, 176, 0.2);
+    border: 1px solid rgba(96, 227, 154, 0.16);
     background: rgba(16, 20, 28, 0.95);
     overflow: hidden;
     cursor: pointer;
@@ -889,7 +899,7 @@ input {
 
 .detail-thumb:hover {
     transform: translateY(-1px);
-    border-color: rgba(176, 190, 216, 0.34);
+    border-color: rgba(96, 227, 154, 0.3);
 }
 
 .detail-thumb img,
@@ -906,8 +916,8 @@ input {
 }
 
 .detail-thumb.active {
-    border: 2px solid #b4bdcf;
-    box-shadow: 0 0 0 1px rgba(180, 189, 207, 0.2);
+    border: 2px solid rgba(96, 227, 154, 0.72);
+    box-shadow: 0 0 0 1px rgba(96, 227, 154, 0.2);
 }
 
 .detail-counter {
@@ -929,8 +939,8 @@ input {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid rgba(146, 155, 176, 0.2);
-    background: rgba(16, 20, 29, 0.95);
+    border: 1px solid rgba(96, 227, 154, 0.18);
+    background: rgba(13, 20, 17, 0.95);
     border-radius: 10px;
     padding: 7px 11px;
     font-size: 0.8rem;
@@ -940,8 +950,8 @@ input {
 .detail-desc-box {
     margin-top: 8px;
     border-radius: 14px;
-    border: 1px solid rgba(146, 155, 176, 0.16);
-    background: rgba(13, 17, 25, 0.95);
+    border: 1px solid rgba(96, 227, 154, 0.12);
+    background: rgba(11, 17, 14, 0.95);
     padding: 13px 15px;
     color: #a5aec2;
     font-size: 0.92rem;
@@ -951,8 +961,8 @@ input {
 .detail-quantity-card {
     margin-top: 10px;
     border-radius: 14px;
-    border: 1px solid rgba(146, 155, 176, 0.16);
-    background: rgba(13, 17, 25, 0.96);
+    border: 1px solid rgba(96, 227, 154, 0.12);
+    background: rgba(11, 17, 14, 0.96);
     padding: 12px;
 }
 
@@ -968,7 +978,7 @@ input {
 }
 
 .qty-card {
-    border: 1px solid rgba(146, 155, 176, 0.16);
+    border: 1px solid rgba(96, 227, 154, 0.12);
     border-radius: 14px;
     background: rgba(18, 22, 30, 0.96);
     min-height: 104px;
@@ -983,7 +993,7 @@ input {
 
 .qty-card:hover {
     transform: translateY(-1px);
-    border-color: rgba(176, 190, 216, 0.34);
+    border-color: rgba(96, 227, 154, 0.28);
 }
 
 .qty-card .qty-label {
@@ -1000,8 +1010,8 @@ input {
 }
 
 .qty-card.active {
-    border-color: rgba(180, 189, 207, 0.86);
-    box-shadow: inset 0 0 0 1px rgba(180, 189, 207, 0.26);
+    border-color: rgba(96, 227, 154, 0.72);
+    box-shadow: inset 0 0 0 1px rgba(96, 227, 154, 0.24);
 }
 
 .detail-bottom-bar {
@@ -1015,8 +1025,8 @@ input {
     gap: 10px;
     padding: 8px;
     border-radius: 16px;
-    border: 1px solid rgba(146, 155, 176, 0.18);
-    background: rgba(13, 17, 25, 0.96);
+    border: 1px solid rgba(96, 227, 154, 0.16);
+    background: rgba(10, 16, 13, 0.96);
     backdrop-filter: blur(8px);
     transform: translateZ(0);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
@@ -1027,8 +1037,8 @@ input {
     width: 52px;
     height: 52px;
     border-radius: 14px;
-    border: 1px solid rgba(146, 155, 176, 0.2);
-    background: rgba(18, 22, 31, 0.95);
+    border: 1px solid rgba(96, 227, 154, 0.16);
+    background: rgba(14, 21, 18, 0.95);
     color: #d8deea;
     font-size: 1.15rem;
     cursor: pointer;
@@ -1037,17 +1047,17 @@ input {
 }
 
 .sound-chip {
-    background: rgba(14, 18, 26, 0.95);
+    background: rgba(12, 18, 15, 0.95);
     color: #d8deea;
 }
 
 .detail-add-main {
     flex: 1;
-    border: 1px solid rgba(146, 155, 176, 0.22);
+    border: 1px solid rgba(96, 227, 154, 0.28);
     min-height: 52px;
     border-radius: 14px;
-    background: linear-gradient(130deg, #9aa3b8, #79839a);
-    color: #11151d;
+    background: linear-gradient(130deg, rgba(96, 227, 154, 0.9), rgba(51, 186, 119, 0.86));
+    color: #072014;
     font-size: clamp(1rem, 2vw, 1.25rem);
     font-weight: 900;
     cursor: pointer;
