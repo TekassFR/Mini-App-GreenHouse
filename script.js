@@ -548,9 +548,8 @@
         if (index >= detailSlides.length) index = 0;
         detailSlideIndex = index;
 
-        const behavior = smooth ? "smooth" : "auto";
-        const x = index * els.detailMediaWindow.clientWidth;
-        els.detailMediaWindow.scrollTo({ left: x, behavior });
+        els.detailMediaTrack.style.transition = smooth ? "transform 280ms ease" : "none";
+        els.detailMediaTrack.style.transform = `translateX(-${detailSlideIndex * 100}%)`;
 
         els.detailThumbs.querySelectorAll(".detail-thumb").forEach((thumb) => {
             thumb.classList.toggle("active", parseInt(thumb.dataset.slideIndex, 10) === detailSlideIndex);
@@ -566,6 +565,7 @@
             if (els.detailMuteBtn) els.detailMuteBtn.style.display = "grid";
         } else if (els.detailMuteBtn) {
             els.detailMuteBtn.style.display = "none";
+            els.detailMuteBtn.textContent = "🔈";
         }
     }
 
@@ -595,6 +595,7 @@
         renderDetailQuantities(product);
         els.detailOverlay.style.display = "block";
         document.body.style.overflow = "hidden";
+        document.body.classList.add("detail-open");
     }
 
     function closeProductDetail() {
@@ -604,6 +605,7 @@
         els.detailMediaTrack.innerHTML = "";
         els.detailThumbs.innerHTML = "";
         document.body.style.overflow = "";
+        document.body.classList.remove("detail-open");
     }
 
     function renderDetailQuantities(product) {
@@ -750,13 +752,6 @@
             if (detailTouchDeltaX < 0) setDetailSlide(detailSlideIndex + 1, true);
             else setDetailSlide(detailSlideIndex - 1, true);
         });
-
-        els.detailMediaWindow.addEventListener("scroll", () => {
-            if (!detailSlides.length) return;
-            const width = els.detailMediaWindow.clientWidth || 1;
-            const newIndex = Math.round(els.detailMediaWindow.scrollLeft / width);
-            if (newIndex !== detailSlideIndex) setDetailSlide(newIndex, false);
-        }, { passive: true });
 
         els.detailAddBtn.addEventListener("click", () => {
             if (!state.selectedProduct || !state.selectedQty || !state.selectedPrice) {

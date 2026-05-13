@@ -714,10 +714,8 @@ input {
 }
 
 .detail-media-window {
-    overflow-x: auto;
+    overflow: hidden;
     border-radius: 20px;
-    scrollbar-width: none;
-    scroll-snap-type: x mandatory;
     border: 1px solid rgba(255, 96, 60, 0.4);
     background: rgba(4, 8, 14, 0.8);
 }
@@ -728,13 +726,15 @@ input {
 
 .detail-media-track {
     display: flex;
+    width: 100%;
+    will-change: transform;
 }
 
 .slide-item {
+    width: 100%;
     min-width: 100%;
     aspect-ratio: 16 / 10;
     overflow: hidden;
-    scroll-snap-align: start;
 }
 
 .slide-image,
@@ -933,6 +933,11 @@ input {
     color: #ff6e45;
     font-weight: 900;
     font-size: 1.15rem;
+}
+
+body.detail-open .bottom-nav {
+    opacity: 0;
+    pointer-events: none;
 }
 
 @media (max-width: 900px) {
