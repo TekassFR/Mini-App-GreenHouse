@@ -555,6 +555,9 @@
         const img = sanitize(product.image || "");
         const name = sanitize(product.name || "Product");
         const desc = sanitize(product.description || "");
+        const categoryMeta = getCategoryMeta(product.category);
+        const categoryName = sanitize(categoryMeta.name || product.category || "Categorie");
+        const shortDesc = desc || categoryName;
         const start = getStartingPrice(product);
 
         let badge = "";
@@ -565,15 +568,14 @@
             <article class="product-card" data-product-id="${product.id}">
                 <div class="product-media">
                     <img src="${img}" alt="${name}" loading="lazy" referrerpolicy="no-referrer">
+                    <span class="status-dot" aria-hidden="true"></span>
                     ${badge}
+                    <div class="product-media-tools" aria-hidden="true">🍃 🛡️ 🌿</div>
                 </div>
                 <div class="product-body">
                     <h3 class="product-title">${name}</h3>
-                    <p class="product-desc">${desc}</p>
-                    <div class="product-foot">
-                        <span class="price-chip">${t("fromPrice", { price: formatEUR(start) })}</span>
-                        <button class="btn primary" type="button">${t("view")}</button>
-                    </div>
+                    <p class="product-desc">⌂ ${shortDesc}</p>
+                    <span class="price-chip">${t("fromPrice", { price: formatEUR(start) })}</span>
                 </div>
             </article>
         `;
