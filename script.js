@@ -985,6 +985,8 @@ function addToCart(productId) {
 function updateCartDisplay() {
     if (cart.length === 0) {
         cartSummary.style.display = 'none';
+        renderCartPage();
+        renderProfilePage();
         return;
     }
     
@@ -1041,6 +1043,8 @@ function updateCartDisplay() {
     
     cartItems.innerHTML = html;
     cartTotal.textContent = total.toFixed(2) + '€';
+    renderCartPage();
+    renderProfilePage();
     
     window.SecurityUtils.securityLog('cart_update', { itemCount: cart.length, total: total });
 }
@@ -1701,6 +1705,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Initialiser l'affichage du panier
         updateCartDisplay();
         
+        // Initialiser les pages secondaires
+        refreshContactPage();
+        renderProfilePage();
+        renderCartPage();
+
         // Initialiser la navigation en bas
         initBottomNavigation();
         
@@ -1724,10 +1733,37 @@ function initBottomNavigation() {
     const navItems = document.querySelectorAll('.nav-item');
     const container = document.querySelector('.container');
     const infoPage = document.getElementById('info-page');
+    const cartPage = document.getElementById('cart-page');
+    const reviewsPage = document.getElementById('reviews-page');
+    const contactPage = document.getElementById('contact-page');
+    const profilePage = document.getElementById('profile-page');
+    const adminPage = document.getElementById('admin-page');
     const mainContent = document.querySelector('main');
     const cartSummary = document.querySelector('.cart-summary');
     const categoryNav = document.querySelector('.category-nav');
-    
+
+    function hideAllSubPages() {
+        if (infoPage) infoPage.style.display = 'none';
+        if (cartPage) cartPage.style.display = 'none';
+        if (reviewsPage) reviewsPage.style.display = 'none';
+        if (contactPage) contactPage.style.display = 'none';
+        if (profilePage) profilePage.style.display = 'none';
+        if (adminPage) adminPage.style.display = 'none';
+    }
+
+    function showAccueil() {
+        container.classList.remove('info-page-active');
+        container.classList.remove('admin-page-active');
+        hideAllSubPages();
+        if (mainContent) mainContent.style.display = 'block';
+        if (categoryNav) categoryNav.style.display = 'flex';
+        displayCategoryButtons();
+        setTimeout(() => displayCategoryButtons(), 60);
+        if (cart.length > 0 && cartSummary) {
+            cartSummary.style.display = 'block';
+        }
+    }
+
     navItems.forEach(item => {
         item.addEventListener('click', function() {
             const page = this.dataset.page;
@@ -1740,92 +1776,65 @@ function initBottomNavigation() {
             
             // Gérer l'affichage des pages
             switch(page) {
-                case 'menu':
-                    container.classList.remove('info-page-active');
-                    container.classList.remove('admin-page-active');
-                    if (infoPage) infoPage.style.display = 'none';
-                    const adminPageMenu = document.getElementById('admin-page');
-                    if (adminPageMenu) adminPageMenu.style.display = 'none';
-                    if (mainContent) mainContent.style.display = 'block';
-                    if (categoryNav) categoryNav.style.display = 'flex';
-                    // SOLUTION ROBUSTE : Forcer le rafraîchissement avec plusieurs tentatives
-                    displayCategoryButtons();
-                    setTimeout(() => displayCategoryButtons(), 50);
-                    setTimeout(() => displayCategoryButtons(), 200);
-                    // Réafficher le panier s'il contient des éléments
-                    if (cart.length > 0 && cartSummary) {
-                        cartSummary.style.display = 'block';
-                    }
+                case 'accueil':
+                    showAccueil();
                     break;
                     
                 case 'info':
+                    hideAllSubPages();
                     container.classList.add('info-page-active');
                     container.classList.remove('admin-page-active');
-                    const adminPageInfo = document.getElementById('admin-page');
-                    if (adminPageInfo) adminPageInfo.style.display = 'none';
                     if (infoPage) infoPage.style.display = 'block';
                     if (mainContent) mainContent.style.display = 'none';
                     if (categoryNav) categoryNav.style.display = 'none';
                     if (cartSummary) cartSummary.style.display = 'none';
                     break;
-                    
-                case 'canal':
-                    // Ouvrir le canal (lien depuis adminConfig)
-                    const channelUrl = (adminConfig && adminConfig.channel_link) ? adminConfig.channel_link : 'https://t.me/+Z6TsKIv3nvc0Yjhk';
-                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
-                        window.Telegram.WebApp.openLink(channelUrl);
-                    } else {
-                        window.open(channelUrl, '_blank');
-                    }
-                    break;
-                    
-                case 'contact':
-                    // Ouvrir la conversation directe avec le vendeur
-                    const contactMessage = encodeURIComponent('👋 Bonjour ! J\'ai une question concernant votre menu.');
-                    // Utiliser adminConfig.telegram_username si disponible, sinon restaurantUsername
-                    const contactUsername = (adminConfig && adminConfig.telegram_username) ? adminConfig.telegram_username : restaurantUsername;
-                    const contactUrl = `https://t.me/${contactUsername}?text=${contactMessage}`;
-                    
-                    if (window.Telegram && window.Telegram.WebApp) {
-                        window.Telegram.WebApp.openTelegramLink(contactUrl);
-                    } else {
-                        window.open(contactUrl, '_blank');
-                    }
-                    break;
-                    
-                case 'admin':
-                    // Vérifier si l'utilisateur est admin
-                    if (!isAdmin()) {
-                        showNotification('Accès refusé. Vous devez être administrateur.');
-                        // Retirer la classe active
-                        this.classList.remove('active');
-                        // Réactiver l'onglet précédent
-                        const prevActive = document.querySelector('.nav-item.active');
-                        if (prevActive) {
-                            prevActive.classList.add('active');
-                        }
-                        return;
-                    }
-                    
-                    // Masquer TOUTES les autres pages et sections
-                    container.classList.remove('info-page-active');
-                    container.classList.add('admin-page-active');
-                    if (infoPage) infoPage.style.display = 'none';
+
+                case 'panier':
+                    hideAllSubPages();
+                    container.classList.add('info-page-active');
+                    container.classList.remove('admin-page-active');
+                    renderCartPage();
+                    if (cartPage) cartPage.style.display = 'block';
                     if (mainContent) mainContent.style.display = 'none';
                     if (categoryNav) categoryNav.style.display = 'none';
                     if (cartSummary) cartSummary.style.display = 'none';
+                    break;
+
+                case 'avis':
+                    hideAllSubPages();
+                    container.classList.add('info-page-active');
+                    container.classList.remove('admin-page-active');
+                    if (reviewsPage) reviewsPage.style.display = 'block';
+                    if (mainContent) mainContent.style.display = 'none';
+                    if (categoryNav) categoryNav.style.display = 'none';
+                    if (cartSummary) cartSummary.style.display = 'none';
+                    break;
                     
-                    // Masquer aussi la page de détail produit si elle est ouverte
-                    const productDetailPage = document.getElementById('product-detail-page');
-                    if (productDetailPage) productDetailPage.style.display = 'none';
-                    
-                    // Afficher la page admin
-                    const adminPage = document.getElementById('admin-page');
-                    if (adminPage) {
-                        adminPage.style.display = 'block';
-                        // Charger les données
-                        switchAdminTab('products');
-                    }
+                case 'contact':
+                    hideAllSubPages();
+                    container.classList.add('info-page-active');
+                    container.classList.remove('admin-page-active');
+                    refreshContactPage();
+                    if (contactPage) contactPage.style.display = 'block';
+                    if (mainContent) mainContent.style.display = 'none';
+                    if (categoryNav) categoryNav.style.display = 'none';
+                    if (cartSummary) cartSummary.style.display = 'none';
+                    break;
+
+                case 'profil':
+                    hideAllSubPages();
+                    container.classList.add('info-page-active');
+                    container.classList.remove('admin-page-active');
+                    renderProfilePage();
+                    if (profilePage) profilePage.style.display = 'block';
+                    if (mainContent) mainContent.style.display = 'none';
+                    if (categoryNav) categoryNav.style.display = 'none';
+                    if (cartSummary) cartSummary.style.display = 'none';
+                    break;
+
+                default:
+                    showAccueil();
                     break;
             }
             
@@ -1835,6 +1844,92 @@ function initBottomNavigation() {
             }
         });
     });
+}
+
+function getCartTotalValue() {
+    return cart.reduce((sum, item) => sum + getPriceForService(item, item.quantity, currentOrderType), 0);
+}
+
+function renderCartPage() {
+    const cartPageItems = document.getElementById('cart-page-items');
+    const cartPageTotal = document.getElementById('cart-page-total');
+    if (!cartPageItems || !cartPageTotal) return;
+
+    if (!cart.length) {
+        cartPageItems.innerHTML = '<p class="empty-state">Votre panier est vide.</p>';
+        cartPageTotal.textContent = 'Total: 0.00€';
+        return;
+    }
+
+    let html = '';
+    cart.forEach(item => {
+        const itemTotal = getPriceForService(item, item.quantity, currentOrderType);
+        html += `
+            <div class="subpage-list-item">
+                <div><strong>${window.SecurityUtils.sanitizeInput(item.name)}</strong></div>
+                <div>${item.quantity} x ${itemTotal.toFixed(2)}€</div>
+            </div>
+        `;
+    });
+
+    cartPageItems.innerHTML = html;
+    cartPageTotal.textContent = `Total: ${getCartTotalValue().toFixed(2)}€`;
+}
+
+function renderProfilePage() {
+    const user = tg.initDataUnsafe?.user;
+    const profileName = document.getElementById('profile-name');
+    const profileUsername = document.getElementById('profile-username');
+    const profileCartCount = document.getElementById('profile-cart-count');
+
+    if (profileName) {
+        profileName.textContent = window.SecurityUtils.sanitizeInput(user?.first_name || 'Utilisateur');
+    }
+
+    if (profileUsername) {
+        profileUsername.textContent = user?.username ? `@${window.SecurityUtils.sanitizeInput(user.username)}` : '-';
+    }
+
+    if (profileCartCount) {
+        const count = cart.reduce((sum, item) => sum + window.SecurityUtils.validateQuantity(item.quantity), 0);
+        profileCartCount.textContent = String(count);
+    }
+}
+
+function refreshContactPage() {
+    const contactUsername = document.getElementById('contact-username');
+    const contactChannel = document.getElementById('contact-channel');
+    const username = (adminConfig && adminConfig.telegram_username) ? adminConfig.telegram_username : restaurantUsername;
+    const channelUrl = (adminConfig && adminConfig.channel_link) ? adminConfig.channel_link : 'https://t.me/+Z6TsKIv3nvc0Yjhk';
+
+    if (contactUsername) {
+        contactUsername.textContent = `@${username}`;
+    }
+
+    if (contactChannel) {
+        contactChannel.textContent = channelUrl;
+    }
+}
+
+function openChannelLink() {
+    const channelUrl = (adminConfig && adminConfig.channel_link) ? adminConfig.channel_link : 'https://t.me/+Z6TsKIv3nvc0Yjhk';
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+        window.Telegram.WebApp.openLink(channelUrl);
+    } else {
+        window.open(channelUrl, '_blank');
+    }
+}
+
+function openTelegramContact() {
+    const contactMessage = encodeURIComponent('Bonjour, j\'ai une question concernant votre menu.');
+    const contactUsername = (adminConfig && adminConfig.telegram_username) ? adminConfig.telegram_username : restaurantUsername;
+    const contactUrl = `https://t.me/${contactUsername}?text=${contactMessage}`;
+
+    if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.openTelegramLink(contactUrl);
+    } else {
+        window.open(contactUrl, '_blank');
+    }
 }
 
 // ==================== PANEL ADMIN ====================

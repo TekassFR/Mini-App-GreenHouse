@@ -132,6 +132,67 @@
             </div>
         </div>
 
+        <!-- Page panier -->
+        <div class="cart-page" id="cart-page" style="display: none;">
+            <div class="subpage-content">
+                <h2>🛒 Panier</h2>
+                <div class="cart-page-total" id="cart-page-total">Total: 0.00€</div>
+                <div class="cart-page-items" id="cart-page-items"></div>
+                <div class="cart-page-actions">
+                    <button class="btn btn-clear" onclick="clearCart()">🗑️ Vider</button>
+                    <button class="btn btn-success" onclick="checkout()">📤 Commander</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page avis -->
+        <div class="reviews-page" id="reviews-page" style="display: none;">
+            <div class="subpage-content">
+                <h2>⭐ Avis clients</h2>
+                <div class="review-card">
+                    <h3>Client Telegram</h3>
+                    <p>"Service rapide et produits au top. Je recommande fortement."</p>
+                </div>
+                <div class="review-card">
+                    <h3>Client fidèle</h3>
+                    <p>"Toujours propre, efficace et qualitatif. Merci l'equipe."</p>
+                </div>
+                <div class="review-card">
+                    <h3>Nouveau client</h3>
+                    <p>"Commande simple, livraison serieuse, tres bon suivi."</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page contact -->
+        <div class="contact-page" id="contact-page" style="display: none;">
+            <div class="subpage-content">
+                <h2>📞 Contact</h2>
+                <div class="contact-card">
+                    <h3>Telegram</h3>
+                    <p id="contact-username">@peakyblinders540</p>
+                    <button class="btn btn-success" onclick="openTelegramContact()">Ouvrir la conversation</button>
+                </div>
+                <div class="contact-card">
+                    <h3>Canal</h3>
+                    <p id="contact-channel">Lien du canal officiel</p>
+                    <button class="btn btn-success" onclick="openChannelLink()">Acceder au canal</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page profil -->
+        <div class="profile-page" id="profile-page" style="display: none;">
+            <div class="subpage-content">
+                <h2>👤 Profil</h2>
+                <div class="profile-card">
+                    <p><strong>Nom:</strong> <span id="profile-name">Utilisateur</span></p>
+                    <p><strong>Username:</strong> <span id="profile-username">-</span></p>
+                    <p><strong>Articles panier:</strong> <span id="profile-cart-count">0</span></p>
+                </div>
+            </div>
+        </div>
+
         <!-- Page Admin -->
         <div class="admin-page" id="admin-page" style="display: none;">
             <div class="admin-content">
@@ -191,25 +252,29 @@
         
         <!-- Barre de navigation en bas -->
         <nav class="bottom-nav">
-            <button class="nav-item active" data-page="menu">
+            <button class="nav-item active" data-page="accueil">
                 <span class="nav-icon">🏠</span>
-                <span class="nav-label">Menu</span>
+                <span class="nav-label">Accueil</span>
             </button>
             <button class="nav-item" data-page="info">
                 <span class="nav-icon">ℹ️</span>
                 <span class="nav-label">Infos</span>
             </button>
-            <button class="nav-item" data-page="canal">
-                <span class="nav-icon">✈️</span>
-                <span class="nav-label">Canal</span>
+            <button class="nav-item" data-page="panier">
+                <span class="nav-icon">🛒</span>
+                <span class="nav-label">Panier</span>
+            </button>
+            <button class="nav-item" data-page="avis">
+                <span class="nav-icon">⭐</span>
+                <span class="nav-label">Avis</span>
             </button>
             <button class="nav-item" data-page="contact">
-                <span class="nav-icon">✉️</span>
+                <span class="nav-icon">📞</span>
                 <span class="nav-label">Contact</span>
             </button>
-            <button class="nav-item admin-nav-item" data-page="admin" style="display: none;">
-                <span class="nav-icon">⚙️</span>
-                <span class="nav-label">Admin</span>
+            <button class="nav-item" data-page="profil">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Profil</span>
             </button>
         </nav>
     </div>

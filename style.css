@@ -2938,6 +2938,56 @@ select option,
     letter-spacing: 0.07em;
 }
 
+.subpage-content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 18px 12px 88px;
+}
+
+.subpage-content h2 {
+    font-family: 'Anton', 'Bebas Neue', sans-serif;
+    letter-spacing: 0.04em;
+    margin-bottom: 16px;
+}
+
+.cart-page,
+.reviews-page,
+.contact-page,
+.profile-page {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #071209 0%, #0b1e12 45%, #102a19 100%);
+}
+
+.subpage-list-item,
+.review-card,
+.contact-card,
+.profile-card {
+    background: linear-gradient(155deg, rgba(12, 33, 21, 0.95), rgba(9, 25, 16, 0.95));
+    border: 1px solid rgba(151, 255, 184, 0.2);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 12px;
+    color: #ebfff0;
+}
+
+.cart-page-total {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #a7ffc4;
+    margin-bottom: 12px;
+}
+
+.cart-page-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.empty-state {
+    opacity: 0.85;
+    padding: 6px 2px;
+}
+
 @media (max-width: 480px) {
     .menu-grid {
         gap: 14px;
@@ -2959,5 +3009,13 @@ select option,
     .nav-item {
         padding: 7px 6px;
         border-radius: 12px;
+    }
+
+    .nav-label {
+        font-size: 0.62rem;
+    }
+
+    .cart-page-actions {
+        flex-direction: column;
     }
 }
