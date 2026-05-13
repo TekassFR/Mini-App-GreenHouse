@@ -19,7 +19,8 @@
         selectedPrice: 0,
         detailMedia: "image",
         reviews: [],
-        orders: []
+        orders: [],
+        language: "fr"
     };
 
     const els = {
@@ -52,9 +53,15 @@
         reviewCount: document.getElementById("review-count"),
 
         profileName: document.getElementById("profile-name"),
+        profileAvatar: document.getElementById("profile-avatar"),
         profileUsername: document.getElementById("profile-username"),
-        profileCartCount: document.getElementById("profile-cart-count"),
         profileOrderCount: document.getElementById("profile-order-count"),
+        profileTotalSpent: document.getElementById("profile-total-spent"),
+        profileMemberFull: document.getElementById("profile-member-full"),
+        profileMemberShort: document.getElementById("profile-member-short"),
+        profileOrdersPreview: document.getElementById("profile-orders-preview"),
+        profileOrdersRefresh: document.getElementById("profile-orders-refresh"),
+        languageGrid: document.getElementById("language-grid"),
 
         infoContactUsername: document.getElementById("info-contact-username"),
         contactBtn: document.getElementById("contact-btn"),
@@ -62,17 +69,28 @@
 
         detailOverlay: document.getElementById("detail-overlay"),
         detailCloseBtn: document.getElementById("detail-close-btn"),
-        detailImage: document.getElementById("detail-image"),
-        detailVideo: document.getElementById("detail-video"),
+        detailPanel: document.getElementById("detail-panel"),
+        detailBrandImage: document.getElementById("detail-brand-image"),
+        detailMediaWindow: document.getElementById("detail-media-window"),
+        detailMediaTrack: document.getElementById("detail-media-track"),
+        detailThumbs: document.getElementById("detail-thumbs"),
+        detailPrevBtn: document.getElementById("detail-prev-btn"),
+        detailNextBtn: document.getElementById("detail-next-btn"),
+        detailSlideCount: document.getElementById("detail-slide-count"),
         detailName: document.getElementById("detail-name"),
         detailDescription: document.getElementById("detail-description"),
         detailCategoryChip: document.getElementById("detail-category-chip"),
-        showImageBtn: document.getElementById("show-image-btn"),
-        showVideoBtn: document.getElementById("show-video-btn"),
         detailQtyGrid: document.getElementById("detail-qty-grid"),
         detailSelectedPrice: document.getElementById("detail-selected-price"),
-        detailAddBtn: document.getElementById("detail-add-btn")
+        detailAddBtn: document.getElementById("detail-add-btn"),
+        detailMuteBtn: document.getElementById("detail-mute-btn"),
+        detailTeleBtn: document.getElementById("detail-tele-btn")
     };
+
+    let detailSlides = [];
+    let detailSlideIndex = 0;
+    let detailTouchStartX = 0;
+    let detailTouchDeltaX = 0;
 
     function sanitize(input) {
         if (typeof input !== "string") return "";
@@ -139,6 +157,7 @@
         localStorage.setItem("gh_cart", JSON.stringify(state.cart));
         localStorage.setItem("gh_orders", JSON.stringify(state.orders));
         localStorage.setItem("gh_reviews", JSON.stringify(state.reviews));
+        localStorage.setItem("gh_language", state.language);
     }
 
     function loadLocal() {
@@ -146,13 +165,16 @@
             const cart = JSON.parse(localStorage.getItem("gh_cart") || "[]");
             const orders = JSON.parse(localStorage.getItem("gh_orders") || "[]");
             const reviews = JSON.parse(localStorage.getItem("gh_reviews") || "[]");
+            const language = localStorage.getItem("gh_language") || "fr";
             state.cart = Array.isArray(cart) ? cart : [];
             state.orders = Array.isArray(orders) ? orders : [];
             state.reviews = Array.isArray(reviews) ? reviews : [];
+            state.language = ["fr", "en", "de"].includes(language) ? language : "fr";
         } catch (_) {
             state.cart = [];
             state.orders = [];
             state.reviews = [];
+            state.language = "fr";
         }
     }
 
@@ -169,10 +191,18 @@
         const user = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
         const firstName = sanitize((user && user.first_name) || "Utilisateur");
         const username = user && user.username ? `@${sanitize(user.username)}` : "-";
+        const avatarLetter = firstName.charAt(0).toUpperCase() || "U";
+        const createdAt = user && user.id ? new Date((1704067200000 + (user.id % 220) * 86400000)) : new Date(2026, 3, 1);
+        const month = new Intl.DateTimeFormat("fr-FR", { month: "long" }).format(createdAt);
+        const year = createdAt.getFullYear();
+        const monthShort = new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(createdAt).replace(".", "");
 
         els.userChip.textContent = `Salut ${firstName}`;
         els.profileName.textContent = firstName;
         els.profileUsername.textContent = username;
+        els.profileAvatar.textContent = avatarLetter;
+        els.profileMemberFull.textContent = `Membre depuis ${month} ${year}`;
+        els.profileMemberShort.textContent = `${monthShort}. ${String(year).slice(-2)}`;
 
         const adminUser = state.config && state.config.admin ? state.config.admin.telegram_username : "peakyblinders540";
         els.infoContactUsername.textContent = `Telegram: @${adminUser}`;
@@ -397,9 +427,36 @@
     }
 
     function renderProfileStats() {
-        const count = state.cart.reduce((sum, item) => sum + item.quantity, 0);
-        els.profileCartCount.textContent = String(count);
         els.profileOrderCount.textContent = String(state.orders.length);
+        const spent = state.orders.reduce((sum, order) => sum + toPrice(order.total), 0);
+        els.profileTotalSpent.textContent = formatEUR(spent).replace(".00", "");
+        renderProfileOrdersPreview();
+    }
+
+    function renderProfileOrdersPreview() {
+        if (!state.orders.length) {
+            els.profileOrdersPreview.innerHTML = `<div class="muted">Aucune commande pour le moment.</div>`;
+            return;
+        }
+
+        const recent = state.orders.slice().reverse().slice(0, 2);
+        els.profileOrdersPreview.innerHTML = recent
+            .map((order) => {
+                const date = new Date(order.timestamp).toLocaleDateString("fr-FR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "2-digit"
+                });
+                return `<div class="profile-order-line"><span>#${order.id} - ${date}</span><strong>${formatEUR(order.total)}</strong></div>`;
+            })
+            .join("");
+    }
+
+    function renderLanguageSelection() {
+        if (!els.languageGrid) return;
+        els.languageGrid.querySelectorAll(".lang-option").forEach((btn) => {
+            btn.classList.toggle("active", btn.dataset.lang === state.language);
+        });
     }
 
     function getPlayableVideo(video) {
@@ -417,59 +474,136 @@
         return v;
     }
 
+    function buildMediaSlides(product) {
+        const slides = [];
+        const gallery = Array.isArray(product.gallery) ? product.gallery : [];
+
+        gallery.forEach((item) => {
+            if (!item) return;
+            if (typeof item === "string") {
+                slides.push({ type: "image", src: sanitize(item) });
+                return;
+            }
+            const type = item.type === "video" ? "video" : "image";
+            const src = type === "video" ? getPlayableVideo(item.src || "") : sanitize(item.src || "");
+            if (src) slides.push({ type, src });
+        });
+
+        if (product.image) slides.unshift({ type: "image", src: sanitize(product.image) });
+        const videoUrl = getPlayableVideo(product.video);
+        if (videoUrl) slides.push({ type: "video", src: videoUrl });
+
+        const dedup = [];
+        const seen = new Set();
+        slides.forEach((slide) => {
+            const key = `${slide.type}:${slide.src}`;
+            if (!slide.src || seen.has(key)) return;
+            seen.add(key);
+            dedup.push(slide);
+        });
+
+        return dedup.length ? dedup : [{ type: "image", src: "https://picsum.photos/seed/fallback-red/900/700" }];
+    }
+
+    function renderDetailCarousel() {
+        if (!detailSlides.length) return;
+
+        els.detailMediaTrack.innerHTML = detailSlides
+            .map((slide, idx) => {
+                if (slide.type === "video") {
+                    return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" playsinline preload="metadata" src="${slide.src}"></video></article>`;
+                }
+                return `<article class="slide-item" data-slide-index="${idx}"><img class="slide-image" src="${slide.src}" alt="Media produit ${idx + 1}" loading="lazy" referrerpolicy="no-referrer"></article>`;
+            })
+            .join("");
+
+        els.detailThumbs.innerHTML = detailSlides
+            .map((slide, idx) => {
+                const marker = slide.type === "video" ? "▶" : "";
+                const thumbMedia = slide.type === "video"
+                    ? `<video src="${slide.src}" muted playsinline preload="metadata"></video>`
+                    : `<img src="${slide.src}" alt="Miniature ${idx + 1}" loading="lazy" referrerpolicy="no-referrer">`;
+                return `<button class="detail-thumb ${idx === 0 ? "active" : ""}" data-slide-index="${idx}" type="button">${thumbMedia}<span>${marker}</span></button>`;
+            })
+            .join("");
+
+        els.detailThumbs.querySelectorAll(".detail-thumb").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                setDetailSlide(parseInt(btn.dataset.slideIndex, 10), true);
+            });
+        });
+
+        setDetailSlide(0, false);
+    }
+
+    function pauseAllSlideVideos() {
+        els.detailMediaTrack.querySelectorAll("video").forEach((video) => {
+            video.pause();
+        });
+    }
+
+    function setDetailSlide(index, smooth) {
+        if (!detailSlides.length) return;
+        if (index < 0) index = detailSlides.length - 1;
+        if (index >= detailSlides.length) index = 0;
+        detailSlideIndex = index;
+
+        const behavior = smooth ? "smooth" : "auto";
+        const x = index * els.detailMediaWindow.clientWidth;
+        els.detailMediaWindow.scrollTo({ left: x, behavior });
+
+        els.detailThumbs.querySelectorAll(".detail-thumb").forEach((thumb) => {
+            thumb.classList.toggle("active", parseInt(thumb.dataset.slideIndex, 10) === detailSlideIndex);
+        });
+
+        els.detailSlideCount.textContent = `${detailSlideIndex + 1} / ${detailSlides.length}`;
+        pauseAllSlideVideos();
+
+        const activeType = detailSlides[detailSlideIndex].type;
+        if (activeType === "video") {
+            const activeVideo = els.detailMediaTrack.querySelector(`.slide-item[data-slide-index="${detailSlideIndex}"] video`);
+            if (activeVideo) activeVideo.play().catch(() => {});
+            if (els.detailMuteBtn) els.detailMuteBtn.style.display = "grid";
+        } else if (els.detailMuteBtn) {
+            els.detailMuteBtn.style.display = "none";
+        }
+    }
+
+    function toggleActiveVideoMute() {
+        const video = els.detailMediaTrack.querySelector(`.slide-item[data-slide-index="${detailSlideIndex}"] video`);
+        if (!video) return;
+        video.muted = !video.muted;
+        els.detailMuteBtn.textContent = video.muted ? "🔈" : "🔇";
+    }
+
     function openProductDetail(product) {
         state.selectedProduct = product;
         state.selectedQty = null;
         state.selectedPrice = 0;
         state.detailMedia = "image";
+        detailSlides = buildMediaSlides(product);
+        detailSlideIndex = 0;
 
         const categoryMeta = getCategoryMeta(product.category);
         els.detailName.textContent = sanitize(product.name || "Produit");
         els.detailDescription.textContent = sanitize(product.description || "");
         els.detailCategoryChip.textContent = `${sanitize(categoryMeta.emoji || "📦")} ${sanitize(categoryMeta.name || product.category)}`;
+        els.detailBrandImage.src = sanitize(product.image || "https://picsum.photos/seed/brand-red/260/260");
 
-        els.detailImage.src = sanitize(product.image || "");
-        els.detailImage.style.display = "block";
+        renderDetailCarousel();
 
-        const videoUrl = getPlayableVideo(product.video);
-        if (videoUrl) {
-            els.detailVideo.src = videoUrl;
-            els.showVideoBtn.style.display = "inline-block";
-        } else {
-            els.detailVideo.src = "";
-            els.showVideoBtn.style.display = "none";
-        }
-
-        switchDetailMedia("image");
         renderDetailQuantities(product);
         els.detailOverlay.style.display = "block";
+        document.body.style.overflow = "hidden";
     }
 
     function closeProductDetail() {
         els.detailOverlay.style.display = "none";
-        els.detailVideo.pause();
-        els.detailVideo.currentTime = 0;
-    }
-
-    function switchDetailMedia(mode) {
-        state.detailMedia = mode;
-        const videoAvailable = !!els.detailVideo.src;
-
-        if (mode === "video" && videoAvailable) {
-            els.detailImage.style.display = "none";
-            els.detailVideo.style.display = "block";
-            els.showImageBtn.classList.remove("active");
-            els.showVideoBtn.classList.add("active");
-            els.detailVideo.play().catch(() => {});
-            return;
-        }
-
-        els.detailVideo.pause();
-        els.detailVideo.currentTime = 0;
-        els.detailVideo.style.display = "none";
-        els.detailImage.style.display = "block";
-        els.showVideoBtn.classList.remove("active");
-        els.showImageBtn.classList.add("active");
+        pauseAllSlideVideos();
+        detailSlides = [];
+        els.detailMediaTrack.innerHTML = "";
+        els.detailThumbs.innerHTML = "";
+        document.body.style.overflow = "";
     }
 
     function renderDetailQuantities(product) {
@@ -478,7 +612,7 @@
             .map((entry, idx) => `
                 <button class="qty-card ${idx === 0 ? "active" : ""}" data-qty="${entry.qty}" data-price="${entry.price}" type="button">
                     <div class="qty-label">${entry.qty}G</div>
-                    <div class="qty-price">${toPrice(entry.price).toFixed(2)}EUR</div>
+                    <div class="qty-price">${toPrice(entry.price).toFixed(2)}€</div>
                 </button>
             `)
             .join("");
@@ -599,8 +733,30 @@
         });
 
         els.detailCloseBtn.addEventListener("click", closeProductDetail);
-        els.showImageBtn.addEventListener("click", () => switchDetailMedia("image"));
-        els.showVideoBtn.addEventListener("click", () => switchDetailMedia("video"));
+        els.detailPrevBtn.addEventListener("click", () => setDetailSlide(detailSlideIndex - 1, true));
+        els.detailNextBtn.addEventListener("click", () => setDetailSlide(detailSlideIndex + 1, true));
+
+        els.detailMediaWindow.addEventListener("touchstart", (event) => {
+            detailTouchStartX = event.changedTouches[0].clientX;
+            detailTouchDeltaX = 0;
+        }, { passive: true });
+
+        els.detailMediaWindow.addEventListener("touchmove", (event) => {
+            detailTouchDeltaX = event.changedTouches[0].clientX - detailTouchStartX;
+        }, { passive: true });
+
+        els.detailMediaWindow.addEventListener("touchend", () => {
+            if (Math.abs(detailTouchDeltaX) < 38) return;
+            if (detailTouchDeltaX < 0) setDetailSlide(detailSlideIndex + 1, true);
+            else setDetailSlide(detailSlideIndex - 1, true);
+        });
+
+        els.detailMediaWindow.addEventListener("scroll", () => {
+            if (!detailSlides.length) return;
+            const width = els.detailMediaWindow.clientWidth || 1;
+            const newIndex = Math.round(els.detailMediaWindow.scrollLeft / width);
+            if (newIndex !== detailSlideIndex) setDetailSlide(newIndex, false);
+        }, { passive: true });
 
         els.detailAddBtn.addEventListener("click", () => {
             if (!state.selectedProduct || !state.selectedQty || !state.selectedPrice) {
@@ -612,9 +768,39 @@
             switchPage("cart");
         });
 
+        if (els.detailMuteBtn) {
+            els.detailMuteBtn.addEventListener("click", toggleActiveVideoMute);
+        }
+
+        if (els.detailTeleBtn) {
+            els.detailTeleBtn.addEventListener("click", () => {
+                const username = state.config && state.config.admin ? state.config.admin.telegram_username : "peakyblinders540";
+                const productName = state.selectedProduct ? sanitize(state.selectedProduct.name) : "produit";
+                const url = `https://t.me/${username}?text=${encodeURIComponent(`Salut, je veux ce produit: ${productName}`)}`;
+                if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
+                else window.open(url, "_blank");
+            });
+        }
+
         els.detailOverlay.addEventListener("click", (e) => {
             if (e.target === els.detailOverlay) closeProductDetail();
         });
+
+        if (els.languageGrid) {
+            els.languageGrid.querySelectorAll(".lang-option").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    state.language = btn.dataset.lang;
+                    renderLanguageSelection();
+                    saveLocal();
+                });
+            });
+        }
+
+        if (els.profileOrdersRefresh) {
+            els.profileOrdersRefresh.addEventListener("click", () => {
+                renderProfileStats();
+            });
+        }
     }
 
     async function bootstrap() {
@@ -628,6 +814,7 @@
             renderHistory();
             renderReviews();
             renderProfileStats();
+            renderLanguageSelection();
             attachNavigation();
             bindActions();
         } catch (error) {

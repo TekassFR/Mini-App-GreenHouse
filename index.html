@@ -115,16 +115,60 @@
             </section>
 
             <section class="page" id="page-profile">
-                <div class="page-head">
-                    <h2>Profil</h2>
-                    <p>Infos compte et stats.</p>
-                </div>
+                <div class="profile-page-wrap">
+                    <div class="profile-top-banner card panel">
+                        <div class="profile-brand-mark">LE MIEL</div>
+                    </div>
 
-                <div class="card panel profile-card">
-                    <div class="profile-row"><span>Nom</span><strong id="profile-name">Utilisateur</strong></div>
-                    <div class="profile-row"><span>Username</span><strong id="profile-username">-</strong></div>
-                    <div class="profile-row"><span>Articles panier</span><strong id="profile-cart-count">0</strong></div>
-                    <div class="profile-row"><span>Commandes</span><strong id="profile-order-count">0</strong></div>
+                    <article class="card panel profile-identity-card">
+                        <div class="profile-avatar" id="profile-avatar">U</div>
+                        <h3 id="profile-name">Utilisateur</h3>
+                        <p class="profile-handle" id="profile-username">@username</p>
+                        <p class="profile-member-full" id="profile-member-full">Membre depuis avril 2026</p>
+                    </article>
+
+                    <div class="profile-stats-grid">
+                        <article class="card panel profile-stat-card">
+                            <p class="profile-stat-value" id="profile-order-count">0</p>
+                            <p class="profile-stat-label">Commandes</p>
+                        </article>
+                        <article class="card panel profile-stat-card">
+                            <p class="profile-stat-value" id="profile-total-spent">0 EUR</p>
+                            <p class="profile-stat-label">Depense</p>
+                        </article>
+                        <article class="card panel profile-stat-card">
+                            <p class="profile-stat-value" id="profile-member-short">avr. 26</p>
+                            <p class="profile-stat-label">Membre depuis</p>
+                        </article>
+                    </div>
+
+                    <article class="card panel profile-language-card">
+                        <div class="profile-section-head">
+                            <h4>Langue</h4>
+                        </div>
+                        <div class="lang-grid" id="language-grid">
+                            <button class="lang-option active" data-lang="fr" type="button">
+                                <span class="lang-flag">🇫🇷</span>
+                                <span class="lang-name">Francais</span>
+                            </button>
+                            <button class="lang-option" data-lang="en" type="button">
+                                <span class="lang-flag">🇬🇧</span>
+                                <span class="lang-name">English</span>
+                            </button>
+                            <button class="lang-option" data-lang="de" type="button">
+                                <span class="lang-flag">🇩🇪</span>
+                                <span class="lang-name">Deutsch</span>
+                            </button>
+                        </div>
+                    </article>
+
+                    <article class="card panel profile-orders-card">
+                        <div class="profile-section-head">
+                            <h4>Mes Commandes</h4>
+                            <button class="refresh-chip" id="profile-orders-refresh" type="button">↻</button>
+                        </div>
+                        <div class="stack" id="profile-orders-preview"></div>
+                    </article>
                 </div>
             </section>
 
@@ -170,41 +214,44 @@
     </div>
 
     <div class="detail-overlay" id="detail-overlay" style="display: none;">
-        <div class="detail-panel">
-            <button class="back-btn" id="detail-close-btn" type="button">Retour</button>
+        <div class="detail-panel" id="detail-panel">
+            <header class="detail-topbar">
+                <button class="top-pill" id="detail-close-btn" type="button">← Retour</button>
+                <div class="detail-logo-box">
+                    <img id="detail-brand-image" alt="Brand" src="https://picsum.photos/seed/brand-red/260/260" loading="lazy">
+                </div>
+                <div class="top-pill ghost">⋯</div>
+            </header>
 
-            <div class="detail-layout">
-                <aside class="detail-media-sticky">
-                    <div class="detail-media-frame">
-                        <img id="detail-image" alt="Produit" class="detail-image">
-                        <video id="detail-video" class="detail-video" controls style="display: none;"></video>
+            <section class="detail-stage">
+                <div class="detail-media-strip">
+                    <button class="slide-nav" id="detail-prev-btn" type="button" aria-label="Media precedent">‹</button>
+                    <div class="detail-media-window" id="detail-media-window">
+                        <div class="detail-media-track" id="detail-media-track"></div>
                     </div>
-                    <div class="detail-media-tabs">
-                        <button class="mini-tab active" id="show-image-btn" type="button">Image</button>
-                        <button class="mini-tab" id="show-video-btn" type="button">Video</button>
-                    </div>
-                </aside>
+                    <button class="slide-nav" id="detail-next-btn" type="button" aria-label="Media suivant">›</button>
+                </div>
 
-                <section class="detail-content">
-                    <h2 id="detail-name">Produit</h2>
-                    <p id="detail-description" class="muted">Description</p>
+                <div class="detail-thumbs" id="detail-thumbs"></div>
+                <div class="detail-counter" id="detail-slide-count">1 / 1</div>
 
-                    <div class="tag-line" id="detail-category-chip">Categorie</div>
+                <h2 class="detail-product-title" id="detail-name">Produit</h2>
+                <div class="detail-subline" id="detail-category-chip">Categorie</div>
+                <p class="detail-desc-box" id="detail-description">Description</p>
 
-                    <div class="detail-quantity-block card panel">
-                        <h3>Selectionner la quantite</h3>
-                        <div class="qty-grid" id="detail-qty-grid"></div>
-                    </div>
+                <article class="detail-quantity-card">
+                    <h3>Selectionner la Quantite</h3>
+                    <div class="qty-grid" id="detail-qty-grid"></div>
+                </article>
+            </section>
 
-                    <div class="detail-footer card panel">
-                        <div>
-                            <p class="muted">Prix selectionne</p>
-                            <p class="checkout-total" id="detail-selected-price">0.00 EUR</p>
-                        </div>
-                        <button class="btn primary" id="detail-add-btn" type="button">Ajouter au panier</button>
-                    </div>
-                </section>
-            </div>
+            <footer class="detail-bottom-bar">
+                <button class="sound-chip" id="detail-mute-btn" type="button" aria-label="Couper le son">🔈</button>
+                <button class="detail-add-main" id="detail-add-btn" type="button">Ajouter</button>
+                <button class="detail-send-btn" id="detail-tele-btn" type="button" aria-label="Contacter">✈</button>
+            </footer>
+
+            <div class="detail-price-floating" id="detail-selected-price">0.00 EUR</div>
         </div>
     </div>
 
