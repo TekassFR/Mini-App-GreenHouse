@@ -3,467 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🕵🏻 Peaky - Menus</title>
+    <title>GreenHouse Mini App</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-    <div id="intro-screen" class="intro-screen">
-        <div class="intro-content">
+    <div id="intro-screen" class="intro-screen" aria-hidden="true">
+        <div class="intro-card">
             <p class="intro-kicker">Telegram Mini App</p>
-            <h1 class="intro-title">GREENHOUSE</h1>
-            <p class="intro-subtitle">Chargement de la vitrine...</p>
+            <h1>GREENHOUSE</h1>
+            <p class="intro-sub">Chargement de la boutique...</p>
         </div>
     </div>
-    <div class="container">
-        <header>
-            <div class="banner-container">
-                <div class="banner-background"></div>
-                <div class="banner-content">
-                    <div class="logo-section">
-                        <div class="logo-icon"><img src="https://picsum.photos/seed/greenhouse-logo/120/120" alt="Logo" class="logo-img" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/56/56?random=88'" /></div>
-                        <h1 class="brand-name">CHEZ PEAKY</h1>
-                        <div class="brand-tagline">Notre Menus 2026</div>
-                    </div>
-                    <div class="user-section">
-                        <p id="user-info" class="user-welcome">Chargement...</p>
-                    </div>
-                </div>
-                <div class="banner-overlay"></div>
 
+    <div class="app-shell">
+        <header class="app-header">
+            <div class="brand-wrap">
+                <h1 class="brand-title">Chez Peaky</h1>
+                <p class="brand-subtitle">Menu premium 2026</p>
             </div>
+            <div class="user-chip" id="user-chip">Bienvenue</div>
         </header>
-        
-        <!-- Panier -->
-        <div class="cart-summary" id="cart-summary" style="display: none;">
-            <div class="cart-header">
-                <h3>🛒 Votre commande</h3>
-                <span class="cart-total" id="cart-total">0.00€</span>
-            </div>
-            <div class="cart-items" id="cart-items"></div>
-            <div class="cart-actions">
-                <button class="btn btn-clear" id="clear-cart-btn" onclick="clearCart()">🗑️ Vider</button>
-                <button class="btn btn-success" id="checkout-btn">📤 Commander</button>
-            </div>
-        </div>
-        
-        <!-- Navigation des catégories -->
-        <nav class="category-nav">
-            <!-- Les boutons seront générés dynamiquement par JavaScript -->
-        </nav>
-        
-        <main>
-            
-            <!-- Menu des produits -->
-            <div class="menu-grid" id="menu-grid">
-                <!-- Les produits seront générés dynamiquement -->
-            </div>
+
+        <main class="app-main">
+            <section class="page active" id="page-home">
+                <div class="hero">
+                    <p class="hero-kicker">Boutique</p>
+                    <h2>Produits classes, service rapide</h2>
+                </div>
+
+                <nav class="category-nav" id="category-nav"></nav>
+
+                <section class="product-grid" id="product-grid" aria-live="polite"></section>
+            </section>
+
+            <section class="page" id="page-cart">
+                <div class="page-head">
+                    <h2>Panier</h2>
+                    <p>Finalise ta commande en quelques secondes.</p>
+                </div>
+
+                <div class="card panel" id="cart-empty-state">Panier vide.</div>
+
+                <div id="cart-content" class="stack" style="display: none;">
+                    <div class="card panel" id="cart-items"></div>
+
+                    <div class="card panel checkout-panel">
+                        <div class="service-switch" id="service-switch">
+                            <button class="service-btn active" data-service="delivery" type="button">Livraison</button>
+                            <button class="service-btn" data-service="pickup" type="button">Sur place</button>
+                        </div>
+
+                        <div class="field-group" id="delivery-field-group">
+                            <label for="delivery-address">Adresse de livraison</label>
+                            <textarea id="delivery-address" rows="3" placeholder="Ex: 10 rue de Paris, 54000 Nancy"></textarea>
+                        </div>
+
+                        <div class="field-group" id="pickup-field-group" style="display: none;">
+                            <label for="pickup-time">Heure d'arrivee</label>
+                            <input id="pickup-time" type="time">
+                        </div>
+
+                        <div class="checkout-row">
+                            <div>
+                                <p class="muted">Total</p>
+                                <p class="checkout-total" id="cart-total">0.00 EUR</p>
+                            </div>
+                            <div class="checkout-actions">
+                                <button class="btn ghost" id="clear-cart-btn" type="button">Vider</button>
+                                <button class="btn primary" id="checkout-btn" type="button">Commander</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="page" id="page-history">
+                <div class="page-head">
+                    <h2>Historique</h2>
+                    <p>Retrouve toutes tes commandes.</p>
+                </div>
+                <div class="stack" id="history-list"></div>
+            </section>
+
+            <section class="page" id="page-reviews">
+                <div class="page-head">
+                    <h2>Avis</h2>
+                    <p>Ce que pensent les clients.</p>
+                </div>
+
+                <div class="review-score card panel">
+                    <p class="review-rating" id="review-rating">4.9 / 5</p>
+                    <p class="muted" id="review-count">Base sur 0 avis</p>
+                </div>
+
+                <div class="stack" id="review-list"></div>
+
+                <form class="card panel review-form" id="review-form">
+                    <h3>Laisser un avis</h3>
+                    <label for="review-author">Nom</label>
+                    <input id="review-author" type="text" maxlength="30" placeholder="Ton nom">
+
+                    <label for="review-stars">Note (1-5)</label>
+                    <input id="review-stars" type="number" min="1" max="5" value="5">
+
+                    <label for="review-message">Message</label>
+                    <textarea id="review-message" rows="3" maxlength="160" placeholder="Ton retour"></textarea>
+
+                    <button class="btn primary" type="submit">Publier</button>
+                </form>
+            </section>
+
+            <section class="page" id="page-profile">
+                <div class="page-head">
+                    <h2>Profil</h2>
+                    <p>Infos compte et stats.</p>
+                </div>
+
+                <div class="card panel profile-card">
+                    <div class="profile-row"><span>Nom</span><strong id="profile-name">Utilisateur</strong></div>
+                    <div class="profile-row"><span>Username</span><strong id="profile-username">-</strong></div>
+                    <div class="profile-row"><span>Articles panier</span><strong id="profile-cart-count">0</strong></div>
+                    <div class="profile-row"><span>Commandes</span><strong id="profile-order-count">0</strong></div>
+                </div>
+            </section>
+
+            <section class="page" id="page-info">
+                <div class="page-head">
+                    <h2>Infos</h2>
+                    <p>Horaires, contact et paiement.</p>
+                </div>
+
+                <div class="stack">
+                    <article class="card panel">
+                        <h3>Livraison</h3>
+                        <p><strong>Horaires:</strong> 8H-02H Lun-Jeu / 10H-05H Ven-Dim</p>
+                        <p><strong>Delai:</strong> 30-45 min</p>
+                        <p><strong>Zone:</strong> 54 / 57 / 55 / 88 / Luxembourg</p>
+                    </article>
+
+                    <article class="card panel">
+                        <h3>Contact</h3>
+                        <p id="info-contact-username">Telegram: @peakyblinders540</p>
+                        <div class="inline-actions">
+                            <button class="btn primary" id="contact-btn" type="button">Contacter</button>
+                            <button class="btn ghost" id="channel-btn" type="button">Canal</button>
+                        </div>
+                    </article>
+
+                    <article class="card panel">
+                        <h3>Paiement</h3>
+                        <p>Paiement en especes uniquement.</p>
+                    </article>
+                </div>
+            </section>
         </main>
-        
-        <!-- Page de détail produit -->
-        <div class="product-detail-page" id="product-detail-page" style="display: none;">
-            <div class="product-detail-content">
-                <button class="back-btn" onclick="closeProductDetail()">← Retour</button>
-                <div class="product-detail-header">
-                    <div class="product-media-sticky">
-                        <div class="product-detail-image">
-                            <img id="detail-product-img" src="" alt="" class="detail-img">
-                            <video id="detail-product-video" class="detail-video" controls preload="metadata" style="display: none;">
-                                <source id="detail-video-source" src="" type="video/mp4">
-                                Votre navigateur ne supporte pas la lecture de vidéos.
-                            </video>
-                            <div id="detail-product-emoji" class="detail-emoji" style="display: none;"></div>
-                        </div>
-                        <div class="media-thumbs">
-                            <button id="media-thumb-image" class="media-thumb media-thumb-active" onclick="switchDetailMedia('image')">🖼️ Image</button>
-                            <button id="media-thumb-video" class="media-thumb" onclick="switchDetailMedia('video')" style="display: none;">🎥 Vidéo</button>
-                        </div>
-                    </div>
-                    <div class="product-detail-info">
-                        <h2 id="detail-product-name"></h2>
-                        <p id="detail-product-description"></p>
-                        <div class="detail-price-section">
-                            <!-- Sélecteur de service (delivery/pickup) pour Cali USA Garry Payton -->
-                            <div id="service-selector" class="service-selector" style="display: none;">
-                                <h4>Choisissez votre service :</h4>
-                                <div class="service-buttons">
-                                    <button id="service-delivery-btn" class="service-btn service-btn-active" onclick="changeProductService('delivery')">
-                                        📦 Livraison
-                                    </button>
-                                    <button id="service-pickup-btn" class="service-btn" onclick="changeProductService('pickup')">
-                                        🏪 Sur place
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="quantity-selector">
-                                <h4>Choisissez votre quantité :</h4>
-                                <div class="quantity-bubbles">
-                                    <!-- Les bulles seront générées dynamiquement par JavaScript -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Page d'informations -->
-        <div class="info-page" id="info-page" style="display: none;">
-            <div class="info-content">
-                <h2>📋 Informations</h2>
-                
-                <div class="info-section">
-                    <h3>🚚 Livraison</h3>
-                    <p><strong>Horaires :</strong> 8H - 02H Lundi Jeudi / 10H - 05H Vendredi Dimanche</p>
-                    <p><strong>Délai :</strong> 30-45 minutes</p>
-                    <p><strong>Minimum :</strong> à partir de 50€ (54) & 100€ alentours</p>
-                    <p><strong>Zone :</strong> 54 / 57 / 55 / 88 / Luxembourg selon commande</p>
-                </div>
-                
-                <div class="info-section">
-                    <h3>📞 Contact</h3>
-                    <p><strong>Snapchat :</strong> PAS DISPONIBLE</p>
-                    <p><strong>Telegram :</strong> @peakyblinders540</p>
-                </div>
-                
-                <div class="info-section">
-                    <h3>💳 Paiement</h3>
-                    <p><strong>Modes acceptés :</strong> Espèces uniquement</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Page panier -->
-        <div class="cart-page" id="cart-page" style="display: none;">
-            <div class="subpage-content">
-                <div class="subpage-topline">Commande en cours</div>
-                <h2>🛒 Mon panier</h2>
-                <div class="cart-page-total" id="cart-page-total">Total: 0.00€</div>
-                <div class="cart-page-items" id="cart-page-items"></div>
-                <div class="cart-page-actions">
-                    <button class="btn btn-clear" onclick="clearCart()">🗑️ Vider</button>
-                    <button class="btn btn-success" onclick="checkout()">📤 Commander</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Page avis -->
-        <div class="reviews-page" id="reviews-page" style="display: none;">
-            <div class="subpage-content">
-                <div class="subpage-topline">Confiance clients</div>
-                <h2>⭐ Avis clients</h2>
-                <div class="review-score-card">
-                    <div class="review-score-value">4.9/5</div>
-                    <div class="review-score-label">Moyenne sur nos commandes</div>
-                </div>
-                <div class="review-card">
-                    <h3>Client Telegram • ⭐⭐⭐⭐⭐</h3>
-                    <p>"Service rapide et produits au top. Je recommande fortement."</p>
-                </div>
-                <div class="review-card">
-                    <h3>Client fidèle • ⭐⭐⭐⭐⭐</h3>
-                    <p>"Toujours propre, efficace et qualitatif. Merci l'equipe."</p>
-                </div>
-                <div class="review-card">
-                    <h3>Nouveau client • ⭐⭐⭐⭐☆</h3>
-                    <p>"Commande simple, livraison serieuse, tres bon suivi."</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Page contact -->
-        <div class="contact-page" id="contact-page" style="display: none;">
-            <div class="subpage-content">
-                <div class="subpage-topline">Disponible 7j/7</div>
-                <h2>📞 Contact</h2>
-                <div class="contact-card">
-                    <h3>Telegram</h3>
-                    <p id="contact-username">@peakyblinders540</p>
-                    <button class="btn btn-success" onclick="openTelegramContact()">Ouvrir la conversation</button>
-                </div>
-                <div class="contact-card">
-                    <h3>Canal</h3>
-                    <p id="contact-channel">Lien du canal officiel</p>
-                    <button class="btn btn-success" onclick="openChannelLink()">Acceder au canal</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Page profil -->
-        <div class="profile-page" id="profile-page" style="display: none;">
-            <div class="subpage-content">
-                <div class="subpage-topline">Espace utilisateur</div>
-                <h2>👤 Profil</h2>
-                <div class="profile-card">
-                    <div class="profile-row"><strong>Nom</strong><span id="profile-name">Utilisateur</span></div>
-                    <div class="profile-row"><strong>Username</strong><span id="profile-username">-</span></div>
-                    <div class="profile-row"><strong>Articles panier</strong><span id="profile-cart-count">0</span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Page Admin -->
-        <div class="admin-page" id="admin-page" style="display: none;">
-            <div class="admin-content">
-                <h2>⚙️ Panel Admin</h2>
-                
-                <!-- Navigation Admin -->
-                <div class="admin-nav-tabs">
-                    <button class="admin-tab active" data-tab="products">📦 Produits</button>
-                    <button class="admin-tab" data-tab="categories">📁 Catégories</button>
-                    <button class="admin-tab" data-tab="settings">⚙️ Paramètres</button>
-                </div>
-
-                <!-- Section Produits -->
-                <div class="admin-section" id="admin-products">
-                    <div class="admin-section-header">
-                        <h3>📦 Gestion des Produits</h3>
-                        <button class="btn btn-success" onclick="openAddProductModal()">+ Ajouter</button>
-                    </div>
-                    <div class="admin-list" id="products-list"></div>
-                </div>
-
-                <!-- Section Catégories -->
-                <div class="admin-section" id="admin-categories" style="display: none;">
-                    <div class="admin-section-header">
-                        <h3>📁 Gestion des Catégories</h3>
-                        <button class="btn btn-success" onclick="openAddCategoryModal()">+ Ajouter</button>
-                    </div>
-                    <div class="admin-list" id="categories-list"></div>
-                </div>
-
-                <!-- Section Paramètres -->
-                <div class="admin-section" id="admin-settings" style="display: none;">
-                    <h3>⚙️ Paramètres</h3>
-                    
-                    <div class="admin-form">
-                        <div class="form-group">
-                            <label>Username Telegram</label>
-                            <input type="text" id="admin-telegram-username" placeholder="LEMIEL54">
-                        </div>
-                        <div class="form-group">
-                            <label>Lien du Canal</label>
-                            <input type="text" id="admin-channel-link" placeholder="https://t.me/...">
-                        </div>
-                        <button type="button" id="admin-save-settings-btn" class="btn btn-success" onclick="saveAdminSettings()">💾 Sauvegarder</button>
-                    </div>
-                    
-                    <div style="margin-top: 30px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h4>👥 Administrateurs</h4>
-                            <button class="admin-btn admin-btn-edit" onclick="openAddAdminModal()">➕ Ajouter</button>
-                        </div>
-                        <div id="admins-list"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Barre de navigation en bas -->
-        <nav class="bottom-nav">
-            <button class="nav-item active" data-page="accueil">
-                <span class="nav-icon">🏠</span>
-                <span class="nav-label">Accueil</span>
-            </button>
-            <button class="nav-item" data-page="info">
-                <span class="nav-icon">ℹ️</span>
-                <span class="nav-label">Infos</span>
-            </button>
-            <button class="nav-item" data-page="panier">
-                <span class="nav-icon">🛒</span>
-                <span class="nav-label">Panier</span>
-            </button>
-            <button class="nav-item" data-page="avis">
-                <span class="nav-icon">⭐</span>
-                <span class="nav-label">Avis</span>
-            </button>
-            <button class="nav-item" data-page="contact">
-                <span class="nav-icon">📞</span>
-                <span class="nav-label">Contact</span>
-            </button>
-            <button class="nav-item" data-page="profil">
-                <span class="nav-icon">👤</span>
-                <span class="nav-label">Profil</span>
-            </button>
+        <nav class="bottom-nav" id="bottom-nav">
+            <button class="tab-btn active" data-page="home" type="button">Accueil</button>
+            <button class="tab-btn" data-page="cart" type="button">Panier</button>
+            <button class="tab-btn" data-page="history" type="button">Historique</button>
+            <button class="tab-btn" data-page="reviews" type="button">Avis</button>
+            <button class="tab-btn" data-page="profile" type="button">Profil</button>
+            <button class="tab-btn" data-page="info" type="button">Infos</button>
         </nav>
     </div>
-    
-    <script src="script.js"></script>
-    <!-- Modal pour choisir le type de commande -->
-    <div id="order-type-modal" class="order-type-modal">
-        <div class="order-type-modal-content">
-            <div class="order-type-modal-header">
-                <h3>📦 Type de commande</h3>
-            </div>
-            <div class="order-type-modal-body">
-                <p class="order-type-description">Comment souhaitez-vous récupérer votre commande ?</p>
-                <div class="order-type-buttons">
-                    <button id="pickup-btn" class="order-type-btn pickup-btn">
-                        <span class="btn-emoji">🏪</span>
-                        <span class="btn-text">Sur place</span>
-                    </button>
-                    <button id="delivery-btn" class="order-type-btn delivery-btn">
-                        <span class="btn-emoji">🚚</span>
-                        <span class="btn-text">Livraison</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Modal pour l'heure d'arrivée (Sur place) -->
-    <div id="arrival-time-modal" class="arrival-time-modal">
-        <div class="arrival-time-modal-content">
-            <div class="arrival-time-modal-header">
-                <h3>🕐 Heure d'arrivée</h3>
-            </div>
-            <div class="arrival-time-modal-body">
-                <div class="time-input-group">
-                    <label for="arrival-time-input">À quelle heure souhaitez-vous arriver ?</label>
-                    <input type="time" id="arrival-time-input" class="time-input">
-                </div>
-            </div>
-            <div class="arrival-time-modal-footer">
-                <button id="cancel-time" class="btn-cancel">❌ Annuler</button>
-                <button id="confirm-time" class="btn-confirm">✅ Confirmer</button>
-            </div>
-        </div>
-    </div>
+    <div class="detail-overlay" id="detail-overlay" style="display: none;">
+        <div class="detail-panel">
+            <button class="back-btn" id="detail-close-btn" type="button">Retour</button>
 
-    <!-- Ajouter cette modal avant la fermeture du body -->
-    <div id="address-modal" class="address-modal">
-        <div class="address-modal-content">
-            <div class="address-modal-header">
-                <h3>📍 Adresse de livraison</h3>
-            </div>
-            <div class="address-modal-body">
-                <div class="address-input-group">
-                    <label for="address-input">Où souhaitez-vous être livré ?</label>
-                    <textarea id="address-input" placeholder="Entrez votre adresse complète...&#10;Ex: 123 Rue de la Paix, 75001 Paris" rows="3"></textarea>
-                </div>
-            </div>
-            <div class="address-modal-footer">
-                <button id="cancel-address" class="btn-cancel">❌ Annuler</button>
-                <button id="confirm-address" class="btn-confirm">✅ Confirmer</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Produit -->
-    <div id="product-modal" class="admin-modal" style="display: none;">
-        <div class="admin-modal-content">
-            <div class="admin-modal-header">
-                <h3 id="product-modal-title">Ajouter un Produit</h3>
-            </div>
-            <div class="admin-modal-body">
-                <div class="form-group">
-                    <label>Nom</label>
-                    <input type="text" id="product-name" placeholder="Nom du produit">
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="product-description" placeholder="Description" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Prix de base (€)</label>
-                    <input type="number" id="product-price" step="0.01" placeholder="10.00">
-                </div>
-                <div class="form-group">
-                    <label>Emoji</label>
-                    <input type="text" id="product-emoji" placeholder="🍕">
-                </div>
-                <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="text" id="product-image" placeholder="https://...">
-                </div>
-                <div class="form-group">
-                    <label>Vidéo URL</label>
-                    <input type="text" id="product-video-url" placeholder="https://...">
-                </div>
-                <div class="form-group">
-                    <label>Catégorie</label>
-                    <div class="custom-select-wrapper">
-                        <div class="custom-select" id="product-category-select">
-                            <div class="custom-select-trigger">
-                                <span id="product-category-display">-- Sélectionner une catégorie --</span>
-                                <span class="custom-select-arrow">▼</span>
-                            </div>
-                            <div class="custom-select-options" id="product-category-options" style="display: none;">
-                            </div>
-                        </div>
-                        <select id="product-category" style="display: none;"></select>
+            <div class="detail-layout">
+                <aside class="detail-media-sticky">
+                    <div class="detail-media-frame">
+                        <img id="detail-image" alt="Produit" class="detail-image">
+                        <video id="detail-video" class="detail-video" controls style="display: none;"></video>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="product-isNew"> Nouveau
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="product-isPromo"> Promo
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>Prix personnalisés (format: quantité=prix, séparés par des virgules)</label>
-                    <input type="text" id="product-custom-prices" placeholder="1=10, 2=18, 5=40">
-                </div>
-            </div>
-            <div class="admin-modal-footer">
-                <button class="btn-cancel" onclick="closeProductModal()">❌ Annuler</button>
-                <button class="btn-confirm" onclick="saveProduct()">✅ Sauvegarder</button>
+                    <div class="detail-media-tabs">
+                        <button class="mini-tab active" id="show-image-btn" type="button">Image</button>
+                        <button class="mini-tab" id="show-video-btn" type="button">Video</button>
+                    </div>
+                </aside>
+
+                <section class="detail-content">
+                    <h2 id="detail-name">Produit</h2>
+                    <p id="detail-description" class="muted">Description</p>
+
+                    <div class="tag-line" id="detail-category-chip">Categorie</div>
+
+                    <div class="detail-quantity-block card panel">
+                        <h3>Selectionner la quantite</h3>
+                        <div class="qty-grid" id="detail-qty-grid"></div>
+                    </div>
+
+                    <div class="detail-footer card panel">
+                        <div>
+                            <p class="muted">Prix selectionne</p>
+                            <p class="checkout-total" id="detail-selected-price">0.00 EUR</p>
+                        </div>
+                        <button class="btn primary" id="detail-add-btn" type="button">Ajouter au panier</button>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
 
-    <!-- Modal Admin -->
-    <div id="admin-modal" class="admin-modal" style="display: none;">
-        <div class="admin-modal-content">
-            <div class="admin-modal-header">
-                <h3 id="admin-modal-title">Ajouter un Administrateur</h3>
-            </div>
-            <div class="admin-modal-body">
-                <div class="form-group">
-                    <label>Username Telegram (sans @)</label>
-                    <input type="text" id="admin-username-input" placeholder="username">
-                </div>
-            </div>
-            <div class="admin-modal-footer">
-                <button class="btn-cancel" onclick="closeAdminModal()">❌ Annuler</button>
-                <button class="btn-confirm" onclick="saveAdmin()">✅ Sauvegarder</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Catégorie -->
-    <div id="category-modal" class="admin-modal" style="display: none;">
-        <div class="admin-modal-content">
-            <div class="admin-modal-header">
-                <h3 id="category-modal-title">Ajouter une Catégorie</h3>
-            </div>
-            <div class="admin-modal-body">
-                <div class="form-group">
-                    <label>ID (clé technique, ex: pizza)</label>
-                    <input type="text" id="category-id" placeholder="pizza">
-                </div>
-                <div class="form-group">
-                    <label>Nom</label>
-                    <input type="text" id="category-name" placeholder="Hash">
-                </div>
-                <div class="form-group">
-                    <label>Emoji</label>
-                    <input type="text" id="category-emoji" placeholder="🍫">
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="category-description" placeholder="Description" rows="3"></textarea>
-                </div>
-            </div>
-            <div class="admin-modal-footer">
-                <button class="btn-cancel" onclick="closeCategoryModal()">❌ Annuler</button>
-                <button class="btn-confirm" onclick="saveCategory()">✅ Sauvegarder</button>
-            </div>
-        </div>
-    </div>
+    <script src="script.js"></script>
 </body>
 </html>
