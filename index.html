@@ -213,12 +213,33 @@
         </main>
 
         <nav class="bottom-nav" id="bottom-nav">
-            <button class="tab-btn active" data-page="home" type="button">Accueil</button>
-            <button class="tab-btn" data-page="cart" type="button">Panier</button>
-            <button class="tab-btn" data-page="history" type="button">Historique</button>
-            <button class="tab-btn" data-page="reviews" type="button">Avis</button>
-            <button class="tab-btn" data-page="profile" type="button">Profil</button>
-            <button class="tab-btn" data-page="info" type="button">Infos</button>
+            <button class="tab-btn active" data-page="home" type="button">
+                <span class="tab-icon" aria-hidden="true">🏠</span>
+                <span class="tab-label">Accueil</span>
+            </button>
+            <button class="tab-btn" data-page="cart" type="button">
+                <span class="tab-icon" aria-hidden="true">🛒</span>
+                <span class="tab-label">Panier</span>
+            </button>
+            <button class="tab-btn" data-page="history" type="button">
+                <span class="tab-icon" aria-hidden="true">🕘</span>
+                <span class="tab-label">Historique</span>
+            </button>
+            <button class="tab-btn" data-page="reviews" type="button">
+                <span class="tab-icon" aria-hidden="true">⭐</span>
+                <span class="tab-label">Avis</span>
+            </button>
+            <button class="tab-btn" data-page="profile" type="button">
+                <span class="tab-profile-avatar" id="nav-profile-avatar" aria-hidden="true">
+                    <img id="nav-profile-photo" alt="" loading="lazy" style="display: none;">
+                    <span id="nav-profile-letter">T</span>
+                </span>
+                <span class="tab-label">Profil</span>
+            </button>
+            <button class="tab-btn" data-page="info" type="button">
+                <span class="tab-icon" aria-hidden="true">✉</span>
+                <span class="tab-label">Infos</span>
+            </button>
         </nav>
     </div>
 

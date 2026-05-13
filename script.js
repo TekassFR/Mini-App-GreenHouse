@@ -38,6 +38,9 @@
         productGrid: document.getElementById("product-grid"),
         pages: document.querySelectorAll(".page"),
         tabs: document.querySelectorAll(".tab-btn"),
+        navProfileAvatar: document.getElementById("nav-profile-avatar"),
+        navProfilePhoto: document.getElementById("nav-profile-photo"),
+        navProfileLetter: document.getElementById("nav-profile-letter"),
 
         cartTitle: document.getElementById("cart-title"),
         cartDesc: document.getElementById("cart-desc"),
@@ -497,6 +500,7 @@
         const firstName = sanitize((user && user.first_name) || "Utilisateur");
         const username = user && user.username ? `@${sanitize(user.username)}` : "-";
         const avatarLetter = firstName.charAt(0).toUpperCase() || "U";
+        const photoUrl = user && user.photo_url ? sanitize(user.photo_url) : "";
         const createdAt = user && user.id ? new Date((1704067200000 + (user.id % 220) * 86400000)) : new Date(2026, 3, 1);
         const monthData = getMonthTexts(createdAt);
         const year = createdAt.getFullYear();
@@ -505,6 +509,20 @@
         els.profileName.textContent = firstName;
         els.profileUsername.textContent = username;
         els.profileAvatar.textContent = avatarLetter;
+
+        if (els.navProfileLetter) els.navProfileLetter.textContent = avatarLetter;
+        if (els.navProfilePhoto) {
+            if (photoUrl) {
+                els.navProfilePhoto.src = photoUrl;
+                els.navProfilePhoto.style.display = "block";
+                if (els.navProfileLetter) els.navProfileLetter.style.display = "none";
+            } else {
+                els.navProfilePhoto.removeAttribute("src");
+                els.navProfilePhoto.style.display = "none";
+                if (els.navProfileLetter) els.navProfileLetter.style.display = "inline";
+            }
+        }
+
         els.profileMemberFull.textContent = t("memberSincePhrase", { month: monthData.monthLong, year });
         els.profileMemberShort.textContent = `${monthData.monthShort}. ${String(year).slice(-2)}`;
 
@@ -837,7 +855,12 @@
                 profile: t("navProfile"),
                 info: t("navInfo")
             };
-            tab.textContent = labels[tab.dataset.page] || tab.textContent;
+            const labelNode = tab.querySelector(".tab-label");
+            if (labelNode) {
+                labelNode.textContent = labels[tab.dataset.page] || labelNode.textContent;
+            } else {
+                tab.textContent = labels[tab.dataset.page] || tab.textContent;
+            }
         });
 
         renderCategories();
