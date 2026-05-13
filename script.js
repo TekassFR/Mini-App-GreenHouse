@@ -220,6 +220,7 @@ let cart = [];
 let currentCategory = 'all';
 let currentOrderType = 'delivery'; // Variable pour tracker le type de service sélectionné
 let productDetailService = 'delivery'; // Variable pour tracker le service sélectionné sur la page de détail du produit
+let currentDetailMedia = 'image';
 
 // Variables pour les éléments DOM (seront initialisées après le chargement)
 let userInfo, menuGrid, cartSummary, cartItems, cartTotal, checkoutBtn;
@@ -616,16 +617,16 @@ function openProductDetail(productId) {
     // Remplir les informations du produit
     const detailPage = document.getElementById('product-detail-page');
     const detailImg = document.getElementById('detail-product-img');
+    const detailVideo = document.getElementById('detail-product-video');
+    const detailVideoSource = document.getElementById('detail-video-source');
     const detailEmoji = document.getElementById('detail-product-emoji');
+    const mediaThumbVideo = document.getElementById('media-thumb-video');
     const detailName = document.getElementById('detail-product-name');
     const detailDescription = document.getElementById('detail-product-description');
-    const productVideo = document.getElementById('product-video');
-    const videoSource = document.getElementById('video-source');
     
     // Sécuriser les données
     const safeName = window.SecurityUtils.sanitizeInput(product.name);
     const safeDescription = window.SecurityUtils.sanitizeInput(product.description);
-    const safePrice = parseFloat(product.price) || 0;
     const safeEmoji = window.SecurityUtils.sanitizeInput(product.emoji);
     
     // Remplir les éléments
@@ -673,146 +674,39 @@ function openProductDetail(productId) {
     }
     
     // Gérer l'image
+    detailImg.setAttribute('data-error', '0');
+    detailImg.style.display = 'block';
     detailImg.src = product.image;
     detailImg.alt = safeName;
     detailImg.onload = function() {
+        this.setAttribute('data-error', '0');
         adjustDetailImageDisplay(this);
     };
     detailImg.onerror = function() {
+        this.setAttribute('data-error', '1');
         this.style.display = 'none';
-        detailEmoji.style.display = 'flex';
+        if (currentDetailMedia === 'image') {
+            detailEmoji.style.display = 'flex';
+        }
         detailEmoji.textContent = safeEmoji;
     };
-    
-    // Gérer la vidéo
-    if (product.video) {
-        const videoContainer = document.querySelector('.video-container');
-        
-        // Vérifier si c'est une URL Imgur
-        if (product.video.includes('imgur.com')) {
-            // Extraire l'ID de l'album ou de l'image Imgur
-            let imgurId = '';
-            if (product.video.includes('/a/')) {
-                // Album: https://imgur.com/a/ztRRYlc
-                imgurId = product.video.split('/a/')[1].split('?')[0].split('/')[0];
-            } else {
-                // Image simple: https://imgur.com/ztRRYlc
-                const match = product.video.match(/imgur\.com\/([a-zA-Z0-9]+)/);
-                if (match) {
-                    imgurId = match[1];
-                }
-            }
-            
-            // Créer un conteneur pour la vidéo/GIF sans interface Imgur
-            videoContainer.innerHTML = `
-                <div style="text-align: center; padding: 20px; background: #000; border-radius: 12px;">
-                    <div id="imgur-content-${imgurId}" style="width: 100%; height: 400px; display: flex; align-items: center; justify-content: center; color: white;">
-                        <div style="text-align: center;">
-                            <div style="margin-bottom: 10px;">📹</div>
-                            <div>Chargement du contenu Imgur...</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Fonction pour charger le contenu direct depuis Imgur
-            async function loadImgurContent(id) {
-                try {
-                    // Essayer d'abord avec l'URL directe du GIF/MP4
-                    const directUrls = [
-                        `https://i.imgur.com/${id}.mp4`,
-                        `https://i.imgur.com/${id}.gifv`,
-                        `https://i.imgur.com/${id}.gif`,
-                        `https://i.imgur.com/${id}.webm`
-                    ];
-                    
-                    const container = document.getElementById(`imgur-content-${id}`);
-                    if (!container) return;
-                    
-                    // Tester chaque URL pour trouver celle qui fonctionne
-                    for (const url of directUrls) {
-                        try {
-                            const response = await fetch(url, { method: 'HEAD' });
-                            if (response.ok) {
-                                if (url.includes('.mp4') || url.includes('.webm')) {
-                                    // Vidéo
-                                    container.innerHTML = `
-                                        <video controls autoplay muted loop style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
-                                            <source src="${url}" type="video/${url.includes('.mp4') ? 'mp4' : 'webm'}">
-                                            Votre navigateur ne supporte pas cette vidéo.
-                                        </video>
-                                    `;
-                                } else {
-                                    // GIF/Image
-                                    container.innerHTML = `
-                                        <img src="${url}" alt="Contenu Imgur" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
-                                    `;
-                                }
-                                return;
-                            }
-                        } catch (e) {
-                            continue;
-                        }
-                    }
-                    
-                    // Si aucune URL directe ne fonctionne, fallback vers l'embed
-                    container.innerHTML = `
-                        <iframe src="https://imgur.com/${id}/embed?pub=true&ref=https%3A%2F%2Fimgur.com&w=540" 
-                                width="100%" 
-                                height="400" 
-                                frameborder="0" 
-                                scrolling="no" 
-                                allowfullscreen
-                                style="border-radius: 8px;">
-                        </iframe>
-                    `;
-                    
-                } catch (error) {
-                    const container = document.getElementById(`imgur-content-${id}`);
-                    if (container) {
-                        container.innerHTML = `
-                            <div style="color: #ff6b6b; text-align: center;">
-                                <div style="margin-bottom: 10px;">❌</div>
-                                <div>Erreur de chargement du contenu Imgur</div>
-                            </div>
-                        `;
-                    }
-                }
-            }
-            
-            // Charger le contenu
-            loadImgurContent(imgurId);
-        } else if (product.video.includes('youtube.com') || product.video.includes('youtu.be')) {
-            // Support pour YouTube
-            let youtubeId;
-            if (product.video.includes('youtube.com/watch?v=')) {
-                youtubeId = product.video.split('v=')[1].split('&')[0];
-            } else if (product.video.includes('youtu.be/')) {
-                youtubeId = product.video.split('youtu.be/')[1].split('?')[0];
-            }
-            
-            if (youtubeId) {
-                const embedUrl = `https://www.youtube.com/embed/${youtubeId}`;
-                videoContainer.innerHTML = `
-                    <iframe src="${embedUrl}" 
-                            width="100%" 
-                            height="315" 
-                            frameborder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowfullscreen>
-                    </iframe>
-                `;
-             }
-         } else {
-            // URL directe vers un fichier vidéo (MP4, etc.)
-            videoContainer.innerHTML = `
-                <video id="product-video" controls preload="metadata" poster="${product.image}">
-                    <source src="${product.video}" type="video/mp4">
-                    Votre navigateur ne supporte pas la lecture de vidéos.
-                </video>
-            `;
-         }
+
+    const playableVideoUrl = getPlayableVideoUrl(product.video);
+    if (playableVideoUrl && detailVideo && detailVideoSource && mediaThumbVideo) {
+        detailVideoSource.src = playableVideoUrl;
+        detailVideo.load();
+        detailVideo.style.display = 'none';
+        mediaThumbVideo.style.display = 'inline-flex';
+    } else if (detailVideo && detailVideoSource && mediaThumbVideo) {
+        detailVideo.pause();
+        detailVideo.currentTime = 0;
+        detailVideoSource.src = '';
+        detailVideo.load();
+        detailVideo.style.display = 'none';
+        mediaThumbVideo.style.display = 'none';
     }
+
+    switchDetailMedia('image');
     
     // Masquer le menu principal et afficher la page de détail
     document.querySelector('main').style.display = 'none';
@@ -893,22 +787,15 @@ function closeProductDetail() {
     }
     
     const detailPage = document.getElementById('product-detail-page');
-    const productVideo = document.getElementById('product-video');
-    const videoContainer = document.querySelector('.video-container');
-    
-    // Arrêter la vidéo si elle existe
-    if (productVideo) {
-        productVideo.pause();
-        productVideo.currentTime = 0;
+    const detailVideo = document.getElementById('detail-product-video');
+    const detailVideoSource = document.getElementById('detail-video-source');
+
+    if (detailVideo && detailVideoSource) {
+        detailVideo.pause();
+        detailVideo.currentTime = 0;
+        detailVideoSource.src = '';
+        detailVideo.load();
     }
-    
-    // Réinitialiser le conteneur vidéo avec l'élément video par défaut
-    videoContainer.innerHTML = `
-        <video id="product-video" controls preload="metadata" poster="">
-            <source id="video-source" src="" type="video/mp4">
-            Votre navigateur ne supporte pas la lecture de vidéos.
-        </video>
-    `;
     
     // Masquer la page de détail et afficher le menu principal
     detailPage.style.display = 'none';
@@ -1047,6 +934,70 @@ function updateCartDisplay() {
     renderProfilePage();
     
     window.SecurityUtils.securityLog('cart_update', { itemCount: cart.length, total: total });
+}
+
+function getPlayableVideoUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return '';
+
+    const clean = rawUrl.trim();
+    if (!clean) return '';
+    if (clean.includes('youtube.com') || clean.includes('youtu.be')) return '';
+
+    if (clean.includes('imgur.com') && !clean.includes('i.imgur.com')) {
+        let id = '';
+        if (clean.includes('/a/')) {
+            id = clean.split('/a/')[1].split('?')[0].split('/')[0];
+        } else {
+            const match = clean.match(/imgur\.com\/([a-zA-Z0-9]+)/);
+            if (match) id = match[1];
+        }
+        return id ? `https://i.imgur.com/${id}.mp4` : '';
+    }
+
+    if (clean.endsWith('.gifv')) {
+        return clean.replace('.gifv', '.mp4');
+    }
+
+    return clean;
+}
+
+function switchDetailMedia(mode) {
+    const detailImg = document.getElementById('detail-product-img');
+    const detailEmoji = document.getElementById('detail-product-emoji');
+    const detailVideo = document.getElementById('detail-product-video');
+    const thumbImage = document.getElementById('media-thumb-image');
+    const thumbVideo = document.getElementById('media-thumb-video');
+
+    if (!detailImg || !detailEmoji || !detailVideo || !thumbImage || !thumbVideo) return;
+
+    const product = Object.values(menuData).flat().find(p => p.id === currentProductId);
+    const hasVideo = !!(product && getPlayableVideoUrl(product.video));
+
+    if (mode === 'video' && hasVideo) {
+        currentDetailMedia = 'video';
+        detailImg.style.display = 'none';
+        detailEmoji.style.display = 'none';
+        detailVideo.style.display = 'block';
+        thumbImage.classList.remove('media-thumb-active');
+        thumbVideo.classList.add('media-thumb-active');
+        detailVideo.play().catch(() => {});
+        return;
+    }
+
+    currentDetailMedia = 'image';
+    detailVideo.pause();
+    detailVideo.currentTime = 0;
+    detailVideo.style.display = 'none';
+    thumbVideo.classList.remove('media-thumb-active');
+    thumbImage.classList.add('media-thumb-active');
+
+    if (detailImg.getAttribute('data-error') === '1') {
+        detailImg.style.display = 'none';
+        detailEmoji.style.display = 'flex';
+    } else {
+        detailImg.style.display = 'block';
+        detailEmoji.style.display = 'none';
+    }
 }
 
 // Fonction pour vider complètement le panier (VERSION SÉCURISÉE)

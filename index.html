@@ -65,9 +65,19 @@
             <div class="product-detail-content">
                 <button class="back-btn" onclick="closeProductDetail()">← Retour</button>
                 <div class="product-detail-header">
-                    <div class="product-detail-image">
-                        <img id="detail-product-img" src="" alt="" class="detail-img">
-                        <div id="detail-product-emoji" class="detail-emoji" style="display: none;"></div>
+                    <div class="product-media-sticky">
+                        <div class="product-detail-image">
+                            <img id="detail-product-img" src="" alt="" class="detail-img">
+                            <video id="detail-product-video" class="detail-video" controls preload="metadata" style="display: none;">
+                                <source id="detail-video-source" src="" type="video/mp4">
+                                Votre navigateur ne supporte pas la lecture de vidéos.
+                            </video>
+                            <div id="detail-product-emoji" class="detail-emoji" style="display: none;"></div>
+                        </div>
+                        <div class="media-thumbs">
+                            <button id="media-thumb-image" class="media-thumb media-thumb-active" onclick="switchDetailMedia('image')">🖼️ Image</button>
+                            <button id="media-thumb-video" class="media-thumb" onclick="switchDetailMedia('video')" style="display: none;">🎥 Vidéo</button>
+                        </div>
                     </div>
                     <div class="product-detail-info">
                         <h2 id="detail-product-name"></h2>
@@ -92,15 +102,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-                <div class="product-video-section">
-                    <h3>🎥 Présentation du produit</h3>
-                    <div class="video-container">
-                        <video id="product-video" controls preload="metadata" poster="">
-                            <source id="video-source" src="" type="video/mp4">
-                            Votre navigateur ne supporte pas la lecture de vidéos.
-                        </video>
                     </div>
                 </div>
             </div>
