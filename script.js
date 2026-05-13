@@ -1792,7 +1792,7 @@ function initBottomNavigation() {
 
                 case 'panier':
                     hideAllSubPages();
-                    container.classList.add('info-page-active');
+                    container.classList.remove('info-page-active');
                     container.classList.remove('admin-page-active');
                     renderCartPage();
                     if (cartPage) cartPage.style.display = 'block';
@@ -1803,7 +1803,7 @@ function initBottomNavigation() {
 
                 case 'avis':
                     hideAllSubPages();
-                    container.classList.add('info-page-active');
+                    container.classList.remove('info-page-active');
                     container.classList.remove('admin-page-active');
                     if (reviewsPage) reviewsPage.style.display = 'block';
                     if (mainContent) mainContent.style.display = 'none';
@@ -1813,7 +1813,7 @@ function initBottomNavigation() {
                     
                 case 'contact':
                     hideAllSubPages();
-                    container.classList.add('info-page-active');
+                    container.classList.remove('info-page-active');
                     container.classList.remove('admin-page-active');
                     refreshContactPage();
                     if (contactPage) contactPage.style.display = 'block';
@@ -1824,7 +1824,7 @@ function initBottomNavigation() {
 
                 case 'profil':
                     hideAllSubPages();
-                    container.classList.add('info-page-active');
+                    container.classList.remove('info-page-active');
                     container.classList.remove('admin-page-active');
                     renderProfilePage();
                     if (profilePage) profilePage.style.display = 'block';
@@ -1864,10 +1864,13 @@ function renderCartPage() {
     let html = '';
     cart.forEach(item => {
         const itemTotal = getPriceForService(item, item.quantity, currentOrderType);
+        const safeName = window.SecurityUtils.sanitizeInput(item.name);
+        const safeQty = window.SecurityUtils.validateQuantity(item.quantity);
         html += `
             <div class="subpage-list-item">
-                <div><strong>${window.SecurityUtils.sanitizeInput(item.name)}</strong></div>
-                <div>${item.quantity} x ${itemTotal.toFixed(2)}€</div>
+                <div class="subpage-list-title"><strong>${safeName}</strong></div>
+                <div class="subpage-list-meta">Quantite: ${safeQty}</div>
+                <div class="subpage-list-price">${itemTotal.toFixed(2)}€</div>
             </div>
         `;
     });

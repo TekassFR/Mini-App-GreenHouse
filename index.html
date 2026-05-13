@@ -135,7 +135,8 @@
         <!-- Page panier -->
         <div class="cart-page" id="cart-page" style="display: none;">
             <div class="subpage-content">
-                <h2>🛒 Panier</h2>
+                <div class="subpage-topline">Commande en cours</div>
+                <h2>🛒 Mon panier</h2>
                 <div class="cart-page-total" id="cart-page-total">Total: 0.00€</div>
                 <div class="cart-page-items" id="cart-page-items"></div>
                 <div class="cart-page-actions">
@@ -148,17 +149,22 @@
         <!-- Page avis -->
         <div class="reviews-page" id="reviews-page" style="display: none;">
             <div class="subpage-content">
+                <div class="subpage-topline">Confiance clients</div>
                 <h2>⭐ Avis clients</h2>
+                <div class="review-score-card">
+                    <div class="review-score-value">4.9/5</div>
+                    <div class="review-score-label">Moyenne sur nos commandes</div>
+                </div>
                 <div class="review-card">
-                    <h3>Client Telegram</h3>
+                    <h3>Client Telegram • ⭐⭐⭐⭐⭐</h3>
                     <p>"Service rapide et produits au top. Je recommande fortement."</p>
                 </div>
                 <div class="review-card">
-                    <h3>Client fidèle</h3>
+                    <h3>Client fidèle • ⭐⭐⭐⭐⭐</h3>
                     <p>"Toujours propre, efficace et qualitatif. Merci l'equipe."</p>
                 </div>
                 <div class="review-card">
-                    <h3>Nouveau client</h3>
+                    <h3>Nouveau client • ⭐⭐⭐⭐☆</h3>
                     <p>"Commande simple, livraison serieuse, tres bon suivi."</p>
                 </div>
             </div>
@@ -167,6 +173,7 @@
         <!-- Page contact -->
         <div class="contact-page" id="contact-page" style="display: none;">
             <div class="subpage-content">
+                <div class="subpage-topline">Disponible 7j/7</div>
                 <h2>📞 Contact</h2>
                 <div class="contact-card">
                     <h3>Telegram</h3>
@@ -184,11 +191,12 @@
         <!-- Page profil -->
         <div class="profile-page" id="profile-page" style="display: none;">
             <div class="subpage-content">
+                <div class="subpage-topline">Espace utilisateur</div>
                 <h2>👤 Profil</h2>
                 <div class="profile-card">
-                    <p><strong>Nom:</strong> <span id="profile-name">Utilisateur</span></p>
-                    <p><strong>Username:</strong> <span id="profile-username">-</span></p>
-                    <p><strong>Articles panier:</strong> <span id="profile-cart-count">0</span></p>
+                    <div class="profile-row"><strong>Nom</strong><span id="profile-name">Utilisateur</span></div>
+                    <div class="profile-row"><strong>Username</strong><span id="profile-username">-</span></div>
+                    <div class="profile-row"><strong>Articles panier</strong><span id="profile-cart-count">0</span></div>
                 </div>
             </div>
         </div>
