@@ -105,6 +105,11 @@ body.app-ready .intro-screen {
     gap: 10px;
 }
 
+.brand-logo-top {
+    display: block;
+    margin-bottom: 4px;
+}
+
 .brand-logo {
     width: 34px;
     height: 34px;
