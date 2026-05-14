@@ -99,24 +99,30 @@ body.app-ready .intro-screen {
     margin-bottom: 14px;
 }
 
+.logo-above {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.logo-above .brand-logo {
+    display: block;
+    margin: 0 auto;
+}
+
 .brand-row {
     display: inline-flex;
     align-items: center;
     gap: 10px;
 }
 
-.brand-logo-top {
-    display: block;
-    margin-bottom: 4px;
-}
-
 .brand-logo {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+    width: 90px;
+    height: 90px;
+    border-radius: 18px;
     object-fit: cover;
     border: 1px solid rgba(168, 255, 207, 0.28);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.26);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     animation: logoFloat 2.9s ease-in-out infinite;
 }
 
@@ -1167,9 +1173,9 @@ body.detail-open .bottom-nav {
     }
 
     .brand-logo {
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
     }
 
     .bottom-nav {
