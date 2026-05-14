@@ -99,6 +99,28 @@ body.app-ready .intro-screen {
     margin-bottom: 14px;
 }
 
+.brand-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid rgba(168, 255, 207, 0.28);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.26);
+    animation: logoFloat 2.9s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-3px); }
+    100% { transform: translateY(0px); }
+}
+
 .brand-title {
     font-size: 1.45rem;
 }
@@ -1133,6 +1155,16 @@ body.detail-open .bottom-nav {
 
     .brand-title {
         font-size: 1.2rem;
+    }
+
+    .brand-row {
+        gap: 8px;
+    }
+
+    .brand-logo {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
     }
 
     .bottom-nav {
