@@ -7,6 +7,27 @@
         tg.expand();
     }
 
+    function ensureBrandLogoVisible() {
+        const img = document.getElementById("brand-logo-main");
+        if (!img) return;
+
+        const candidates = [
+            "logo.png?v=20260514g",
+            "./logo.png?v=20260514g",
+            "background.png?v=20260514g"
+        ];
+
+        let idx = 0;
+        const tryNext = () => {
+            idx += 1;
+            if (idx >= candidates.length) return;
+            img.src = candidates[idx];
+        };
+
+        img.addEventListener("error", tryNext, { once: false });
+        img.src = candidates[0];
+    }
+
     function getHashParam(name) {
         const raw = String(window.location.hash || "").replace(/^#/, "");
         if (!raw) return "";
@@ -66,6 +87,12 @@
             renderDesktopBlockedScreen();
         }
         return;
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", ensureBrandLogoVisible, { once: true });
+    } else {
+        ensureBrandLogoVisible();
     }
 
     const state = {
