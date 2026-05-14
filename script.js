@@ -50,6 +50,7 @@
         document.body.innerHTML = `
             <div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#0b1110;color:#f2fff8;font-family:Segoe UI,Tahoma,sans-serif;text-align:center;">
                 <div style="max-width:520px;border:1px solid rgba(168,255,207,0.2);border-radius:16px;padding:22px;background:rgba(9,17,13,0.86);">
+                    <img src="./logo.png?v=20260514f" alt="GreenHouse logo" style="width:58px;height:58px;border-radius:12px;display:block;margin:0 auto 12px;border:1px solid rgba(168,255,207,0.3);box-shadow:0 8px 20px rgba(0,0,0,0.35);">
                     <h1 style="margin:0 0 10px;font-size:1.4rem;">Acces mobile uniquement</h1>
                     <p style="margin:0;color:#c7d5cc;line-height:1.5;">Cette mini app Telegram est reservee au client mobile Telegram. Ouvre-la depuis Telegram sur ton telephone.</p>
                 </div>
