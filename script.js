@@ -8,10 +8,21 @@
     }
 
     function isTelegramMobileClient() {
-        // Autorise uniquement la MiniApp ouverte dans Telegram mobile.
+        // Autorise uniquement la MiniApp ouverte dans Telegram mobile natif.
         if (!tg) return false;
+
         const platform = typeof tg.platform === "string" ? tg.platform.toLowerCase() : "";
-        return platform === "android" || platform === "ios";
+        const isTelegramNativeMobile = platform === "android" || platform === "ios";
+        if (!isTelegramNativeMobile) return false;
+
+        // Garde-fou supplementaire: il faut un user Telegram charge.
+        const user = tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+        if (!user || !Number.isFinite(Number(user.id))) return false;
+
+        // Double verification par user-agent mobile.
+        const ua = (navigator.userAgent || "").toLowerCase();
+        const isMobileUA = /android|iphone|ipad|ipod|mobile/.test(ua);
+        return isMobileUA;
     }
 
     function renderDesktopBlockedScreen() {
@@ -23,6 +34,16 @@
                 </div>
             </div>
         `;
+    }
+
+    // Blocage immediat pour eviter tout affichage desktop, meme avant bootstrap.
+    if (!isTelegramMobileClient()) {
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", renderDesktopBlockedScreen, { once: true });
+        } else {
+            renderDesktopBlockedScreen();
+        }
+        return;
     }
 
     const state = {
