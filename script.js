@@ -7,6 +7,26 @@
         tg.expand();
     }
 
+    function isTelegramMobileClient() {
+        const platform = tg && typeof tg.platform === "string" ? tg.platform.toLowerCase() : "";
+        if (platform === "android" || platform === "ios") return true;
+
+        const ua = (navigator.userAgent || "").toLowerCase();
+        const isMobileUA = /android|iphone|ipad|ipod|mobile/.test(ua);
+        return Boolean(tg) && isMobileUA;
+    }
+
+    function renderDesktopBlockedScreen() {
+        document.body.innerHTML = `
+            <div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#0b1110;color:#f2fff8;font-family:Segoe UI,Tahoma,sans-serif;text-align:center;">
+                <div style="max-width:520px;border:1px solid rgba(168,255,207,0.2);border-radius:16px;padding:22px;background:rgba(9,17,13,0.86);">
+                    <h1 style="margin:0 0 10px;font-size:1.4rem;">Acces mobile uniquement</h1>
+                    <p style="margin:0;color:#c7d5cc;line-height:1.5;">Cette mini app Telegram est reservee au client mobile Telegram. Ouvre-la depuis Telegram sur ton telephone.</p>
+                </div>
+            </div>
+        `;
+    }
+
     const state = {
         config: null,
         products: [],
@@ -20,8 +40,11 @@
         detailMedia: "image",
         reviews: [],
         orders: [],
-        language: "fr"
+        language: "fr",
+        storageScope: "guest"
     };
+
+    const LOCAL_API_BASE = "http://localhost:3000";
 
     const els = {
         intro: document.getElementById("intro-screen"),
@@ -382,6 +405,25 @@
         return input.replace(/[<>"'&]/g, "").trim();
     }
 
+    function getTelegramUser() {
+        return tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
+    }
+
+    function resolveStorageScope() {
+        const user = getTelegramUser();
+        if (user && Number.isFinite(Number(user.id))) {
+            return `u${Number(user.id)}`;
+        }
+        if (user && user.username) {
+            return `n${sanitize(user.username).toLowerCase()}`;
+        }
+        return "guest";
+    }
+
+    function storageKey(name) {
+        return `gh_${state.storageScope}_${name}`;
+    }
+
     function t(key, params) {
         const dict = i18n[state.language] || i18n.fr;
         const fallback = i18n.fr[key] || key;
@@ -462,27 +504,89 @@
     }
 
     function saveLocal() {
-        localStorage.setItem("gh_cart", JSON.stringify(state.cart));
-        localStorage.setItem("gh_orders", JSON.stringify(state.orders));
-        localStorage.setItem("gh_reviews", JSON.stringify(state.reviews));
-        localStorage.setItem("gh_language", state.language);
+        localStorage.setItem(storageKey("cart"), JSON.stringify(state.cart));
+        localStorage.setItem(storageKey("orders"), JSON.stringify(state.orders));
+        localStorage.setItem(storageKey("reviews"), JSON.stringify(state.reviews));
+        localStorage.setItem(storageKey("language"), state.language);
     }
 
     function loadLocal() {
+        state.storageScope = resolveStorageScope();
         try {
-            const cart = JSON.parse(localStorage.getItem("gh_cart") || "[]");
-            const orders = JSON.parse(localStorage.getItem("gh_orders") || "[]");
-            const reviews = JSON.parse(localStorage.getItem("gh_reviews") || "[]");
-            const language = localStorage.getItem("gh_language") || "fr";
+            const scopedCartRaw = localStorage.getItem(storageKey("cart"));
+            const scopedOrdersRaw = localStorage.getItem(storageKey("orders"));
+            const scopedReviewsRaw = localStorage.getItem(storageKey("reviews"));
+            const scopedLanguageRaw = localStorage.getItem(storageKey("language"));
+
+            const cart = JSON.parse(scopedCartRaw || localStorage.getItem("gh_cart") || "[]");
+            const orders = JSON.parse(scopedOrdersRaw || localStorage.getItem("gh_orders") || "[]");
+            const reviews = JSON.parse(scopedReviewsRaw || localStorage.getItem("gh_reviews") || "[]");
+            const language = scopedLanguageRaw || localStorage.getItem("gh_language") || "fr";
             state.cart = Array.isArray(cart) ? cart : [];
             state.orders = Array.isArray(orders) ? orders : [];
             state.reviews = Array.isArray(reviews) ? reviews : [];
             state.language = ["fr", "en", "de"].includes(language) ? language : "fr";
+
+            // One-time migration from legacy non-scoped keys to user-scoped keys.
+            if (!scopedCartRaw || !scopedOrdersRaw || !scopedReviewsRaw || !scopedLanguageRaw) {
+                saveLocal();
+            }
         } catch (_) {
             state.cart = [];
             state.orders = [];
             state.reviews = [];
             state.language = "fr";
+        }
+    }
+
+    function normalizeReviewEntry(review) {
+        if (!review || typeof review !== "object") return null;
+        const author = sanitize(String(review.author || "")).trim();
+        const message = sanitize(String(review.message || "")).trim();
+        if (!author || !message) return null;
+
+        const rawStars = parseInt(review.stars, 10);
+        const stars = Number.isFinite(rawStars) ? Math.max(1, Math.min(5, rawStars)) : 5;
+        const rawTs = Number(review.timestamp);
+        const timestamp = Number.isFinite(rawTs) ? rawTs : Date.now();
+
+        return {
+            author,
+            stars,
+            message,
+            timestamp,
+            telegramUserId: Number.isFinite(Number(review.telegramUserId)) ? Number(review.telegramUserId) : null,
+            telegramUsername: review.telegramUsername ? sanitize(String(review.telegramUsername)) : null
+        };
+    }
+
+    async function syncReviewsFromLocalApi() {
+        try {
+            const resp = await fetch(`${LOCAL_API_BASE}/reviews`, { cache: "no-store" });
+            if (!resp.ok) return false;
+
+            const data = await resp.json();
+            if (!data || !Array.isArray(data.reviews)) return false;
+
+            const normalized = data.reviews.map(normalizeReviewEntry).filter(Boolean);
+            state.reviews = normalized;
+            saveLocal();
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    async function persistReviewToLocalApi(review) {
+        try {
+            const resp = await fetch(`${LOCAL_API_BASE}/save-review`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(review)
+            });
+            return resp.ok;
+        } catch (_) {
+            return false;
         }
     }
 
@@ -496,16 +600,17 @@
     }
 
     function renderUser() {
-        const user = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
+        const user = getTelegramUser();
         const firstName = sanitize((user && user.first_name) || "Utilisateur");
         const username = user && user.username ? `@${sanitize(user.username)}` : "-";
+        const greetingName = user && user.username ? `@${sanitize(user.username)}` : firstName;
         const avatarLetter = firstName.charAt(0).toUpperCase() || "U";
         const photoUrl = user && user.photo_url ? sanitize(user.photo_url) : "";
         const createdAt = user && user.id ? new Date((1704067200000 + (user.id % 220) * 86400000)) : new Date(2026, 3, 1);
         const monthData = getMonthTexts(createdAt);
         const year = createdAt.getFullYear();
 
-        els.userChip.textContent = t("greeting", { name: firstName });
+        els.userChip.textContent = t("greeting", { name: greetingName });
         els.profileName.textContent = firstName;
         els.profileUsername.textContent = username;
         els.profileAvatar.textContent = avatarLetter;
@@ -526,7 +631,7 @@
         els.profileMemberFull.textContent = t("memberSincePhrase", { month: monthData.monthLong, year });
         els.profileMemberShort.textContent = `${monthData.monthShort}. ${String(year).slice(-2)}`;
 
-        const adminUser = state.config && state.config.admin ? state.config.admin.telegram_username : "peakyblinders540";
+        const adminUser = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
         els.infoContactUsername.textContent = `Telegram: @${adminUser}`;
     }
 
@@ -745,15 +850,26 @@
         els.reviewList.innerHTML = html;
     }
 
-    function addReview(author, stars, message) {
-        state.reviews.push({
+    async function addReview(author, stars, message) {
+        const currentUser = getTelegramUser();
+        const review = {
             author,
             stars,
             message,
-            timestamp: Date.now()
-        });
+            timestamp: Date.now(),
+            telegramUserId: currentUser && Number.isFinite(Number(currentUser.id)) ? Number(currentUser.id) : null,
+            telegramUsername: currentUser && currentUser.username ? sanitize(currentUser.username) : null
+        };
+
+        state.reviews.push(review);
         saveLocal();
         renderReviews();
+
+        const serverSaved = await persistReviewToLocalApi(review);
+        if (serverSaved) {
+            await syncReviewsFromLocalApi();
+            renderReviews();
+        }
     }
 
     function renderProfileStats() {
@@ -1120,16 +1236,19 @@
 
         const orderId = state.orders.length + 1;
         const summary = state.cart.map((i) => `${sanitize(i.name)} x${i.quantity}`).join(", ");
+        const currentUser = getTelegramUser();
         state.orders.push({
             id: orderId,
             type: state.orderType,
             total,
             summary,
             items: JSON.parse(JSON.stringify(state.cart)),
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            telegramUserId: currentUser && Number.isFinite(Number(currentUser.id)) ? Number(currentUser.id) : null,
+            telegramUsername: currentUser && currentUser.username ? sanitize(currentUser.username) : null
         });
 
-        const username = state.config && state.config.admin ? state.config.admin.telegram_username : "peakyblinders540";
+        const username = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
         const text = encodeURIComponent(t("orderText", {
             id: orderId,
             type: state.orderType === "pickup" ? t("pickup") : t("delivery"),
@@ -1186,7 +1305,7 @@
         }
 
         els.contactBtn.addEventListener("click", () => {
-            const username = state.config && state.config.admin ? state.config.admin.telegram_username : "peakyblinders540";
+            const username = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
             const url = `https://t.me/${username}`;
             if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
             else window.open(url, "_blank");
@@ -1207,7 +1326,7 @@
                 alert(t("alertReview"));
                 return;
             }
-            addReview(author, stars, message);
+            void addReview(author, stars, message);
             els.reviewForm.reset();
             els.reviewStars.value = "5";
         });
@@ -1247,7 +1366,7 @@
 
         if (els.detailTeleBtn) {
             els.detailTeleBtn.addEventListener("click", () => {
-                const username = state.config && state.config.admin ? state.config.admin.telegram_username : "peakyblinders540";
+                const username = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
                 const productName = state.selectedProduct ? sanitize(state.selectedProduct.name) : "product";
                 const url = `https://t.me/${username}?text=${encodeURIComponent(t("askProduct", { name: productName }))}`;
                 if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
@@ -1281,9 +1400,15 @@
     }
 
     async function bootstrap() {
+        if (!isTelegramMobileClient()) {
+            renderDesktopBlockedScreen();
+            return;
+        }
+
         try {
             await loadConfig();
             loadLocal();
+            await syncReviewsFromLocalApi();
             renderUser();
             renderCategories();
             renderProducts();
