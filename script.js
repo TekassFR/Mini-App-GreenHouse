@@ -8,10 +8,15 @@
     }
 
     function isTelegramMobileClient() {
+        const referrer = String(document.referrer || "").toLowerCase();
+        const fromWebTelegram = referrer.includes("web.telegram.org");
+        if (fromWebTelegram) return false;
+
         // Autorise uniquement la MiniApp ouverte dans Telegram mobile natif.
         if (!tg) return false;
 
         const platform = typeof tg.platform === "string" ? tg.platform.toLowerCase() : "";
+        if (platform.startsWith("web")) return false;
         const isTelegramNativeMobile = platform === "android" || platform === "ios";
         if (!isTelegramNativeMobile) return false;
 
