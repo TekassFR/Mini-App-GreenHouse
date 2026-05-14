@@ -7,17 +7,34 @@
         tg.expand();
     }
 
+    function getHashParam(name) {
+        const raw = String(window.location.hash || "").replace(/^#/, "");
+        if (!raw) return "";
+        const params = new URLSearchParams(raw);
+        return String(params.get(name) || "").toLowerCase();
+    }
+
     function isTelegramMobileClient() {
         const referrer = String(document.referrer || "").toLowerCase();
         const fromWebTelegram = referrer.includes("web.telegram.org");
         if (fromWebTelegram) return false;
+
+        const ua = (navigator.userAgent || "").toLowerCase();
+        const looksDesktopUA = /windows|macintosh|linux x86_64|telegramdesktop|electron/.test(ua);
+        if (looksDesktopUA) return false;
 
         // Autorise uniquement la MiniApp ouverte dans Telegram mobile natif.
         if (!tg) return false;
 
         const platform = typeof tg.platform === "string" ? tg.platform.toLowerCase() : "";
         if (platform.startsWith("web")) return false;
-        const isTelegramNativeMobile = platform === "android" || platform === "ios";
+        if (platform.includes("desktop") || platform.includes("tdesktop")) return false;
+
+        const hashPlatform = getHashParam("tgWebAppPlatform");
+        if (hashPlatform.startsWith("web") || hashPlatform.includes("desktop") || hashPlatform.includes("tdesktop")) return false;
+
+        const effectivePlatform = hashPlatform || platform;
+        const isTelegramNativeMobile = effectivePlatform === "android" || effectivePlatform === "ios";
         if (!isTelegramNativeMobile) return false;
 
         // Garde-fou supplementaire: il faut un user Telegram charge.
@@ -25,7 +42,6 @@
         if (!user || !Number.isFinite(Number(user.id))) return false;
 
         // Double verification par user-agent mobile.
-        const ua = (navigator.userAgent || "").toLowerCase();
         const isMobileUA = /android|iphone|ipad|ipod|mobile/.test(ua);
         return isMobileUA;
     }
