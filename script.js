@@ -8,12 +8,10 @@
     }
 
     function isTelegramMobileClient() {
-        const platform = tg && typeof tg.platform === "string" ? tg.platform.toLowerCase() : "";
-        if (platform === "android" || platform === "ios") return true;
-
-        const ua = (navigator.userAgent || "").toLowerCase();
-        const isMobileUA = /android|iphone|ipad|ipod|mobile/.test(ua);
-        return Boolean(tg) && isMobileUA;
+        // Autorise uniquement la MiniApp ouverte dans Telegram mobile.
+        if (!tg) return false;
+        const platform = typeof tg.platform === "string" ? tg.platform.toLowerCase() : "";
+        return platform === "android" || platform === "ios";
     }
 
     function renderDesktopBlockedScreen() {
