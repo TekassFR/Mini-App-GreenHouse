@@ -26,11 +26,20 @@ body {
 body {
     font-family: "Segoe UI", Tahoma, sans-serif;
     background:
-        linear-gradient(170deg, rgba(8, 11, 17, 0.86), rgba(11, 16, 23, 0.88) 44%, rgba(15, 21, 29, 0.92)),
-        url("background.png") no-repeat center center / 115% auto;
-    background-attachment: fixed;
+        linear-gradient(170deg, rgba(8, 11, 17, 0.54), rgba(11, 16, 23, 0.58) 44%, rgba(15, 21, 29, 0.64)),
+        url("background.png") no-repeat center 22% / cover;
+    background-attachment: scroll;
     color: var(--text);
     padding-bottom: 86px;
+}
+
+@media (min-width: 901px) {
+    body {
+        background:
+            linear-gradient(170deg, rgba(8, 11, 17, 0.56), rgba(11, 16, 23, 0.6) 44%, rgba(15, 21, 29, 0.66)),
+            url("background.png") no-repeat center center / 112% auto;
+        background-attachment: fixed;
+    }
 }
 
 .intro-screen {
@@ -1108,6 +1117,12 @@ body.detail-open .bottom-nav {
 }
 
 @media (max-width: 640px) {
+    body {
+        background-position: center 18%;
+        background-size: cover;
+        background-attachment: scroll;
+    }
+
     .app-shell {
         padding: 10px;
     }
