@@ -119,7 +119,7 @@
             ? normalizeApiBase(window.location.origin)
             : "";
         const fallbackBase = normalizeApiBase(LOCAL_API_BASE);
-        return Array.from(new Set([storedBase, configuredBase, originBase, fallbackBase].filter(Boolean)));
+        return Array.from(new Set([configuredBase, storedBase, originBase, fallbackBase].filter(Boolean)));
     }
 
     function getWriteApiDebugHint() {
@@ -762,6 +762,9 @@
         if (!resp.ok) throw new Error("config.json introuvable");
         const cfg = await resp.json();
         state.config = cfg;
+        if (cfg && cfg.admin && cfg.admin.api_base) {
+            setStoredWriteApiBase(cfg.admin.api_base);
+        }
         state.products = allProductsFromConfig(cfg);
         state.categories = Object.keys((cfg && cfg.categories) || {});
     }
