@@ -8,7 +8,7 @@
   },
   "admin": {
     "telegram_username": "GreenHouse682",
-    "channel_link": "https://t.me/+1ucagzAd9_YxZDE0",
+    "channel_link": "https://t.me/+my0XrYsNth80OGE0",
     "whitelist": ["GreenHouse682"]
   },
   "categories": {
@@ -24,117 +24,43 @@
     }
   },
   "products": {
-    "pizza": [
-      {
-        "id": 4,
-        "name": "Sushi Static",
-        "description": "Sushi Static est un produit de haute qualité, parfait pour les amateurs de saveurs uniques.",
-        "price": 10.00,
-        "emoji": "🍫",
-        "image": "https://i.imgur.com/h9UzIom.jpeg",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/1Bl1BqO.mp4",
-          "customPrices": {
-            "5": 50.00,
-            "10": 100.00,
-            "50": 300.00
-          }
-      },
-      {
-          "id": 3,
-          "name": "Frozen Sour Tsunami",
-          "description": "Frozen de très bonne qualité, je te laisse faire ton propre avis.",
-          "price": 10.00,
-          "emoji": "🍫",
-          "image": "https://i.imgur.com/0v0Z6rv.jpeg",
-          "category": "pizza",
-          "isNew": true,
-          "isPromo": false,
-          "video": "https://i.imgur.com/L4hl2bp.mp4",
-          "customPrices": {
-            "5": 50.00,
-            "10": 100.00,
-            "50": 350.00
-          }
-      }
-    ],
     "pasta": [
       {
         "id": 8,
-        "name": "Hyper Space Cats",
-        "description": "La Hyper Space Cats est un extraordinaire cannabis une variété qui captive l'imagination avec son profil de saveur unique et ses effets puissants.",
-        "price": 10.00,
+        "name": "RS11",
+        "description": "La RS11 est un extraordinaire cannabis une variété qui captive l'imagination avec son profil de saveur unique et ses effets puissants.",
+        "price": 20.00,
         "emoji": "🌿",
-        "image": "https://i.imgur.com/ahfRgbu.jpeg",
+        "image": "https://i.imgur.com/O0deSzA.png.jpeg",
         "category": "pasta",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/BCbTf9t.mp4",
+        "video": "https://i.imgur.com/gt63FTa.mp4",
         "customPrices": {
+            "1.5": 20.00,
+            "3.5": 50.00,
             "5": 60.00,
-            "10": 120.00,
-            "50": 450.00
+            "10": 120.00
           }
       },
       {
         "id": 7,
-        "name": "Slush Mint Cake",
-        "description": "La Slush Mint Cake est une hybride américaine extrêmement puissante, dotée d'un profil terpénique intense et d'un taux de THC très élevé, compris entre 23-27% en moyenne.",
-        "price": 10.00,
+        "name": "Ice Cream Cake",
+        "description": "La Ice Cream Cake est une hybride américaine extrêmement puissante, dotée d'un profil terpénique intense et d'un taux de THC très élevé, compris entre 23-27% en moyenne.",
+        "price": 20.00,
         "emoji": "🌿",
-        "image": "https://i.imgur.com/ksj2jRo.jpeg",
+        "image": "https://i.imgur.com/i4GMB7v.png",
         "category": "pasta",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/z5yirEn.mp4",
+        "video": "https://i.imgur.com/9tcFE8l.mp4",
         "customPrices": {
-            "5": 60.00,
-            "10": 120.00,
-            "50": 450.00
-          }
-      },
-      {
-        "id": 5,
-        "name": "Cali USA Cherry Runtz",
-        "description": "Cali USA Cherry Runtz est un hybride américain qui conquiert l'Europe.",
-        "price": 15.00,
-        "emoji": "🌿",
-        "image": "https://i.imgur.com/1Zdxkqk.jpeg",
-        "category": "pasta",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/YTiElWE.mp4",
-        "customPrices": {
-          "2": 30.00,
-          "5": 60.00,
-          "10": 120.00,
-          "50": 450.00
-        }
-      },
-      {
-        "id": 6,
-        "name": "Cali USA Garry Payton",
-        "description": "Cali USA Garry Payton, une variété premium de Californie avec une puissance exceptionnelle.",
-        "price": 10.00,
-        "emoji": "🌿",
-        "image": "https://i.imgur.com/iymqQgY.jpeg",
-        "category": "pasta",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/ePIAER7.mp4",
-        "customPrices": {
-          "5": {
-            "delivery": 60.00,
-            "pickup": 50.00
-          },
-          "10": {
-            "delivery": 120.00,
-            "pickup": 100.00
+            "1.5": 20.00,
+            "3.5": 50.00,
+            "5": 70.00,
+            "10": 130.00
           }
         }
-      }
     ]
   }
 }
