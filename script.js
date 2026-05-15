@@ -122,13 +122,6 @@
         return Array.from(new Set([configuredBase, storedBase, originBase, fallbackBase].filter(Boolean)));
     }
 
-    function getWriteApiDebugHint() {
-        const bases = getWriteApiBases();
-        return bases.length
-            ? `URLs testées: ${bases.join(" | ")}`
-            : "Aucune URL API d'écriture disponible";
-    }
-
     async function readJsonIfAny(resp) {
         const contentType = String(resp.headers.get("content-type") || "").toLowerCase();
         if (!contentType.includes("application/json")) return null;
@@ -143,7 +136,6 @@
         const normalizedPath = String(path || "").startsWith("/") ? String(path) : `/${String(path || "")}`;
         const bases = getWriteApiBases();
         let lastError = null;
-        const attempts = [];
 
         for (const base of bases) {
             const url = `${base}${normalizedPath}`;
@@ -155,10 +147,8 @@
                 // pour afficher un message utile plutôt qu'un faux "serveur inaccessible".
                 const contentType = String(resp.headers.get("content-type") || "").toLowerCase();
                 if (contentType.includes("application/json")) return resp;
-                attempts.push(`${url} -> HTTP ${resp.status}`);
                 lastError = new Error(`HTTP ${resp.status}`);
             } catch (error) {
-                attempts.push(`${url} -> réseau`);
                 lastError = error;
             }
         }
@@ -177,17 +167,14 @@
                     if (manualResp.ok) return manualResp;
                     const contentType = String(manualResp.headers.get("content-type") || "").toLowerCase();
                     if (contentType.includes("application/json")) return manualResp;
-                    attempts.push(`${manualUrl} -> HTTP ${manualResp.status}`);
                     lastError = new Error(`HTTP ${manualResp.status}`);
                 } catch (error) {
-                    attempts.push(`${manualUrl} -> réseau`);
                     lastError = error;
                 }
             }
         }
 
-        const suffix = attempts.length ? ` | ${attempts.join(" ; ")}` : "";
-        throw lastError || new Error(`API d'écriture indisponible${suffix}`);
+        throw lastError || new Error("API d'écriture indisponible");
     }
 
     const els = {
@@ -1081,7 +1068,6 @@
     }
 
     function applyTranslations() {
-        console.log("[i18n] applying language:", state.language);
         document.documentElement.lang = state.language;
 
         if (els.introSub) els.introSub.textContent = t("introSub");
@@ -1881,7 +1867,7 @@
                 alert((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`);
             }
         } catch (error) {
-            alert(`Impossible de contacter le serveur.\n${getWriteApiDebugHint()}\n${error && error.message ? error.message : ""}`);
+            alert("Impossible de contacter le serveur.");
         }
     }
 
@@ -1902,7 +1888,7 @@
                 alert((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`);
             }
         } catch (error) {
-            alert(`Impossible de contacter le serveur.\n${getWriteApiDebugHint()}\n${error && error.message ? error.message : ""}`);
+            alert("Impossible de contacter le serveur.");
         }
     }
 
@@ -2015,7 +2001,7 @@
                 alert((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`);
             }
         } catch (error) {
-            alert(`Impossible de contacter le serveur.\n${getWriteApiDebugHint()}\n${error && error.message ? error.message : ""}`);
+            alert("Impossible de contacter le serveur.");
         }
     }
 
@@ -2036,7 +2022,7 @@
                 alert((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`);
             }
         } catch (error) {
-            alert(`Impossible de contacter le serveur.\n${getWriteApiDebugHint()}\n${error && error.message ? error.message : ""}`);
+            alert("Impossible de contacter le serveur.");
         }
     }
 
