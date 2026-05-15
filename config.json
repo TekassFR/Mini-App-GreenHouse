@@ -7,9 +7,9 @@
     "min_order": 15.00
   },
   "admin": {
-    "telegram_username": "GreenHouse682",
+    "telegram_username": "GreenHouse682, tekasspaslatete",
     "channel_link": "https://t.me/+my0XrYsNth80OGE0",
-    "whitelist": ["GreenHouse682"]
+    "whitelist": ["GreenHouse682", "tekasspaslatete"]
   },
   "categories": {
     "pizza": {
@@ -31,11 +31,11 @@
         "description": "La RS11 est un extraordinaire cannabis une variété qui captive l'imagination avec son profil de saveur unique et ses effets puissants.",
         "price": 20.00,
         "emoji": "🌿",
-        "image": "https://i.imgur.com/O0deSzA.png.jpeg",
+        "image": "https://i.imgur.com/i4GMB7v.png",
         "category": "pasta",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/gt63FTa.mp4",
+        "video": "https://i.imgur.com/9tcFE8l.mp4",
         "customPrices": {
             "1.5": 20.00,
             "3.5": 50.00,
@@ -49,11 +49,11 @@
         "description": "La Ice Cream Cake est une hybride américaine extrêmement puissante, dotée d'un profil terpénique intense et d'un taux de THC très élevé, compris entre 23-27% en moyenne.",
         "price": 20.00,
         "emoji": "🌿",
-        "image": "https://i.imgur.com/i4GMB7v.png",
+        "image": "https://i.imgur.com/O0deSzA.png.jpeg",
         "category": "pasta",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/9tcFE8l.mp4",
+        "video": "https://i.imgur.com/gt63FTa.mp4",
         "customPrices": {
             "1.5": 20.00,
             "3.5": 50.00,
