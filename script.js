@@ -84,7 +84,8 @@
         storageScope: "guest"
     };
 
-    const LOCAL_API_BASE = "http://localhost:3000";
+    // Utilise des URLs relatives pour fonctionner depuis n'importe quelle origine (localhost, LAN, ngrok)
+    const LOCAL_API_BASE = "";
 
     const els = {
         intro: document.getElementById("intro-screen"),
@@ -166,6 +167,10 @@
         adminTabOrders: document.getElementById("admin-tab-orders"),
         adminReviewsPending: document.getElementById("admin-reviews-pending"),
         adminOrdersAll: document.getElementById("admin-orders-all"),
+        adminTabProducts: document.getElementById("admin-tab-products"),
+        adminTabCategories: document.getElementById("admin-tab-categories"),
+        adminProductsContent: document.getElementById("admin-products-content"),
+        adminCategoriesContent: document.getElementById("admin-categories-content"),
 
         infoTitle: document.getElementById("info-title"),
         infoDesc: document.getElementById("info-desc"),
@@ -1502,7 +1507,11 @@
         });
         if (els.adminTabReviews) els.adminTabReviews.classList.toggle("active", tabName === "reviews");
         if (els.adminTabOrders) els.adminTabOrders.classList.toggle("active", tabName === "orders");
+        if (els.adminTabProducts) els.adminTabProducts.classList.toggle("active", tabName === "products");
+        if (els.adminTabCategories) els.adminTabCategories.classList.toggle("active", tabName === "categories");
         if (tabName === "orders") loadAdminOrders();
+        if (tabName === "products") loadAdminProducts();
+        if (tabName === "categories") loadAdminCategories();
     }
 
     function getAdminUsername() {
@@ -1633,6 +1642,279 @@
                 body: JSON.stringify(order)
             });
         } catch (_) {}
+    }
+
+    // ===== ADMIN PRODUITS =====
+
+    async function loadAdminProducts() {
+        if (!els.adminProductsContent) return;
+        els.adminProductsContent.innerHTML = `<div class="admin-empty">Chargement...</div>`;
+        try {
+            const username = encodeURIComponent(getAdminUsername());
+            const resp = await fetch(`${LOCAL_API_BASE}/admin/config?tg_username=${username}`, { cache: "no-store" });
+            if (resp.status === 403) { els.adminProductsContent.innerHTML = `<div class="admin-empty">Accès refusé.</div>`; return; }
+            const data = await resp.json();
+            const cfg = data.config || {};
+            const categories = cfg.categories || {};
+            const products = cfg.products || {};
+            const allProducts = [];
+            for (const [catKey, prods] of Object.entries(products)) {
+                for (const p of prods) allProducts.push({ ...p, category: catKey });
+            }
+            const catNames = {};
+            for (const [key, cat] of Object.entries(categories)) catNames[key] = `${cat.emoji || ""} ${cat.name}`;
+            let html = `<button class="admin-add-btn" id="admin-add-product-btn" type="button">+ Ajouter un produit</button>`;
+            if (!allProducts.length) {
+                html += `<div class="admin-empty">Aucun produit.</div>`;
+            } else {
+                html += allProducts.map((p) => `
+                    <div class="admin-product-card">
+                        <div class="admin-product-header">
+                            <span class="admin-product-name">${sanitize(p.name || "")}</span>
+                            <span class="admin-product-price">${(p.price || 0).toFixed(2)} €</span>
+                        </div>
+                        <span class="admin-product-cat">${sanitize(catNames[p.category] || p.category)}</span>
+                        <div class="admin-review-actions">
+                            <button class="admin-btn-edit" data-pid="${p.id}" type="button">✏️ Modifier</button>
+                            <button class="admin-btn-reject" data-pid="${p.id}" type="button">🗑 Supprimer</button>
+                        </div>
+                    </div>`).join("");
+            }
+            els.adminProductsContent.innerHTML = html;
+            const addBtn = document.getElementById("admin-add-product-btn");
+            if (addBtn) addBtn.addEventListener("click", () => showAdminProductForm(null, cfg));
+            els.adminProductsContent.querySelectorAll(".admin-btn-edit[data-pid]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const pid = Number(btn.dataset.pid);
+                    const product = allProducts.find((p) => p.id === pid);
+                    if (product) showAdminProductForm(product, cfg);
+                });
+            });
+            els.adminProductsContent.querySelectorAll(".admin-btn-reject[data-pid]").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    if (!confirm("Supprimer ce produit ?")) return;
+                    await adminDeleteProduct(Number(btn.dataset.pid));
+                });
+            });
+        } catch (_) {
+            els.adminProductsContent.innerHTML = `<div class="admin-empty">Impossible de charger les produits.<br>Vérifie que le bot est actif.</div>`;
+        }
+    }
+
+    function showAdminProductForm(product, cfg) {
+        const categories = cfg.categories || {};
+        const isEdit = !!product;
+        const catOptions = Object.entries(categories).map(([key, cat]) =>
+            `<option value="${sanitize(key)}" ${product && product.category === key ? "selected" : ""}>${sanitize(cat.emoji || "")} ${sanitize(cat.name)}</option>`
+        ).join("");
+        const customPricesStr = product && product.customPrices ? JSON.stringify(product.customPrices, null, 2) : "";
+        const formHtml = `
+            <div class="admin-form-wrap">
+                <button class="admin-form-back-btn" id="admin-product-form-back" type="button">← Retour</button>
+                <h3 class="admin-form-title">${isEdit ? "✏️ Modifier le produit" : "➕ Nouveau produit"}</h3>
+                <form id="admin-product-form" autocomplete="off">
+                    <label class="admin-label">Nom *<input class="admin-input" id="apf-name" type="text" maxlength="100" value="${sanitize(product ? product.name : "")}" required></label>
+                    <label class="admin-label">Description<textarea class="admin-input admin-textarea" id="apf-desc" maxlength="500">${sanitize(product ? (product.description || "") : "")}</textarea></label>
+                    <label class="admin-label">Catégorie *<select class="admin-input" id="apf-cat">${catOptions}</select></label>
+                    <label class="admin-label">Prix de base (€) *<input class="admin-input" id="apf-price" type="number" step="0.01" min="0" value="${product ? (product.price || 0) : ""}" required></label>
+                    <label class="admin-label">Prix personnalisés (JSON)<span class="admin-hint">Ex: {"1.5": 20, "3.5": 50, "10": 110}</span><textarea class="admin-input admin-textarea" id="apf-custom" rows="4">${customPricesStr}</textarea></label>
+                    <label class="admin-label">Image (URL)<input class="admin-input" id="apf-img" type="text" value="${sanitize(product ? (product.image || "") : "")}"></label>
+                    <label class="admin-label">Vidéo (URL, optionnel)<input class="admin-input" id="apf-video" type="text" value="${sanitize(product ? (product.video || "") : "")}"></label>
+                    <label class="admin-label">Emoji<input class="admin-input" id="apf-emoji" type="text" maxlength="8" value="${sanitize(product ? (product.emoji || "📦") : "📦")}"></label>
+                    <div class="admin-check-row">
+                        <label class="admin-check-label"><input type="checkbox" id="apf-new" ${product && product.isNew ? "checked" : ""}> Nouveau</label>
+                        <label class="admin-check-label"><input type="checkbox" id="apf-promo" ${product && product.isPromo ? "checked" : ""}> Promo</label>
+                    </div>
+                    ${isEdit ? `<input type="hidden" id="apf-id" value="${product.id}">` : ""}
+                    <button class="admin-form-submit" type="submit">${isEdit ? "💾 Sauvegarder" : "➕ Ajouter"}</button>
+                </form>
+            </div>`;
+        if (els.adminProductsContent) els.adminProductsContent.innerHTML = formHtml;
+        document.getElementById("admin-product-form-back").addEventListener("click", loadAdminProducts);
+        document.getElementById("admin-product-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const nameVal = document.getElementById("apf-name").value.trim();
+            const catVal = document.getElementById("apf-cat").value;
+            const priceVal = parseFloat(document.getElementById("apf-price").value) || 0;
+            if (!nameVal || !catVal) return;
+            let customPrices = {};
+            const cpRaw = document.getElementById("apf-custom").value.trim();
+            if (cpRaw) { try { customPrices = JSON.parse(cpRaw); } catch (_) { alert("Prix personnalisés: JSON invalide"); return; } }
+            const productData = {
+                name: nameVal,
+                description: document.getElementById("apf-desc").value.trim(),
+                category: catVal,
+                price: priceVal,
+                customPrices,
+                image: document.getElementById("apf-img").value.trim(),
+                video: document.getElementById("apf-video").value.trim(),
+                emoji: document.getElementById("apf-emoji").value.trim() || "📦",
+                isNew: document.getElementById("apf-new").checked,
+                isPromo: document.getElementById("apf-promo").checked,
+            };
+            const idEl = document.getElementById("apf-id");
+            if (idEl) productData.id = Number(idEl.value);
+            await adminSaveProduct(productData);
+        });
+    }
+
+    async function adminSaveProduct(productData) {
+        try {
+            const resp = await fetch(`${LOCAL_API_BASE}/admin/products/save`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), product: productData })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                await loadConfig();
+                renderCategories();
+                renderProducts();
+                await loadAdminProducts();
+            } else { alert(data.error || "Erreur lors de la sauvegarde."); }
+        } catch (_) { alert("Impossible de contacter le serveur."); }
+    }
+
+    async function adminDeleteProduct(productId) {
+        try {
+            const resp = await fetch(`${LOCAL_API_BASE}/admin/products/delete`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), product_id: productId })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                await loadConfig();
+                renderCategories();
+                renderProducts();
+                await loadAdminProducts();
+            } else { alert(data.error || "Erreur lors de la suppression."); }
+        } catch (_) { alert("Impossible de contacter le serveur."); }
+    }
+
+    // ===== ADMIN CATÉGORIES =====
+
+    async function loadAdminCategories() {
+        if (!els.adminCategoriesContent) return;
+        els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Chargement...</div>`;
+        try {
+            const username = encodeURIComponent(getAdminUsername());
+            const resp = await fetch(`${LOCAL_API_BASE}/admin/config?tg_username=${username}`, { cache: "no-store" });
+            if (resp.status === 403) { els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Accès refusé.</div>`; return; }
+            const data = await resp.json();
+            const cfg = data.config || {};
+            const categories = cfg.categories || {};
+            const products = cfg.products || {};
+            let html = `<button class="admin-add-btn" id="admin-add-cat-btn" type="button">+ Ajouter une catégorie</button>`;
+            const catEntries = Object.entries(categories);
+            if (!catEntries.length) {
+                html += `<div class="admin-empty">Aucune catégorie.</div>`;
+            } else {
+                html += catEntries.map(([key, cat]) => {
+                    const count = (products[key] || []).length;
+                    return `
+                    <div class="admin-product-card">
+                        <div class="admin-product-header">
+                            <span class="admin-product-name">${sanitize(cat.emoji || "")} ${sanitize(cat.name || key)}</span>
+                            <span class="admin-product-price">${count} produit${count !== 1 ? "s" : ""}</span>
+                        </div>
+                        <span class="admin-cat-key">clé: ${sanitize(key)}</span>
+                        <div class="admin-review-actions">
+                            <button class="admin-btn-edit" data-ckey="${sanitize(key)}" type="button">✏️ Modifier</button>
+                            <button class="admin-btn-reject" data-ckey="${sanitize(key)}" type="button">🗑 Supprimer</button>
+                        </div>
+                    </div>`;
+                }).join("");
+            }
+            els.adminCategoriesContent.innerHTML = html;
+            const addBtn = document.getElementById("admin-add-cat-btn");
+            if (addBtn) addBtn.addEventListener("click", () => showAdminCategoryForm(null, null));
+            els.adminCategoriesContent.querySelectorAll(".admin-btn-edit[data-ckey]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const key = btn.dataset.ckey;
+                    const cat = categories[key];
+                    if (cat) showAdminCategoryForm(key, cat);
+                });
+            });
+            els.adminCategoriesContent.querySelectorAll(".admin-btn-reject[data-ckey]").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const key = btn.dataset.ckey;
+                    const count = (products[key] || []).length;
+                    const msg = count > 0 ? `Supprimer "${key}" et ses ${count} produit(s) ?` : `Supprimer la catégorie "${key}" ?`;
+                    if (!confirm(msg)) return;
+                    await adminDeleteCategory(key);
+                });
+            });
+        } catch (_) {
+            els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Impossible de charger les catégories.<br>Vérifie que le bot est actif.</div>`;
+        }
+    }
+
+    function showAdminCategoryForm(key, cat) {
+        const isEdit = !!key;
+        const formHtml = `
+            <div class="admin-form-wrap">
+                <button class="admin-form-back-btn" id="admin-cat-form-back" type="button">← Retour</button>
+                <h3 class="admin-form-title">${isEdit ? "✏️ Modifier la catégorie" : "➕ Nouvelle catégorie"}</h3>
+                <form id="admin-cat-form" autocomplete="off">
+                    ${isEdit
+                        ? `<input type="hidden" id="acf-key" value="${sanitize(key)}">`
+                        : `<label class="admin-label">Clé (slug) *<span class="admin-hint">Minuscules, pas d'espaces (ex: hash)</span><input class="admin-input" id="acf-key" type="text" maxlength="30" required></label>`
+                    }
+                    <label class="admin-label">Nom *<input class="admin-input" id="acf-name" type="text" maxlength="50" value="${sanitize(cat ? cat.name : "")}" required></label>
+                    <label class="admin-label">Emoji<input class="admin-input" id="acf-emoji" type="text" maxlength="8" value="${sanitize(cat ? (cat.emoji || "📦") : "📦")}"></label>
+                    <label class="admin-label">Description<input class="admin-input" id="acf-desc" type="text" maxlength="200" value="${sanitize(cat ? (cat.description || "") : "")}"></label>
+                    <button class="admin-form-submit" type="submit">${isEdit ? "💾 Sauvegarder" : "➕ Ajouter"}</button>
+                </form>
+            </div>`;
+        if (els.adminCategoriesContent) els.adminCategoriesContent.innerHTML = formHtml;
+        document.getElementById("admin-cat-form-back").addEventListener("click", loadAdminCategories);
+        document.getElementById("admin-cat-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const catKey = document.getElementById("acf-key").value.trim().toLowerCase().replace(/\s+/g, "_");
+            const catName = document.getElementById("acf-name").value.trim();
+            if (!catKey || !catName) return;
+            await adminSaveCategory({
+                key: catKey,
+                name: catName,
+                emoji: document.getElementById("acf-emoji").value.trim() || "📦",
+                description: document.getElementById("acf-desc").value.trim(),
+            });
+        });
+    }
+
+    async function adminSaveCategory(catData) {
+        try {
+            const resp = await fetch(`${LOCAL_API_BASE}/admin/categories/save`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), ...catData })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                await loadConfig();
+                renderCategories();
+                renderProducts();
+                await loadAdminCategories();
+            } else { alert(data.error || "Erreur lors de la sauvegarde."); }
+        } catch (_) { alert("Impossible de contacter le serveur."); }
+    }
+
+    async function adminDeleteCategory(key) {
+        try {
+            const resp = await fetch(`${LOCAL_API_BASE}/admin/categories/delete`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), key })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                await loadConfig();
+                renderCategories();
+                renderProducts();
+                await loadAdminCategories();
+            } else { alert(data.error || "Erreur lors de la suppression."); }
+        } catch (_) { alert("Impossible de contacter le serveur."); }
     }
 
     // ===== FIN ADMIN PANEL =====
