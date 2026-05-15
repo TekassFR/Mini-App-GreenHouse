@@ -84,8 +84,8 @@
         storageScope: "guest"
     };
 
-    // Utilise des URLs relatives pour fonctionner depuis n'importe quelle origine (localhost, LAN, ngrok)
-    const LOCAL_API_BASE = "";
+    // URL du bot local — uniquement pour les écritures (approve, save, delete). Les lectures utilisent les fichiers JSON statiques.
+    const LOCAL_API_BASE = "http://localhost:3000";
 
     const els = {
         intro: document.getElementById("intro-screen"),
@@ -626,13 +626,13 @@
 
     async function syncReviewsFromLocalApi() {
         try {
-            const resp = await fetch(`${LOCAL_API_BASE}/reviews`, { cache: "no-store" });
+            const resp = await fetch(`./reviews.json?t=${Date.now()}`, { cache: "no-store" });
             if (!resp.ok) return false;
-
             const data = await resp.json();
-            if (!data || !Array.isArray(data.reviews)) return false;
-
-            const normalized = data.reviews.map(normalizeReviewEntry).filter(Boolean);
+            // Supporte l'ancien format (tableau plat) et le nouveau {pending, approved}
+            const list = Array.isArray(data) ? data : (Array.isArray(data.approved) ? data.approved : null);
+            if (!list) return false;
+            const normalized = list.map(normalizeReviewEntry).filter(Boolean);
             state.reviews = normalized;
             saveLocal();
             return true;
@@ -1523,10 +1523,9 @@
         if (!els.adminReviewsPending) return;
         els.adminReviewsPending.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
-            const username = encodeURIComponent(getAdminUsername());
-            const resp = await fetch(`${LOCAL_API_BASE}/admin/reviews/pending?tg_username=${username}`, { cache: "no-store" });
-            if (resp.status === 403) {
-                els.adminReviewsPending.innerHTML = `<div class="admin-empty">Accès refusé.</div>`;
+            const resp = await fetch(`./reviews.json?t=${Date.now()}`, { cache: "no-store" });
+            if (!resp.ok) {
+                els.adminReviewsPending.innerHTML = `<div class="admin-empty">Aucun avis en attente ✓</div>`;
                 return;
             }
             const data = await resp.json();
@@ -1563,7 +1562,7 @@
                 btn.addEventListener("click", () => adminRejectReview(Number(btn.dataset.ts)));
             });
         } catch (_) {
-            els.adminReviewsPending.innerHTML = `<div class="admin-empty">Impossible de charger les avis.<br>Vérifie que le bot est actif.</div>`;
+            els.adminReviewsPending.innerHTML = `<div class="admin-empty">Aucun avis en attente ✓</div>`;
         }
     }
 
@@ -1597,14 +1596,14 @@
         if (!els.adminOrdersAll) return;
         els.adminOrdersAll.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
-            const username = encodeURIComponent(getAdminUsername());
-            const resp = await fetch(`${LOCAL_API_BASE}/admin/orders?tg_username=${username}`, { cache: "no-store" });
-            if (resp.status === 403) {
-                els.adminOrdersAll.innerHTML = `<div class="admin-empty">Accès refusé.</div>`;
+            const resp = await fetch(`./orders.json?t=${Date.now()}`, { cache: "no-store" });
+            if (!resp.ok) {
+                els.adminOrdersAll.innerHTML = `<div class="admin-empty">Aucune commande enregistrée.</div>`;
                 return;
             }
             const data = await resp.json();
-            const orders = Array.isArray(data.orders) ? data.orders : [];
+            // orders.json est un tableau direct, trié du plus récent au plus ancien
+            const orders = Array.isArray(data) ? [...data].reverse() : [];
             if (!orders.length) {
                 els.adminOrdersAll.innerHTML = `<div class="admin-empty">Aucune commande enregistrée.</div>`;
                 return;
@@ -1630,7 +1629,7 @@
             const refreshBtnEl = document.getElementById("admin-orders-refresh-btn");
             if (refreshBtnEl) refreshBtnEl.addEventListener("click", loadAdminOrders);
         } catch (_) {
-            els.adminOrdersAll.innerHTML = `<div class="admin-empty">Impossible de charger les commandes.<br>Vérifie que le bot est actif.</div>`;
+            els.adminOrdersAll.innerHTML = `<div class="admin-empty">Aucune commande enregistrée.</div>`;
         }
     }
 
@@ -1650,11 +1649,12 @@
         if (!els.adminProductsContent) return;
         els.adminProductsContent.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
-            const username = encodeURIComponent(getAdminUsername());
-            const resp = await fetch(`${LOCAL_API_BASE}/admin/config?tg_username=${username}`, { cache: "no-store" });
-            if (resp.status === 403) { els.adminProductsContent.innerHTML = `<div class="admin-empty">Accès refusé.</div>`; return; }
-            const data = await resp.json();
-            const cfg = data.config || {};
+            let cfg = state.config && typeof state.config === "object" ? state.config : null;
+            const cfgResp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
+            if (cfgResp.ok) {
+                cfg = await cfgResp.json();
+            }
+            if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
             const products = cfg.products || {};
             const allProducts = [];
@@ -1697,7 +1697,7 @@
                 });
             });
         } catch (_) {
-            els.adminProductsContent.innerHTML = `<div class="admin-empty">Impossible de charger les produits.<br>Vérifie que le bot est actif.</div>`;
+            els.adminProductsContent.innerHTML = `<div class="admin-empty">Impossible de charger les produits.<br>Réessaie dans quelques secondes.</div>`;
         }
     }
 
@@ -1798,11 +1798,12 @@
         if (!els.adminCategoriesContent) return;
         els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
-            const username = encodeURIComponent(getAdminUsername());
-            const resp = await fetch(`${LOCAL_API_BASE}/admin/config?tg_username=${username}`, { cache: "no-store" });
-            if (resp.status === 403) { els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Accès refusé.</div>`; return; }
-            const data = await resp.json();
-            const cfg = data.config || {};
+            let cfg = state.config && typeof state.config === "object" ? state.config : null;
+            const cfgResp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
+            if (cfgResp.ok) {
+                cfg = await cfgResp.json();
+            }
+            if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
             const products = cfg.products || {};
             let html = `<button class="admin-add-btn" id="admin-add-cat-btn" type="button">+ Ajouter une catégorie</button>`;
@@ -1846,7 +1847,7 @@
                 });
             });
         } catch (_) {
-            els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Impossible de charger les catégories.<br>Vérifie que le bot est actif.</div>`;
+            els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Impossible de charger les catégories.<br>Réessaie dans quelques secondes.</div>`;
         }
     }
 
