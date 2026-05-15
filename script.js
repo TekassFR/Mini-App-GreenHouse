@@ -1638,6 +1638,7 @@
     // ===== FIN ADMIN PANEL =====
 
     async function bootstrap() {
+        if (!isTelegramMobileClient()) {
             renderDesktopBlockedScreen();
             return;
         }
