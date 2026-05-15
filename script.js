@@ -103,10 +103,28 @@
         return Array.from(new Set([configuredBase, originBase, fallbackBase].filter(Boolean)));
     }
 
+    function getWriteApiDebugHint() {
+        const bases = getWriteApiBases();
+        return bases.length
+            ? `URLs testées: ${bases.join(" | ")}`
+            : "Aucune URL API d'écriture disponible";
+    }
+
+    async function readJsonIfAny(resp) {
+        const contentType = String(resp.headers.get("content-type") || "").toLowerCase();
+        if (!contentType.includes("application/json")) return null;
+        try {
+            return await resp.json();
+        } catch (_) {
+            return null;
+        }
+    }
+
     async function fetchWriteApi(path, options) {
         const normalizedPath = String(path || "").startsWith("/") ? String(path) : `/${String(path || "")}`;
         const bases = getWriteApiBases();
         let lastError = null;
+        const attempts = [];
 
         for (const base of bases) {
             const url = `${base}${normalizedPath}`;
@@ -118,13 +136,16 @@
                 // pour afficher un message utile plutôt qu'un faux "serveur inaccessible".
                 const contentType = String(resp.headers.get("content-type") || "").toLowerCase();
                 if (contentType.includes("application/json")) return resp;
+                attempts.push(`${url} -> HTTP ${resp.status}`);
                 lastError = new Error(`HTTP ${resp.status}`);
             } catch (error) {
+                attempts.push(`${url} -> réseau`);
                 lastError = error;
             }
         }
 
-        throw lastError || new Error("API d'écriture indisponible");
+        const suffix = attempts.length ? ` | ${attempts.join(" ; ")}` : "";
+        throw lastError || new Error(`API d'écriture indisponible${suffix}`);
     }
 
     const els = {
@@ -1805,14 +1826,18 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), product: productData })
             });
-            const data = await resp.json();
-            if (data.success) {
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
                 await loadConfig();
                 renderCategories();
                 renderProducts();
                 await loadAdminProducts();
-            } else { alert(data.error || "Erreur lors de la sauvegarde."); }
-        } catch (_) { alert("Impossible de contacter le serveur."); }
+            } else {
+                alert((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`);
+            }
+        } catch (error) {
+            alert(`Impossible de contacter le serveur.\n${getWriteApiDebugHint()}\n${error && error.message ? error.message : ""}`);
+        }
     }
 
     async function adminDeleteProduct(productId) {
@@ -1822,14 +1847,18 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), product_id: productId })
             });
-            const data = await resp.json();
-            if (data.success) {
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
                 await loadConfig();
                 renderCategories();
                 renderProducts();
                 await loadAdminProducts();
-            } else { alert(data.error || "Erreur lors de la suppression."); }
-        } catch (_) { alert("Impossible de contacter le serveur."); }
+            } else {
+                alert((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`);
+            }
+        } catch (error) {
+            alert(`Impossible de contacter le serveur.\n${getWriteApiDebugHint()}\n${error && error.message ? error.message : ""}`);
+        }
     }
 
     // ===== ADMIN CATÉGORIES =====
@@ -1931,14 +1960,18 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), ...catData })
             });
-            const data = await resp.json();
-            if (data.success) {
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
                 await loadConfig();
                 renderCategories();
                 renderProducts();
                 await loadAdminCategories();
-            } else { alert(data.error || "Erreur lors de la sauvegarde."); }
-        } catch (_) { alert("Impossible de contacter le serveur."); }
+            } else {
+                alert((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`);
+            }
+        } catch (error) {
+            alert(`Impossible de contacter le serveur.\n${getWriteApiDebugHint()}\n${error && error.message ? error.message : ""}`);
+        }
     }
 
     async function adminDeleteCategory(key) {
@@ -1948,14 +1981,18 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), key })
             });
-            const data = await resp.json();
-            if (data.success) {
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
                 await loadConfig();
                 renderCategories();
                 renderProducts();
                 await loadAdminCategories();
-            } else { alert(data.error || "Erreur lors de la suppression."); }
-        } catch (_) { alert("Impossible de contacter le serveur."); }
+            } else {
+                alert((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`);
+            }
+        } catch (error) {
+            alert(`Impossible de contacter le serveur.\n${getWriteApiDebugHint()}\n${error && error.message ? error.message : ""}`);
+        }
     }
 
     // ===== FIN ADMIN PANEL =====
