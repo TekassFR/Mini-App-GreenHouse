@@ -87,6 +87,46 @@
     // URL du bot local — uniquement pour les écritures (approve, save, delete). Les lectures utilisent les fichiers JSON statiques.
     const LOCAL_API_BASE = "http://localhost:3000";
 
+    function normalizeApiBase(base) {
+        const raw = String(base || "").trim();
+        return raw.replace(/\/+$/, "");
+    }
+
+    function getWriteApiBases() {
+        const configuredBase = state && state.config && state.config.admin && state.config.admin.api_base
+            ? normalizeApiBase(state.config.admin.api_base)
+            : "";
+        const originBase = window.location && /^https?:/i.test(String(window.location.origin || ""))
+            ? normalizeApiBase(window.location.origin)
+            : "";
+        const fallbackBase = normalizeApiBase(LOCAL_API_BASE);
+        return Array.from(new Set([configuredBase, originBase, fallbackBase].filter(Boolean)));
+    }
+
+    async function fetchWriteApi(path, options) {
+        const normalizedPath = String(path || "").startsWith("/") ? String(path) : `/${String(path || "")}`;
+        const bases = getWriteApiBases();
+        let lastError = null;
+
+        for (const base of bases) {
+            const url = `${base}${normalizedPath}`;
+            try {
+                const resp = await fetch(url, options);
+                if (resp.ok) return resp;
+
+                // Si le serveur répond en JSON (même en erreur), on renvoie la réponse
+                // pour afficher un message utile plutôt qu'un faux "serveur inaccessible".
+                const contentType = String(resp.headers.get("content-type") || "").toLowerCase();
+                if (contentType.includes("application/json")) return resp;
+                lastError = new Error(`HTTP ${resp.status}`);
+            } catch (error) {
+                lastError = error;
+            }
+        }
+
+        throw lastError || new Error("API d'écriture indisponible");
+    }
+
     const els = {
         intro: document.getElementById("intro-screen"),
         introSub: document.getElementById("intro-sub"),
@@ -643,7 +683,7 @@
 
     async function persistReviewToLocalApi(review) {
         try {
-            const resp = await fetch(`${LOCAL_API_BASE}/save-review`, {
+            const resp = await fetchWriteApi("/save-review", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(review)
@@ -1568,7 +1608,7 @@
 
     async function adminApproveReview(timestamp) {
         try {
-            const resp = await fetch(`${LOCAL_API_BASE}/admin/reviews/approve`, {
+            const resp = await fetchWriteApi("/admin/reviews/approve", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
@@ -1583,7 +1623,7 @@
 
     async function adminRejectReview(timestamp) {
         try {
-            const resp = await fetch(`${LOCAL_API_BASE}/admin/reviews/reject`, {
+            const resp = await fetchWriteApi("/admin/reviews/reject", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
@@ -1635,7 +1675,7 @@
 
     async function persistOrderToServer(order) {
         try {
-            await fetch(`${LOCAL_API_BASE}/save-order`, {
+            await fetchWriteApi("/save-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(order)
@@ -1760,7 +1800,7 @@
 
     async function adminSaveProduct(productData) {
         try {
-            const resp = await fetch(`${LOCAL_API_BASE}/admin/products/save`, {
+            const resp = await fetchWriteApi("/admin/products/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), product: productData })
@@ -1777,7 +1817,7 @@
 
     async function adminDeleteProduct(productId) {
         try {
-            const resp = await fetch(`${LOCAL_API_BASE}/admin/products/delete`, {
+            const resp = await fetchWriteApi("/admin/products/delete", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), product_id: productId })
@@ -1886,7 +1926,7 @@
 
     async function adminSaveCategory(catData) {
         try {
-            const resp = await fetch(`${LOCAL_API_BASE}/admin/categories/save`, {
+            const resp = await fetchWriteApi("/admin/categories/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), ...catData })
@@ -1903,7 +1943,7 @@
 
     async function adminDeleteCategory(key) {
         try {
-            const resp = await fetch(`${LOCAL_API_BASE}/admin/categories/delete`, {
+            const resp = await fetchWriteApi("/admin/categories/delete", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), key })
