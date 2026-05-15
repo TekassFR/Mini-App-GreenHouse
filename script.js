@@ -88,11 +88,30 @@
     const LOCAL_API_BASE = "http://localhost:3000";
 
     function normalizeApiBase(base) {
-        const raw = String(base || "").trim();
+        let raw = String(base || "").trim();
+        if (!raw) return "";
+        if (!/^https?:\/\//i.test(raw)) raw = `http://${raw}`;
         return raw.replace(/\/+$/, "");
     }
 
+    function getStoredWriteApiBase() {
+        try {
+            return normalizeApiBase(localStorage.getItem("gh_write_api_base") || "");
+        } catch (_) {
+            return "";
+        }
+    }
+
+    function setStoredWriteApiBase(base) {
+        try {
+            const normalized = normalizeApiBase(base);
+            if (!normalized) localStorage.removeItem("gh_write_api_base");
+            else localStorage.setItem("gh_write_api_base", normalized);
+        } catch (_) {}
+    }
+
     function getWriteApiBases() {
+        const storedBase = getStoredWriteApiBase();
         const configuredBase = state && state.config && state.config.admin && state.config.admin.api_base
             ? normalizeApiBase(state.config.admin.api_base)
             : "";
@@ -100,7 +119,7 @@
             ? normalizeApiBase(window.location.origin)
             : "";
         const fallbackBase = normalizeApiBase(LOCAL_API_BASE);
-        return Array.from(new Set([configuredBase, originBase, fallbackBase].filter(Boolean)));
+        return Array.from(new Set([storedBase, configuredBase, originBase, fallbackBase].filter(Boolean)));
     }
 
     function getWriteApiDebugHint() {
@@ -120,7 +139,7 @@
         }
     }
 
-    async function fetchWriteApi(path, options) {
+    async function fetchWriteApi(path, options, allowPromptFallback) {
         const normalizedPath = String(path || "").startsWith("/") ? String(path) : `/${String(path || "")}`;
         const bases = getWriteApiBases();
         let lastError = null;
@@ -141,6 +160,29 @@
             } catch (error) {
                 attempts.push(`${url} -> réseau`);
                 lastError = error;
+            }
+        }
+
+        if (allowPromptFallback) {
+            const userInput = window.prompt(
+                "Serveur API introuvable.\nColle l'URL du bot (ex: http://192.168.1.20:3000)",
+                getStoredWriteApiBase() || "http://192.168.1.20:3000"
+            );
+            const manualBase = normalizeApiBase(userInput || "");
+            if (manualBase) {
+                setStoredWriteApiBase(manualBase);
+                const manualUrl = `${manualBase}${normalizedPath}`;
+                try {
+                    const manualResp = await fetch(manualUrl, options);
+                    if (manualResp.ok) return manualResp;
+                    const contentType = String(manualResp.headers.get("content-type") || "").toLowerCase();
+                    if (contentType.includes("application/json")) return manualResp;
+                    attempts.push(`${manualUrl} -> HTTP ${manualResp.status}`);
+                    lastError = new Error(`HTTP ${manualResp.status}`);
+                } catch (error) {
+                    attempts.push(`${manualUrl} -> réseau`);
+                    lastError = error;
+                }
             }
         }
 
@@ -1825,7 +1867,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), product: productData })
-            });
+            }, true);
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
                 await loadConfig();
@@ -1846,7 +1888,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), product_id: productId })
-            });
+            }, true);
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
                 await loadConfig();
@@ -1959,7 +2001,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), ...catData })
-            });
+            }, true);
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
                 await loadConfig();
@@ -1980,7 +2022,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), key })
-            });
+            }, true);
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
                 await loadConfig();
