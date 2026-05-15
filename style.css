@@ -1335,3 +1335,237 @@ body.detail-open .bottom-nav {
         padding: 5px 9px;
     }
 }
+
+/* ===== ADMIN PANEL ===== */
+.profile-admin-card {
+    border-color: rgba(96, 227, 154, 0.3);
+    background: linear-gradient(160deg, rgba(14, 26, 20, 0.97), rgba(10, 20, 15, 0.97));
+}
+
+.admin-launch-btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 1rem;
+    font-weight: 800;
+    border-radius: 13px;
+    letter-spacing: 0.02em;
+}
+
+.admin-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 4000;
+    background: var(--bg);
+    overflow-y: auto;
+}
+
+.admin-panel {
+    max-width: 680px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    padding: 12px 12px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.admin-topbar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-heading {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+.admin-tabs-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    border-radius: 13px;
+    background: rgba(10, 18, 14, 0.95);
+    border: 1px solid var(--line);
+    padding: 5px;
+}
+
+.admin-tab-btn {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 9px;
+    padding: 9px 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.admin-tab-btn.active {
+    background: linear-gradient(135deg, rgba(96, 227, 154, 0.22), rgba(51, 186, 119, 0.16));
+    border-color: rgba(96, 227, 154, 0.45);
+    color: #d5ffe9;
+}
+
+.admin-tab-pane {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-tab-pane.active {
+    display: flex;
+}
+
+.admin-empty {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+    padding: 28px 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: linear-gradient(160deg, rgba(18, 28, 23, 0.95), rgba(13, 21, 17, 0.95));
+}
+
+.admin-review-card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+    background: linear-gradient(160deg, rgba(18, 28, 23, 0.97), rgba(13, 21, 17, 0.97));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.admin-review-author {
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.admin-review-stars {
+    color: #f5c842;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.admin-review-msg {
+    color: var(--muted);
+    font-size: 0.83rem;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.admin-review-meta {
+    color: #5a6e64;
+    font-size: 0.72rem;
+}
+
+.admin-review-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.admin-btn-approve {
+    flex: 1;
+    border: 0;
+    border-radius: 9px;
+    padding: 8px 10px;
+    background: linear-gradient(130deg, #4fae78, #33904e);
+    color: #05150a;
+    font-weight: 800;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.admin-btn-reject {
+    flex: 1;
+    border: 1px solid rgba(255, 99, 87, 0.35);
+    border-radius: 9px;
+    padding: 8px 10px;
+    background: rgba(255, 99, 87, 0.12);
+    color: var(--danger);
+    font-weight: 800;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.admin-order-card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+    background: linear-gradient(160deg, rgba(18, 28, 23, 0.97), rgba(13, 21, 17, 0.97));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.admin-order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-order-id {
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.admin-order-total {
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: var(--accent);
+}
+
+.admin-order-type {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(96, 227, 154, 0.14);
+    border: 1px solid rgba(96, 227, 154, 0.25);
+    color: var(--accent);
+}
+
+.admin-order-summary {
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.admin-order-user {
+    color: #5a6e64;
+    font-size: 0.72rem;
+}
+
+.admin-order-date {
+    color: #5a6e64;
+    font-size: 0.72rem;
+}
+
+.admin-refresh-btn {
+    align-self: flex-end;
+    border: 1px solid var(--line);
+    background: rgba(18, 28, 23, 0.95);
+    color: var(--muted);
+    border-radius: 9px;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+

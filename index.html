@@ -183,6 +183,10 @@
                         </div>
                         <div class="stack" id="profile-orders-preview"></div>
                     </article>
+
+                    <article class="card panel profile-admin-card" id="profile-admin-card" style="display:none">
+                        <button class="btn primary admin-launch-btn" id="admin-panel-btn" type="button">⚙️ Gestion MiniApp</button>
+                    </article>
                 </div>
             </section>
 
@@ -217,8 +221,7 @@
             </section>
         </main>
 
-        <nav class="bottom-nav" id="bottom-nav">
-            <button class="tab-btn active" data-page="home" type="button">
+        <nav class="bottom-nav" id="bottom-nav">            <button class="tab-btn active" data-page="home" type="button">
                 <span class="tab-icon" aria-hidden="true">🏠</span>
                 <span class="tab-label">Accueil</span>
             </button>
@@ -246,6 +249,27 @@
                 <span class="tab-label">Infos</span>
             </button>
         </nav>
+    </div>
+
+    <!-- Panel Admin -->
+    <div class="admin-overlay" id="admin-overlay" style="display:none">
+        <div class="admin-panel">
+            <header class="admin-topbar">
+                <button class="top-pill" id="admin-close-btn" type="button">← Retour</button>
+                <span class="admin-heading">⚙️ Gestion MiniApp</span>
+                <span></span>
+            </header>
+            <div class="admin-tabs-bar">
+                <button class="admin-tab-btn active" data-admin-tab="reviews" type="button">Avis en attente</button>
+                <button class="admin-tab-btn" data-admin-tab="orders" type="button">Commandes</button>
+            </div>
+            <div class="admin-tab-pane active" id="admin-tab-reviews">
+                <div id="admin-reviews-pending"><div class="admin-empty">Chargement...</div></div>
+            </div>
+            <div class="admin-tab-pane" id="admin-tab-orders">
+                <div id="admin-orders-all"><div class="admin-empty">Chargement...</div></div>
+            </div>
+        </div>
     </div>
 
     <div class="detail-overlay" id="detail-overlay" style="display: none;">

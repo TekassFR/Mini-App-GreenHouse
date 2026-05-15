@@ -7,27 +7,6 @@
         tg.expand();
     }
 
-    function ensureBrandLogoVisible() {
-        const img = document.getElementById("brand-logo-main");
-        if (!img) return;
-
-        const candidates = [
-            "logo.png?v=20260514g",
-            "./logo.png?v=20260514g",
-            "background.png?v=20260514g"
-        ];
-
-        let idx = 0;
-        const tryNext = () => {
-            idx += 1;
-            if (idx >= candidates.length) return;
-            img.src = candidates[idx];
-        };
-
-        img.addEventListener("error", tryNext, { once: false });
-        img.src = candidates[0];
-    }
-
     function getHashParam(name) {
         const raw = String(window.location.hash || "").replace(/^#/, "");
         if (!raw) return "";
@@ -71,7 +50,6 @@
         document.body.innerHTML = `
             <div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#0b1110;color:#f2fff8;font-family:Segoe UI,Tahoma,sans-serif;text-align:center;">
                 <div style="max-width:520px;border:1px solid rgba(168,255,207,0.2);border-radius:16px;padding:22px;background:rgba(9,17,13,0.86);">
-                    <img src="./logo.png?v=20260514f" alt="GreenHouse logo" style="width:58px;height:58px;border-radius:12px;display:block;margin:0 auto 12px;border:1px solid rgba(168,255,207,0.3);box-shadow:0 8px 20px rgba(0,0,0,0.35);">
                     <h1 style="margin:0 0 10px;font-size:1.4rem;">Acces mobile uniquement</h1>
                     <p style="margin:0;color:#c7d5cc;line-height:1.5;">Cette mini app Telegram est reservee au client mobile Telegram. Ouvre-la depuis Telegram sur ton telephone.</p>
                 </div>
@@ -87,12 +65,6 @@
             renderDesktopBlockedScreen();
         }
         return;
-    }
-
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", ensureBrandLogoVisible, { once: true });
-    } else {
-        ensureBrandLogoVisible();
     }
 
     const state = {
@@ -185,6 +157,15 @@
         profileLanguageTitle: document.getElementById("profile-language-title"),
         profileOrdersTitle: document.getElementById("profile-orders-title"),
         languageGrid: document.getElementById("language-grid"),
+        profileAdminCard: document.getElementById("profile-admin-card"),
+        adminPanelBtn: document.getElementById("admin-panel-btn"),
+        adminOverlay: document.getElementById("admin-overlay"),
+        adminCloseBtn: document.getElementById("admin-close-btn"),
+        adminTabBtns: document.querySelectorAll(".admin-tab-btn"),
+        adminTabReviews: document.getElementById("admin-tab-reviews"),
+        adminTabOrders: document.getElementById("admin-tab-orders"),
+        adminReviewsPending: document.getElementById("admin-reviews-pending"),
+        adminOrdersAll: document.getElementById("admin-orders-all"),
 
         infoTitle: document.getElementById("info-title"),
         infoDesc: document.getElementById("info-desc"),
@@ -473,6 +454,16 @@
         return input.replace(/[<>"'&]/g, "").trim();
     }
 
+    function isAdmin() {
+        const user = getTelegramUser();
+        if (!user || !user.username) return false;
+        const whitelist = (state.config && state.config.admin && Array.isArray(state.config.admin.whitelist))
+            ? state.config.admin.whitelist
+            : [];
+        const normalizedList = whitelist.map((u) => String(u).replace(/^@/, "").toLowerCase());
+        return normalizedList.includes(user.username.replace(/^@/, "").toLowerCase());
+    }
+
     function getTelegramUser() {
         return tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
     }
@@ -701,6 +692,11 @@
 
         const adminUser = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
         els.infoContactUsername.textContent = `Telegram: @${adminUser}`;
+
+        // Afficher le bouton admin si l'utilisateur est dans la whitelist
+        if (els.profileAdminCard) {
+            els.profileAdminCard.style.display = isAdmin() ? "block" : "none";
+        }
     }
 
     function renderCategories() {
@@ -1328,6 +1324,9 @@
         if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
         else window.open(url, "_blank");
 
+        const savedOrder = state.orders[state.orders.length - 1];
+        void persistOrderToServer(savedOrder);
+
         state.cart = [];
         saveLocal();
         renderCart();
@@ -1380,7 +1379,7 @@
         });
 
         els.channelBtn.addEventListener("click", () => {
-            const link = state.config && state.config.admin ? state.config.admin.channel_link : "https://t.me/+1ucagzAd9_YxZDE0";
+            const link = state.config && state.config.admin ? state.config.admin.channel_link : "https://t.me/+my0XrYsNth80OGE0";
             if (tg && tg.openLink) tg.openLink(link);
             else window.open(link, "_blank");
         });
@@ -1465,10 +1464,180 @@
                 renderProfileStats();
             });
         }
+
+        if (els.adminPanelBtn) {
+            els.adminPanelBtn.addEventListener("click", openAdminPanel);
+        }
+
+        if (els.adminCloseBtn) {
+            els.adminCloseBtn.addEventListener("click", closeAdminPanel);
+        }
+
+        els.adminTabBtns.forEach((btn) => {
+            btn.addEventListener("click", () => switchAdminTab(btn.dataset.adminTab));
+        });
     }
 
+    // ===== ADMIN PANEL =====
+
+    function openAdminPanel() {
+        if (els.adminOverlay) {
+            els.adminOverlay.style.display = "block";
+            document.body.style.overflow = "hidden";
+            switchAdminTab("reviews");
+            loadAdminReviews();
+        }
+    }
+
+    function closeAdminPanel() {
+        if (els.adminOverlay) {
+            els.adminOverlay.style.display = "none";
+            document.body.style.overflow = "";
+        }
+    }
+
+    function switchAdminTab(tabName) {
+        els.adminTabBtns.forEach((btn) => {
+            btn.classList.toggle("active", btn.dataset.adminTab === tabName);
+        });
+        if (els.adminTabReviews) els.adminTabReviews.classList.toggle("active", tabName === "reviews");
+        if (els.adminTabOrders) els.adminTabOrders.classList.toggle("active", tabName === "orders");
+        if (tabName === "orders") loadAdminOrders();
+    }
+
+    function getAdminUsername() {
+        const user = getTelegramUser();
+        return user && user.username ? user.username : "";
+    }
+
+    async function loadAdminReviews() {
+        if (!els.adminReviewsPending) return;
+        els.adminReviewsPending.innerHTML = `<div class="admin-empty">Chargement...</div>`;
+        try {
+            const username = encodeURIComponent(getAdminUsername());
+            const resp = await fetch(`${LOCAL_API_BASE}/admin/reviews/pending?tg_username=${username}`, { cache: "no-store" });
+            if (resp.status === 403) {
+                els.adminReviewsPending.innerHTML = `<div class="admin-empty">Accès refusé.</div>`;
+                return;
+            }
+            const data = await resp.json();
+            const pending = Array.isArray(data.pending) ? data.pending : [];
+            if (!pending.length) {
+                els.adminReviewsPending.innerHTML = `<div class="admin-empty">Aucun avis en attente ✓</div>`;
+                return;
+            }
+            els.adminReviewsPending.innerHTML = pending.map((r) => {
+                const rawStars = Math.max(1, Math.min(5, r.stars || 5));
+                const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
+                const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
+                const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "";
+                return `
+                    <div class="admin-review-card">
+                        <div class="admin-review-header">
+                            <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
+                            <span class="admin-review-stars">${stars}</span>
+                        </div>
+                        <p class="admin-review-msg">${sanitize(r.message || "")}</p>
+                        <div class="admin-review-meta">${date}${handle}</div>
+                        <div class="admin-review-actions">
+                            <button class="admin-btn-approve" data-ts="${r.timestamp}" type="button">✓ Approuver</button>
+                            <button class="admin-btn-reject" data-ts="${r.timestamp}" type="button">✗ Refuser</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            els.adminReviewsPending.querySelectorAll(".admin-btn-approve").forEach((btn) => {
+                btn.addEventListener("click", () => adminApproveReview(Number(btn.dataset.ts)));
+            });
+            els.adminReviewsPending.querySelectorAll(".admin-btn-reject").forEach((btn) => {
+                btn.addEventListener("click", () => adminRejectReview(Number(btn.dataset.ts)));
+            });
+        } catch (_) {
+            els.adminReviewsPending.innerHTML = `<div class="admin-empty">Impossible de charger les avis.<br>Vérifie que le bot est actif.</div>`;
+        }
+    }
+
+    async function adminApproveReview(timestamp) {
+        try {
+            const resp = await fetch(`${LOCAL_API_BASE}/admin/reviews/approve`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
+            });
+            if (resp.ok) {
+                await syncReviewsFromLocalApi();
+                renderReviews();
+                await loadAdminReviews();
+            }
+        } catch (_) {}
+    }
+
+    async function adminRejectReview(timestamp) {
+        try {
+            const resp = await fetch(`${LOCAL_API_BASE}/admin/reviews/reject`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
+            });
+            if (resp.ok) await loadAdminReviews();
+        } catch (_) {}
+    }
+
+    async function loadAdminOrders() {
+        if (!els.adminOrdersAll) return;
+        els.adminOrdersAll.innerHTML = `<div class="admin-empty">Chargement...</div>`;
+        try {
+            const username = encodeURIComponent(getAdminUsername());
+            const resp = await fetch(`${LOCAL_API_BASE}/admin/orders?tg_username=${username}`, { cache: "no-store" });
+            if (resp.status === 403) {
+                els.adminOrdersAll.innerHTML = `<div class="admin-empty">Accès refusé.</div>`;
+                return;
+            }
+            const data = await resp.json();
+            const orders = Array.isArray(data.orders) ? data.orders : [];
+            if (!orders.length) {
+                els.adminOrdersAll.innerHTML = `<div class="admin-empty">Aucune commande enregistrée.</div>`;
+                return;
+            }
+            els.adminOrdersAll.innerHTML = `<button class="admin-refresh-btn" id="admin-orders-refresh-btn" type="button">↻ Actualiser</button>` +
+                orders.map((o) => {
+                    const date = new Date(o.timestamp || Date.now()).toLocaleString("fr-FR");
+                    const typeLabel = o.type === "pickup" ? "Sur place" : "Livraison";
+                    const user = o.telegramUsername ? `@${sanitize(o.telegramUsername)}` : (o.telegramUserId ? `ID ${o.telegramUserId}` : "Anonyme");
+                    return `
+                        <div class="admin-order-card">
+                            <div class="admin-order-header">
+                                <span class="admin-order-id">Commande #${o.id}</span>
+                                <span class="admin-order-total">${toPrice(o.total).toFixed(2)} EUR</span>
+                            </div>
+                            <span class="admin-order-type">${typeLabel}</span>
+                            <p class="admin-order-summary">${sanitize(o.summary || "")}</p>
+                            <span class="admin-order-user">👤 ${user}</span>
+                            <span class="admin-order-date">📅 ${date}</span>
+                        </div>
+                    `;
+                }).join("");
+            const refreshBtnEl = document.getElementById("admin-orders-refresh-btn");
+            if (refreshBtnEl) refreshBtnEl.addEventListener("click", loadAdminOrders);
+        } catch (_) {
+            els.adminOrdersAll.innerHTML = `<div class="admin-empty">Impossible de charger les commandes.<br>Vérifie que le bot est actif.</div>`;
+        }
+    }
+
+    async function persistOrderToServer(order) {
+        try {
+            await fetch(`${LOCAL_API_BASE}/save-order`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(order)
+            });
+        } catch (_) {}
+    }
+
+    // ===== FIN ADMIN PANEL =====
+
     async function bootstrap() {
-        if (!isTelegramMobileClient()) {
             renderDesktopBlockedScreen();
             return;
         }
