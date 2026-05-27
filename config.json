@@ -9,8 +9,11 @@
   "admin": {
     "telegram_username": "GreenHouse682, tekasspaslatete",
     "channel_link": "https://t.me/+my0XrYsNth80OGE0",
-    "api_base": "http://192.168.1.20:3000",
-    "whitelist": ["GreenHouse682", "tekasspaslatete"]
+    "api_base": "http://192.168.1.135:3000",
+    "whitelist": [
+      "GreenHouse682",
+      "tekasspaslatete"
+    ]
   },
   "categories": {
     "pizza": {
@@ -25,6 +28,27 @@
     }
   },
   "products": {
+    "pizza": [
+      {
+        "id": 2,
+        "name": "Richard Mille",
+        "description": "Hash premium aux notes puissante, texture sèche/sableuse, pressage léger, idéal pour les amateurs de qualité 🔥💎.",
+        "price": 10,
+        "emoji": "🍫",
+        "image": "https://i.ibb.co/Kx0Fb4rR/93398cad-274a-468b-959f-36e3589b37b4.jpg",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "video": "https://i.imgur.com/nyPKpcm.mp4",
+        "customPrices": {
+          "2": 20.00,
+          "3": 30.00,
+          "5": 40.00,
+          "10": 70.00,
+          "25": 150.00
+        }
+      }
+    ],
     "pasta": [
       {
         "id": 8,
@@ -38,11 +62,11 @@
         "isPromo": false,
         "video": "https://i.imgur.com/9tcFE8l.mp4",
         "customPrices": {
-            "1.5": 20.00,
-            "3.5": 50.00,
-            "5": 60.00,
-            "10": 120.00
-          }
+          "1.5": 20.00,
+          "3.5": 50.00,
+          "5": 60.00,
+          "10": 120.00
+        }
       },
       {
         "id": 7,
@@ -56,12 +80,12 @@
         "isPromo": false,
         "video": "https://i.imgur.com/gt63FTa.mp4",
         "customPrices": {
-            "1.5": 20.00,
-            "3.5": 50.00,
-            "5": 70.00,
-            "10": 130.00
-          }
+          "1.5": 20.00,
+          "3.5": 50.00,
+          "5": 70.00,
+          "10": 130.00
         }
+      }
     ]
   }
 }
