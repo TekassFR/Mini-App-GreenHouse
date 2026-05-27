@@ -41,11 +41,9 @@
         "isPromo": false,
         "video": "https://i.imgur.com/nyPKpcm.mp4",
         "customPrices": {
-          "2": 20.00,
-          "3": 30.00,
           "5": 40.00,
           "10": 70.00,
-          "25": 150.00
+          "100": 380.00
         }
       }
     ],
