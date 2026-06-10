@@ -1655,7 +1655,7 @@
                 const rawStars = Math.max(1, Math.min(5, r.stars || 5));
                 const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
                 const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
-                const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "";
+                const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "@GreenHouse682";
                 return `
                     <div class="admin-review-card">
                         <div class="admin-review-header">
