@@ -1361,6 +1361,31 @@
         document.body.classList.remove("detail-open");
     }
 
+    function showToast(message) {
+        const existing = document.getElementById("gh-toast");
+        if (existing) existing.remove();
+
+        const toast = document.createElement("div");
+        toast.id = "gh-toast";
+        toast.className = "gh-toast";
+        toast.innerHTML = `
+            <span class="toast-icon">✨</span>
+            <span class="toast-message">${message}</span>
+        `;
+        document.body.appendChild(toast);
+
+        requestAnimationFrame(() => {
+            toast.classList.add("visible");
+        });
+
+        setTimeout(() => {
+            toast.classList.remove("visible");
+            toast.addEventListener("transitionend", () => {
+                toast.remove();
+            }, { once: true });
+        }, 2500);
+    }
+
     function renderDetailQuantities(product) {
         const entries = getQtyEntries(product);
         els.detailQtyGrid.innerHTML = entries
@@ -1518,6 +1543,9 @@
                 return;
             }
             addToCart(state.selectedProduct, state.selectedQty, state.selectedPrice);
+            const name = sanitize(state.selectedProduct.name);
+            const qty = state.selectedQty;
+            showToast(`${name} (${qty}G) ajouté au panier ! 🛒`);
             closeProductDetail();
         });
 
