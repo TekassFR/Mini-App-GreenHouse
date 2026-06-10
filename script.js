@@ -15,6 +15,8 @@
     }
 
     function isTelegramMobileClient() {
+        return true; // Désactivé temporairement pour le rework / développement sur PC
+
         const referrer = String(document.referrer || "").toLowerCase();
         const fromWebTelegram = referrer.includes("web.telegram.org");
         if (fromWebTelegram) return false;
