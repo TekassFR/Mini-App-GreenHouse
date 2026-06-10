@@ -292,6 +292,14 @@
         detailTeleBtn: document.getElementById("detail-tele-btn")
     };
 
+    function getPrimaryTelegramUsername() {
+        if (!state.config || !state.config.admin || !state.config.admin.telegram_username) {
+            return "GreenHouse682";
+        }
+        const parts = state.config.admin.telegram_username.split(/[\s,]+/);
+        return parts[0] || "GreenHouse682";
+    }
+
     let detailSlides = [];
     let detailSlideIndex = 0;
     let detailTouchStartX = 0;
@@ -784,8 +792,9 @@
         els.profileMemberFull.textContent = t("memberSincePhrase", { month: monthData.monthLong, year });
         els.profileMemberShort.textContent = `${monthData.monthShort}. ${String(year).slice(-2)}`;
 
-        const adminUser = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
-        els.infoContactUsername.textContent = `Telegram: @${adminUser}`;
+        const adminUserRaw = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
+        const formattedAdmins = adminUserRaw.split(/[\s,]+/).map((u) => `@${u}`).join(" / ");
+        els.infoContactUsername.textContent = `Telegram: ${formattedAdmins}`;
 
         // Afficher le bouton admin si l'utilisateur est dans la whitelist
         if (els.profileAdminCard) {
@@ -1448,7 +1457,7 @@
             telegramUsername: currentUser && currentUser.username ? sanitize(currentUser.username) : null
         });
 
-        const username = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
+        const username = getPrimaryTelegramUsername();
         const text = encodeURIComponent(t("orderText", {
             id: orderId,
             type: state.orderType === "pickup" ? t("pickup") : t("delivery"),
@@ -1492,7 +1501,7 @@
         });
 
         els.contactBtn.addEventListener("click", () => {
-            const username = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
+            const username = getPrimaryTelegramUsername();
             const url = `https://t.me/${username}`;
             if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
             else window.open(url, "_blank");
@@ -1555,7 +1564,7 @@
 
         if (els.detailTeleBtn) {
             els.detailTeleBtn.addEventListener("click", () => {
-                const username = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
+                const username = getPrimaryTelegramUsername();
                 const productName = state.selectedProduct ? sanitize(state.selectedProduct.name) : "product";
                 const url = `https://t.me/${username}?text=${encodeURIComponent(t("askProduct", { name: productName }))}`;
                 if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
