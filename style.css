@@ -1252,23 +1252,22 @@ body.detail-open .bottom-nav {
     }
 
     .bottom-nav {
-        left: 6px;
-        right: 6px;
-        bottom: 6px;
+        left: 14px;
+        right: 14px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); /* Décolle la barre au-dessus de l'indicateur d'accueil iOS/Android */
         grid-template-columns: repeat(6, minmax(0, 1fr));
-        gap: 3px;
-        padding: 4px;
-        border-radius: 11px;
+        gap: 4px;
+        padding: 8px 6px;
+        border-radius: 40px; /* Conserve la forme capsule ultra-arrondie sur mobile */
     }
 
     .tab-btn {
-        font-size: 0.52rem;
-        padding: 5px 2px 4px;
-        border-radius: 7px;
+        font-size: 0.62rem;
+        padding: 8px 2px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        gap: 1px;
+        gap: 3px;
     }
 
     .tab-icon {
