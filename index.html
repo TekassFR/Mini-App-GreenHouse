@@ -32,20 +32,10 @@
 
         <main class="app-main">
             <section class="page active" id="page-home">
-                <div class="hero">
-                    <p class="hero-kicker" id="hero-kicker">Boutique</p>
-                    <h2 id="hero-title">Produits classes, service rapide</h2>
-                </div>
-
-                <nav class="category-nav" id="category-nav">
-                    <label class="category-field">
-                        <span id="category-key-label">Categorie</span>
-                        <select id="category-key-select"></select>
-                    </label>
-                    <label class="category-field">
-                        <span id="category-name-label">Type</span>
-                        <select id="category-name-select"></select>
-                    </label>
+                <nav class="category-tabs-container">
+                    <div class="category-tabs" id="category-tabs" role="tablist">
+                        <!-- Rempli dynamiquement par script.js -->
+                    </div>
                 </nav>
 
                 <section class="product-grid" id="product-grid" aria-live="polite"></section>

@@ -184,13 +184,7 @@
         introSub: document.getElementById("intro-sub"),
         brandSubtitle: document.getElementById("brand-subtitle"),
         userChip: document.getElementById("user-chip"),
-        heroKicker: document.getElementById("hero-kicker"),
-        heroTitle: document.getElementById("hero-title"),
-        categoryNav: document.getElementById("category-nav"),
-        categoryKeyLabel: document.getElementById("category-key-label"),
-        categoryNameLabel: document.getElementById("category-name-label"),
-        categoryKeySelect: document.getElementById("category-key-select"),
-        categoryNameSelect: document.getElementById("category-name-select"),
+        categoryTabs: document.getElementById("category-tabs"),
         productGrid: document.getElementById("product-grid"),
         pages: document.querySelectorAll(".page"),
         tabs: document.querySelectorAll(".tab-btn"),
@@ -800,24 +794,46 @@
     }
 
     function renderCategories() {
-        if (!els.categoryKeySelect || !els.categoryNameSelect) return;
+        if (!els.categoryTabs) return;
 
-        const allOption = `<option value="all">${t("categoryAll")}</option>`;
-        const keyOptions = state.categories
-            .map((catId) => `<option value="${catId}">${sanitize(catId)}</option>`)
-            .join("");
-        const typeOptions = state.categories
+        const allActive = state.category === "all" ? "active" : "";
+        let html = `<button class="category-tab-btn ${allActive}" data-category="all" role="tab" aria-selected="${state.category === "all" ? "true" : "false"}">
+            <span class="tab-emoji">📦</span>
+            <span class="tab-text">${t("categoryAll")}</span>
+        </button>`;
+
+        html += state.categories
             .map((catId) => {
                 const meta = getCategoryMeta(catId);
                 const label = sanitize(meta.name || catId);
-                return `<option value="${catId}">${label}</option>`;
+                const emoji = sanitize(meta.emoji || "🌿");
+                const active = state.category === catId ? "active" : "";
+                return `<button class="category-tab-btn ${active}" data-category="${catId}" role="tab" aria-selected="${state.category === catId ? "true" : "false"}">
+                    <span class="tab-emoji">${emoji}</span>
+                    <span class="tab-text">${label}</span>
+                </button>`;
             })
             .join("");
 
-        els.categoryKeySelect.innerHTML = allOption + keyOptions;
-        els.categoryNameSelect.innerHTML = allOption + typeOptions;
-        els.categoryKeySelect.value = state.category;
-        els.categoryNameSelect.value = state.category;
+        els.categoryTabs.innerHTML = html;
+
+        // Add event listeners to the tabs
+        const tabButtons = els.categoryTabs.querySelectorAll(".category-tab-btn");
+        tabButtons.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                state.category = btn.getAttribute("data-category");
+                
+                // Update active class and aria-selected state on buttons
+                tabButtons.forEach((b) => {
+                    b.classList.remove("active");
+                    b.setAttribute("aria-selected", "false");
+                });
+                btn.classList.add("active");
+                btn.setAttribute("aria-selected", "true");
+                
+                renderProducts();
+            });
+        });
     }
 
     function productCardTemplate(product) {
@@ -1074,10 +1090,6 @@
 
         if (els.introSub) els.introSub.textContent = t("introSub");
         if (els.brandSubtitle) els.brandSubtitle.textContent = t("brandSubtitle");
-        if (els.heroKicker) els.heroKicker.textContent = t("heroKicker");
-        if (els.heroTitle) els.heroTitle.textContent = t("heroTitle");
-        if (els.categoryKeyLabel) els.categoryKeyLabel.textContent = t("categoryKeyLabel");
-        if (els.categoryNameLabel) els.categoryNameLabel.textContent = t("categoryTypeLabel");
 
         if (els.cartTitle) els.cartTitle.textContent = t("cartTitle");
         if (els.cartDesc) els.cartDesc.textContent = t("cartDesc");
@@ -1453,22 +1465,6 @@
                 els.pickupFieldGroup.style.display = isDelivery ? "none" : "grid";
             });
         });
-
-        if (els.categoryKeySelect) {
-            els.categoryKeySelect.addEventListener("change", () => {
-                state.category = els.categoryKeySelect.value;
-                if (els.categoryNameSelect) els.categoryNameSelect.value = state.category;
-                renderProducts();
-            });
-        }
-
-        if (els.categoryNameSelect) {
-            els.categoryNameSelect.addEventListener("change", () => {
-                state.category = els.categoryNameSelect.value;
-                if (els.categoryKeySelect) els.categoryKeySelect.value = state.category;
-                renderProducts();
-            });
-        }
 
         els.contactBtn.addEventListener("click", () => {
             const username = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";

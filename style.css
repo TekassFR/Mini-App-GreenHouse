@@ -24,9 +24,12 @@ body {
 }
 
 body {
-    font-family: "Segoe UI", Tahoma, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background:
-        linear-gradient(170deg, rgba(8, 11, 17, 0.54), rgba(11, 16, 23, 0.58) 44%, rgba(15, 21, 29, 0.64)),
+        radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.22), transparent 50%),
+        radial-gradient(circle at 10% 40%, rgba(16, 185, 129, 0.05), transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.08), transparent 40%),
+        linear-gradient(170deg, rgba(8, 11, 17, 0.65), rgba(11, 16, 23, 0.72) 44%, rgba(15, 21, 29, 0.78)),
         url("background.png") no-repeat center 22% / cover;
     background-attachment: scroll;
     color: var(--text);
@@ -36,7 +39,10 @@ body {
 @media (min-width: 901px) {
     body {
         background:
-            linear-gradient(170deg, rgba(8, 11, 17, 0.56), rgba(11, 16, 23, 0.6) 44%, rgba(15, 21, 29, 0.66)),
+            radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.22), transparent 50%),
+            radial-gradient(circle at 10% 40%, rgba(16, 185, 129, 0.05), transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.08), transparent 40%),
+            linear-gradient(170deg, rgba(8, 11, 17, 0.65), rgba(11, 16, 23, 0.72) 44%, rgba(15, 21, 29, 0.78)),
             url("background.png") no-repeat center center / 112% auto;
         background-attachment: fixed;
     }
@@ -89,20 +95,25 @@ body.app-ready .intro-screen {
 
 .app-header {
     display: flex;
-    justify-content: space-between;
-    gap: 16px;
+    flex-direction: column;
     align-items: center;
-    padding: 16px;
-    border-radius: 18px;
-    border: 1px solid rgba(150, 161, 182, 0.18);
-    background: linear-gradient(160deg, rgba(16, 21, 30, 0.95), rgba(12, 17, 26, 0.95));
-    margin-bottom: 14px;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px 16px;
+    border-radius: 24px;
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    background: rgba(10, 20, 15, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    text-align: center;
 }
 
 .logo-above {
     text-align: center;
     width: 100%;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
 }
 
 .logo-above .brand-logo {
@@ -111,42 +122,65 @@ body.app-ready .intro-screen {
 }
 
 .brand-row {
-    display: inline-flex;
+    display: flex;
+    justify-content: center;
     align-items: center;
     gap: 10px;
 }
 
 .brand-logo {
-    width: 128px;
-    height: 128px;
-    border-radius: 24px;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%; /* Cercle parfait comme CFE Shop */
     object-fit: cover;
-    border: 1px solid rgba(168, 255, 207, 0.28);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-    animation: logoFloat 2.9s ease-in-out infinite;
+    border: 3px solid #10b981; /* Bordure verte néon */
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.45);
+    animation: logoPulse 3.5s ease-in-out infinite;
 }
 
-@keyframes logoFloat {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-3px); }
-    100% { transform: translateY(0px); }
+@keyframes logoPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+    50% {
+        transform: scale(1.04);
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.7);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
 }
 
 .brand-title {
-    font-size: 1.45rem;
+    font-size: 1.65rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+    text-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
 }
 
 .brand-subtitle {
-    color: var(--muted);
-    font-size: 0.86rem;
+    color: #10b981; /* Métadonnées vertes */
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 4px;
+    letter-spacing: 0.03em;
 }
 
 .user-chip {
-    background: rgba(30, 52, 41, 0.92);
-    border: 1px solid rgba(168, 255, 207, 0.22);
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
     border-radius: 999px;
-    padding: 9px 13px;
-    font-size: 0.85rem;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #60e39a;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
 }
 
 .hero {
@@ -180,55 +214,62 @@ body.app-ready .intro-screen {
     display: block;
 }
 
-.category-nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    padding: 8px;
-    margin-bottom: 8px;
-    border-radius: 16px;
-    background: linear-gradient(150deg, rgba(12, 18, 26, 0.9), rgba(10, 15, 22, 0.9));
-    border: 1px solid rgba(146, 155, 176, 0.14);
-}
-
-.category-nav::-webkit-scrollbar {
-    display: none;
-}
-
-.category-field {
-    display: grid;
-    gap: 6px;
-}
-
-.category-field span {
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #8d97ad;
-    font-weight: 700;
-}
-
-.category-field select {
+/* --- MODERN TABS --- */
+.category-tabs-container {
     width: 100%;
-    min-height: 38px;
-    border-radius: 10px;
-    border: 1px solid rgba(146, 155, 176, 0.22);
-    background: rgba(16, 20, 29, 0.95);
-    color: #e5eaf6;
-    padding: 8px 10px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    outline: none;
-    appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, #a7b0c4 50%), linear-gradient(135deg, #a7b0c4 50%, transparent 50%);
-    background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
-    background-size: 5px 5px, 5px 5px;
-    background-repeat: no-repeat;
+    overflow: hidden;
+    margin-bottom: 16px;
+    padding: 4px 0;
 }
 
-.category-field select:focus {
-    border-color: rgba(180, 189, 207, 0.62);
-    box-shadow: 0 0 0 2px rgba(180, 189, 207, 0.16);
+.category-tabs {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
+    padding-bottom: 4px;
+}
+
+.category-tabs::-webkit-scrollbar {
+    display: none; /* Hide scrollbar Chrome/Safari */
+}
+
+.category-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 999px; /* Pill-shaped buttons */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(16, 28, 23, 0.6);
+    color: #a9b9b0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.category-tab-btn:hover {
+    color: #f2fff8;
+    border-color: rgba(96, 227, 154, 0.3);
+    background: rgba(22, 38, 31, 0.7);
+    transform: translateY(-1px);
+}
+
+.category-tab-btn.active {
+    background: linear-gradient(135deg, #10b981, #059669); /* Rich emerald green */
+    color: #ffffff;
+    border-color: rgba(96, 227, 154, 0.4);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);
+    font-weight: 700;
+}
+
+.category-tab-btn .tab-emoji {
+    font-size: 1.05rem;
 }
 
 .product-grid {
@@ -253,27 +294,28 @@ body.app-ready .intro-screen {
 .product-card {
     position: relative;
     z-index: 1;
-    border-radius: 14px;
-    border: 1px solid rgba(96, 227, 154, 0.2);
-    background:
-        linear-gradient(170deg, rgba(11, 21, 17, 0.98), rgba(8, 15, 12, 0.98));
+    border-radius: 20px; /* Bords ultra arrondis comme CFE Shop */
+    border: 1px solid rgba(16, 185, 129, 0.15); /* Légère bordure verte émeraude */
+    background: rgba(14, 25, 20, 0.7); /* Fond translucide pro */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .product-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.42);
-    border-color: rgba(96, 227, 154, 0.38);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.2);
+    border-color: rgba(96, 227, 154, 0.45);
 }
 
 .product-media {
     position: relative;
-    aspect-ratio: 4 / 4.8;
-    background: #0b1612;
-    border-bottom: 1px solid rgba(96, 227, 154, 0.18);
+    aspect-ratio: 1 / 1; /* Forme carrée parfaite et harmonieuse */
+    background: #09120d;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .product-media img {
@@ -354,6 +396,7 @@ body.app-ready .intro-screen {
     margin: 6px 0 10px;
     display: -webkit-box;
     -webkit-line-clamp: 1;
+    line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
