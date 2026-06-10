@@ -7,12 +7,11 @@
     "min_order": 15.00
   },
   "admin": {
-    "telegram_username": "GreenHouse682, tekasspaslatete",
+    "telegram_username": "GreenHouse682",
     "channel_link": "https://t.me/+my0XrYsNth80OGE0",
     "api_base": "http://192.168.1.135:3000",
     "whitelist": [
-      "GreenHouse682",
-      "tekasspaslatete"
+      "GreenHouse682"
     ]
   },
   "categories": {
