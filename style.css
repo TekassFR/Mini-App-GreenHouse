@@ -869,12 +869,7 @@ input {
 }
 
 .detail-logo-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2px solid #10b981;
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+    display: none !important;
 }
 
 .detail-logo-box img {
