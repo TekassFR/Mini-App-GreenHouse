@@ -1519,7 +1519,6 @@
             }
             addToCart(state.selectedProduct, state.selectedQty, state.selectedPrice);
             closeProductDetail();
-            switchPage("cart");
         });
 
         if (els.detailMuteBtn) {
