@@ -2604,13 +2604,29 @@
                     if (cat) showAdminCategoryForm(key, cat);
                 });
             });
-            els.adminCategoriesContent.querySelectorAll(".admin-btn-reject[data-ckey]").forEach((btn) => {
-                btn.addEventListener("click", async () => {
+        els.adminCategoriesContent.querySelectorAll(".admin-btn-reject[data-ckey]").forEach((btn) => {
+                btn.addEventListener("click", () => {
                     const key = btn.dataset.ckey;
+                    const catObj = categories[key];
+                    const catName = catObj ? (catObj.name || key) : key;
+                    const catEmoji = catObj ? (catObj.emoji || "📁") : "📁";
                     const count = (products[key] || []).length;
-                    const msg = count > 0 ? `Supprimer "${key}" et ses ${count} produit(s) ?` : `Supprimer la catégorie "${key}" ?`;
-                    if (!confirm(msg)) return;
-                    await adminDeleteCategory(key);
+                    const msg = count > 0
+                        ? `Supprimer définitivement la catégorie <strong>« ${sanitize(catName)} »</strong> et ses <strong>${count} produit(s)</strong> associés ?`
+                        : `Supprimer définitivement la catégorie <strong>« ${sanitize(catName)} »</strong> ?`;
+
+                    showConfirmModal({
+                        title: "Supprimer la catégorie ?",
+                        emoji: catEmoji,
+                        message: msg,
+                        confirmText: "Oui, supprimer",
+                        cancelText: "Annuler",
+                        isDanger: true,
+                        onConfirm: async () => {
+                            btn.disabled = true;
+                            await adminDeleteCategory(key);
+                        }
+                    });
                 });
             });
         } catch (_) {
@@ -2656,7 +2672,11 @@
             const resp = await fetchWriteApi("/admin/categories/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), ...catData })
+                body: JSON.stringify({
+                    tg_username: getAdminUsername(),
+                    ...catData,
+                    category: { ...catData }
+                })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
@@ -2678,7 +2698,11 @@
             const resp = await fetchWriteApi("/admin/categories/delete", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), key })
+                body: JSON.stringify({
+                    tg_username: getAdminUsername(),
+                    key: key,
+                    cat_key: key
+                })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
