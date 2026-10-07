@@ -1350,7 +1350,7 @@
         els.detailMediaTrack.innerHTML = detailSlides
             .map((slide, idx) => {
                 if (slide.type === "video") {
-                    return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" playsinline preload="metadata" src="${slide.src}"></video><button class="video-fs-btn" type="button" aria-label="Plein écran">⛶</button></article>`;
+                    return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" muted playsinline webkit-playsinline loop preload="auto" src="${slide.src}"></video><button class="video-fs-btn" type="button" aria-label="Plein écran">⛶</button></article>`;
                 }
                 return `<article class="slide-item" data-slide-index="${idx}"><img class="slide-image" src="${slide.src}" alt="Media produit ${idx + 1}" loading="lazy" referrerpolicy="no-referrer"></article>`;
             })
