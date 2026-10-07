@@ -236,8 +236,8 @@ module.exports = async function handler(req, res) {
         if (route === '/admin/categories/save' && req.method === 'POST') {
             const payload = await readBody(req);
             if (!await isAdmin(client, payload.tg_username)) return json(res, { error: 'Forbidden' }, 403);
-            const c = payload.category || {};
-            const cat_key = String(c.key || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
+            const c = payload.category || payload || {};
+            const cat_key = String(c.key || c.cat_key || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
             const cat_name = String(c.name || '').trim().slice(0, 60);
             if (!cat_key || !cat_name) return json(res, { error: 'Clé ou nom manquant' }, 400);
             const maxOrd = await client.query('SELECT COALESCE(MAX(sort_order),-1) as mo FROM categories');
@@ -253,7 +253,7 @@ module.exports = async function handler(req, res) {
         if (route === '/admin/categories/delete' && req.method === 'POST') {
             const payload = await readBody(req);
             if (!await isAdmin(client, payload.tg_username)) return json(res, { error: 'Forbidden' }, 403);
-            const cat_key = String(payload.cat_key || '').trim();
+            const cat_key = String(payload.cat_key || payload.key || '').trim();
             if (!cat_key) return json(res, { error: 'cat_key manquant' }, 400);
             await client.query('DELETE FROM products WHERE cat_key=$1', [cat_key]);
             await client.query('DELETE FROM categories WHERE cat_key=$1', [cat_key]);
