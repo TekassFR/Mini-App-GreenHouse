@@ -89,6 +89,21 @@
     // URL du bot VPS par défaut pour les API d'écriture (save, delete, reorder, settings, etc.)
     const LOCAL_API_BASE = "http://185.185.83.209:4001";
 
+    // Cloudinary : hébergement permanent des vidéos, converties en MP4 H.264 (lisible iPhone + Android)
+    const CLOUDINARY_CLOUD_NAME = "";      // ex: "dxxxxxx"
+    const CLOUDINARY_UPLOAD_PRESET = "";   // preset "Unsigned"
+    const CLOUDINARY_VIDEO_TRANSFORM = "f_mp4,vc_h264,q_auto";
+
+    // Transforme une URL vidéo Cloudinary en MP4 H.264 universel
+    function toUniversalVideoUrl(url) {
+        const s = String(url || "");
+        if (!/res\.cloudinary\.com\/.+\/video\/upload\//.test(s)) return s;
+        if (s.includes(`/upload/${CLOUDINARY_VIDEO_TRANSFORM}/`)) return s;
+        return s
+            .replace("/video/upload/", `/video/upload/${CLOUDINARY_VIDEO_TRANSFORM}/`)
+            .replace(/\.(mov|qt|m4v|webm|avi|mkv|3gp|hevc)(\?.*)?$/i, ".mp4");
+    }
+
     function normalizeApiBase(base) {
         let raw = String(base || "").trim();
         if (!raw) return "";
@@ -923,7 +938,7 @@
         if (rawImg && !rawImg.startsWith("data:video/")) {
             mediaHtml = `<img src="${sanitize(rawImg)}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;\\'>📦</div>';">`;
         } else if (rawVideo) {
-            mediaHtml = `<video src="${sanitize(rawVideo)}" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
+            mediaHtml = `<video src="${sanitize(getPlayableVideo(rawVideo))}#t=0.1" muted playsinline webkit-playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
         } else {
             mediaHtml = `<div style="width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;">📦</div>`;
         }
@@ -1246,7 +1261,7 @@
 
     function getPlayableVideo(video) {
         if (!video) return "";
-        const v = String(video).trim();
+        const v = toUniversalVideoUrl(String(video).trim());
         if (!v) return "";
         if (v.includes("youtube.com") || v.includes("youtu.be")) return "";
         if (v.includes("imgur.com") && !v.includes("i.imgur.com")) {
@@ -2263,6 +2278,28 @@
         return null;
     }
 
+    async function uploadToCloudinary(file) {
+        if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) return null;
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+            const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, {
+                method: "POST",
+                body: formData
+            });
+            const json = await resp.json().catch(() => null);
+            if (!resp.ok || !json || !json.secure_url) {
+                console.warn("cloudinary upload failed:", json && json.error);
+                return null;
+            }
+            return json.resource_type === "video" ? toUniversalVideoUrl(json.secure_url) : json.secure_url;
+        } catch (e) {
+            console.warn("cloudinary upload failed:", e);
+            return null;
+        }
+    }
+
     async function uploadToLitterbox(file, filename) {
         try {
             const formData = new FormData();
@@ -2285,6 +2322,13 @@
         const ext = (file.name || "").split(".").pop().toLowerCase() || "bin";
         const filename = `up_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
         const isImage = file.type && file.type.startsWith("image/");
+        const isVideo = (file.type && file.type.startsWith("video/")) || /\.(mov|mp4|m4v|webm|3gp|hevc)$/i.test(file.name || "");
+
+        // 0. Pour les vidéos : Cloudinary (permanent + conversion MP4 H.264 pour iPhone ET Android)
+        if (isVideo) {
+            const cloudVideo = await uploadToCloudinary(file);
+            if (cloudVideo) return cloudVideo;
+        }
 
         // 1. Pour les photos : FreeImage / iili.io (CDN illimité et permanent qui fonctionne toujours sur Telegram et mobile)
         if (isImage) {
