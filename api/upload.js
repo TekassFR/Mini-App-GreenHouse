@@ -57,7 +57,7 @@ function uploadToCatbox(filename, mimeType, fileBuffer) {
 
         const options = {
             hostname: 'catbox.moe',
-            path: '/user.php',
+            path: '/user/api.php',
             method: 'POST',
             headers: {
                 'Content-Type': `multipart/form-data; boundary=${boundary}`,
