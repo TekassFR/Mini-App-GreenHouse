@@ -1,0 +1,21 @@
+{
+  "functions": {
+    "api/upload.js": {
+      "maxDuration": 30
+    },
+    "api/proxy.js": {
+      "maxDuration": 15
+    },
+    "api/config.js": {
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
+    { "source": "/config", "destination": "/api/config" },
+    { "source": "/reviews", "destination": "/api/proxy" },
+    { "source": "/save-review", "destination": "/api/proxy" },
+    { "source": "/save-order", "destination": "/api/proxy" },
+    { "source": "/admin/upload", "destination": "/api/upload" },
+    { "source": "/admin/:path*", "destination": "/api/proxy" }
+  ]
+}

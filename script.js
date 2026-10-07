@@ -86,8 +86,8 @@
         storageScope: "guest"
     };
 
-    // URL du bot local — uniquement pour les écritures (approve, save, delete). Les lectures utilisent les fichiers JSON statiques.
-    const LOCAL_API_BASE = "http://localhost:3000";
+    // URL du bot VPS par défaut pour les API d'écriture (save, delete, reorder, settings, etc.)
+    const LOCAL_API_BASE = "http://185.185.83.209:4001";
 
     function normalizeApiBase(base) {
         let raw = String(base || "").trim();
@@ -109,19 +109,25 @@
             const normalized = normalizeApiBase(base);
             if (!normalized) localStorage.removeItem("gh_write_api_base");
             else localStorage.setItem("gh_write_api_base", normalized);
-        } catch (_) {}
+        } catch (_) { }
     }
 
     function getWriteApiBases() {
-        const storedBase = getStoredWriteApiBase();
-        const configuredBase = state && state.config && state.config.admin && state.config.admin.api_base
+        const filterHttpIfHttps = (base) => {
+            if (!base) return "";
+            return base;
+        };
+
+        const storedBase = filterHttpIfHttps(getStoredWriteApiBase());
+        const configuredBase = filterHttpIfHttps(state && state.config && state.config.admin && state.config.admin.api_base
             ? normalizeApiBase(state.config.admin.api_base)
-            : "";
-        const originBase = window.location && /^https?:/i.test(String(window.location.origin || ""))
+            : "");
+        const fallbackBase = filterHttpIfHttps(normalizeApiBase(LOCAL_API_BASE));
+        const originBase = filterHttpIfHttps(window.location && /^https?:/i.test(String(window.location.origin || ""))
             ? normalizeApiBase(window.location.origin)
-            : "";
-        const fallbackBase = normalizeApiBase(LOCAL_API_BASE);
-        return Array.from(new Set([configuredBase, storedBase, originBase, fallbackBase].filter(Boolean)));
+            : "");
+
+        return Array.from(new Set([storedBase, configuredBase, fallbackBase, originBase, ""].filter(b => typeof b === "string" && b !== "")));
     }
 
     async function readJsonIfAny(resp) {
@@ -134,7 +140,23 @@
         }
     }
 
-    async function fetchWriteApi(path, options, allowPromptFallback) {
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
+        const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+        const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+        const reqHeaders = Object.assign({ "ngrok-skip-browser-warning": "69420" }, (options && options.headers) || {});
+        const reqOpts = Object.assign({}, options || {}, { headers: reqHeaders });
+        if (controller) reqOpts.signal = controller.signal;
+        try {
+            const response = await fetch(url, reqOpts);
+            if (timer) clearTimeout(timer);
+            return response;
+        } catch (err) {
+            if (timer) clearTimeout(timer);
+            throw err;
+        }
+    }
+
+    async function fetchWriteApi(path, options, timeoutMs = 6000) {
         const normalizedPath = String(path || "").startsWith("/") ? String(path) : `/${String(path || "")}`;
         const bases = getWriteApiBases();
         let lastError = null;
@@ -142,7 +164,7 @@
         for (const base of bases) {
             const url = `${base}${normalizedPath}`;
             try {
-                const resp = await fetch(url, options);
+                const resp = await fetchWithTimeout(url, options, timeoutMs);
                 if (resp.ok) return resp;
 
                 // Si le serveur répond en JSON (même en erreur), on renvoie la réponse
@@ -152,27 +174,6 @@
                 lastError = new Error(`HTTP ${resp.status}`);
             } catch (error) {
                 lastError = error;
-            }
-        }
-
-        if (allowPromptFallback) {
-            const userInput = window.prompt(
-                "Serveur API introuvable.\nColle l'URL du bot (ex: http://192.168.1.20:3000)",
-                getStoredWriteApiBase() || "http://192.168.1.20:3000"
-            );
-            const manualBase = normalizeApiBase(userInput || "");
-            if (manualBase) {
-                setStoredWriteApiBase(manualBase);
-                const manualUrl = `${manualBase}${normalizedPath}`;
-                try {
-                    const manualResp = await fetch(manualUrl, options);
-                    if (manualResp.ok) return manualResp;
-                    const contentType = String(manualResp.headers.get("content-type") || "").toLowerCase();
-                    if (contentType.includes("application/json")) return manualResp;
-                    lastError = new Error(`HTTP ${manualResp.status}`);
-                } catch (error) {
-                    lastError = error;
-                }
             }
         }
 
@@ -255,8 +256,10 @@
         adminOrdersAll: document.getElementById("admin-orders-all"),
         adminTabProducts: document.getElementById("admin-tab-products"),
         adminTabCategories: document.getElementById("admin-tab-categories"),
+        adminTabSettings: document.getElementById("admin-tab-settings"),
         adminProductsContent: document.getElementById("admin-products-content"),
         adminCategoriesContent: document.getElementById("admin-categories-content"),
+        adminSettingsContent: document.getElementById("admin-settings-content"),
 
         infoTitle: document.getElementById("info-title"),
         infoDesc: document.getElementById("info-desc"),
@@ -289,15 +292,16 @@
         detailSelectedPrice: document.getElementById("detail-selected-price"),
         detailAddBtn: document.getElementById("detail-add-btn"),
         detailMuteBtn: document.getElementById("detail-mute-btn"),
+        detailFullscreenBtn: document.getElementById("detail-fullscreen-btn"),
         detailTeleBtn: document.getElementById("detail-tele-btn")
     };
 
     function getPrimaryTelegramUsername() {
         if (!state.config || !state.config.admin || !state.config.admin.telegram_username) {
-            return "GreenHouse682";
+            return "Passionterps67"; // Valeur par défaut si la configuration n'est pas disponible
         }
         const parts = state.config.admin.telegram_username.split(/[\s,]+/);
-        return parts[0] || "GreenHouse682";
+        return parts[0] || "Passionterps67";
     }
 
     let detailSlides = [];
@@ -720,10 +724,20 @@
 
     async function syncReviewsFromLocalApi() {
         try {
-            const resp = await fetch(`./reviews.json?t=${Date.now()}`, { cache: "no-store" });
+            const resp = await fetchWriteApi("/reviews", { method: "GET" });
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data && data.success && Array.isArray(data.reviews)) {
+                    state.reviews = data.reviews.map(normalizeReviewEntry).filter(Boolean);
+                    saveLocal();
+                    return true;
+                }
+            }
+        } catch (_) {}
+        try {
+            const resp = await fetchWithTimeout(`./reviews.json?t=${Date.now()}`, { cache: "no-store" }, 3000);
             if (!resp.ok) return false;
             const data = await resp.json();
-            // Supporte l'ancien format (tableau plat) et le nouveau {pending, approved}
             const list = Array.isArray(data) ? data : (Array.isArray(data.approved) ? data.approved : null);
             if (!list) return false;
             const normalized = list.map(normalizeReviewEntry).filter(Boolean);
@@ -749,9 +763,55 @@
     }
 
     async function loadConfig() {
-        const resp = await fetch(`./config.json?t=${Date.now()}`);
-        if (!resp.ok) throw new Error("config.json introuvable");
-        const cfg = await resp.json();
+        const bases = getWriteApiBases();
+        let cfg = null;
+
+        // 1. Charger la configuration LIVE depuis le serveur VPS (ngrok)
+        for (const base of bases) {
+            if (!base) continue;
+            try {
+                const resp = await fetchWithTimeout(`${base}/config?t=${Date.now()}`, { cache: "no-store" }, 4000);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && typeof data === "object" && (data.products || data.categories || data.restaurant)) {
+                        cfg = data;
+                        break;
+                    }
+                }
+            } catch (_) {}
+        }
+
+        // 2. Si VPS inaccessible: essayer la fonction serverless Vercel /api/config (requête Neon en direct)
+        if (!cfg) {
+            try {
+                const vercelOrigin = (window.location && /^https?:/i.test(String(window.location.origin || "")))
+                    ? String(window.location.origin).replace(/\/+$/, "")
+                    : "";
+                if (vercelOrigin) {
+                    const resp = await fetchWithTimeout(`${vercelOrigin}/api/config?t=${Date.now()}`, { cache: "no-store" }, 6000);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data && typeof data === "object" && (data.products || data.categories || data.restaurant)) {
+                            cfg = data;
+                        }
+                    }
+                }
+            } catch (_) {}
+        }
+
+        // 3. Si toujours rien: garder le state actuel si déjà chargé (évite d'écraser avec données figées)
+        if (!cfg) {
+            if (state.config && typeof state.config === "object") {
+                return;
+            }
+            // Dernier recours absolu: config.json statique Vercel
+            try {
+                const resp = await fetchWithTimeout(`./config.json?t=${Date.now()}`, { cache: "no-store" }, 3000);
+                if (resp.ok) cfg = await resp.json();
+            } catch (_) {}
+            if (!cfg) throw new Error("Impossible de charger la configuration (VPS et API Vercel inaccessibles)");
+        }
+
         state.config = cfg;
         if (cfg && cfg.admin && cfg.admin.api_base) {
             setStoredWriteApiBase(cfg.admin.api_base);
@@ -792,7 +852,7 @@
         els.profileMemberFull.textContent = t("memberSincePhrase", { month: monthData.monthLong, year });
         els.profileMemberShort.textContent = `${monthData.monthShort}. ${String(year).slice(-2)}`;
 
-        const adminUserRaw = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
+        const adminUserRaw = state.config && state.config.admin ? state.config.admin.telegram_username : "Passionterps67";
         const formattedAdmins = adminUserRaw.split(/[\s,]+/).map((u) => `@${u}`).join(" / ");
         els.infoContactUsername.textContent = `Telegram: ${formattedAdmins}`;
 
@@ -831,7 +891,7 @@
         tabButtons.forEach((btn) => {
             btn.addEventListener("click", () => {
                 state.category = btn.getAttribute("data-category");
-                
+
                 // Update active class and aria-selected state on buttons
                 tabButtons.forEach((b) => {
                     b.classList.remove("active");
@@ -839,14 +899,15 @@
                 });
                 btn.classList.add("active");
                 btn.setAttribute("aria-selected", "true");
-                
+
                 renderProducts();
             });
         });
     }
 
     function productCardTemplate(product) {
-        const img = sanitize(product.image || "");
+        const rawImg = cleanMediaUrl(product.image || "", "image");
+        const rawVideo = cleanMediaUrl(product.video || "", "video");
         const name = sanitize(product.name || "Product");
         const desc = sanitize(product.description || "");
         const categoryMeta = getCategoryMeta(product.category);
@@ -858,13 +919,22 @@
         if (product.isNew) badge = `<span class="badge new">${t("badgeNew")}</span>`;
         else if (product.isPromo) badge = `<span class="badge promo">${t("badgePromo")}</span>`;
 
+        let mediaHtml = "";
+        if (rawImg && !rawImg.startsWith("data:video/")) {
+            mediaHtml = `<img src="${sanitize(rawImg)}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;\\'>📦</div>';">`;
+        } else if (rawVideo) {
+            mediaHtml = `<video src="${sanitize(rawVideo)}" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
+        } else {
+            mediaHtml = `<div style="width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;">📦</div>`;
+        }
+
         return `
             <article class="product-card" data-product-id="${product.id}">
                 <div class="product-media">
-                    <img src="${img}" alt="${name}" loading="lazy" referrerpolicy="no-referrer">
+                    ${mediaHtml}
                     <span class="status-dot" aria-hidden="true"></span>
                     ${badge}
-                    <div class="product-media-tools" aria-hidden="true">🍃 🛡️ 🌿</div>
+                    <div class="product-media-tools" aria-hidden="true">🧊🚀⚡️</div>
                 </div>
                 <div class="product-body">
                     <h3 class="product-title">${name}</h3>
@@ -1207,33 +1277,58 @@
         return `https://i.imgur.com/${id}.jpg`;
     }
 
+    function cleanMediaUrl(url, defaultType) {
+        if (!url) return "";
+        let s = String(url).trim();
+        if (!s) return "";
+
+        // application/octet-stream sans MIME → on devine selon le contexte
+        if (s.startsWith("data:application/octet-stream") || s.startsWith("data:;")) {
+            if (defaultType === "video") {
+                s = s.replace(/^data:(application\/octet-stream|);/, "data:video/mp4;");
+            } else {
+                s = s.replace(/^data:(application\/octet-stream|);/, "data:image/jpeg;");
+            }
+        }
+        // NE PAS remapper video/quicktime → video/mp4 : les données sont QuickTime,
+        // changer le MIME ne transcode pas le contenu et casse la lecture sur Chrome.
+        // iOS Safari lit nativement video/quicktime.
+
+        return s;
+    }
+
     function buildMediaSlides(product) {
         const slides = [];
         const gallery = Array.isArray(product.gallery) ? product.gallery : [];
+        const cleanImg = cleanMediaUrl(product.image || "", "image");
+        const cleanVid = cleanMediaUrl(product.video || "", "video");
 
         gallery.forEach((item) => {
             if (!item) return;
             if (typeof item === "string") {
-                slides.push({ type: "image", src: sanitize(item) });
+                const c = cleanMediaUrl(item, "image");
+                if (c) slides.push({ type: c.startsWith("data:video/") ? "video" : "image", src: sanitize(c) });
                 return;
             }
             const type = item.type === "video" ? "video" : "image";
-            const src = type === "video" ? getPlayableVideo(item.src || "") : sanitize(item.src || "");
+            const src = type === "video" ? getPlayableVideo(cleanMediaUrl(item.src || "", "video")) : sanitize(cleanMediaUrl(item.src || "", "image"));
             if (!src) return;
             if (type === "video") {
-                const fallbackThumb = sanitize(product.image || "");
-                const thumb = sanitize(item.thumb || item.poster || getVideoPreviewImage(src) || fallbackThumb);
+                const fallbackThumb = sanitize(cleanImg);
+                const thumb = sanitize(cleanMediaUrl(item.thumb || item.poster || getVideoPreviewImage(src) || fallbackThumb, "image"));
                 slides.push({ type, src, thumb, fallbackThumb });
                 return;
             }
             slides.push({ type, src });
         });
 
-        if (product.image) slides.unshift({ type: "image", src: sanitize(product.image) });
-        const videoUrl = getPlayableVideo(product.video);
+        if (cleanImg && !cleanImg.startsWith("data:video/")) {
+            slides.unshift({ type: "image", src: sanitize(cleanImg) });
+        }
+        const videoUrl = getPlayableVideo(cleanVid);
         if (videoUrl) {
-            const fallbackThumb = sanitize(product.image || "");
-            const thumb = sanitize(getVideoPreviewImage(videoUrl) || fallbackThumb);
+            const fallbackThumb = sanitize(cleanImg);
+            const thumb = sanitize(cleanMediaUrl(getVideoPreviewImage(videoUrl) || fallbackThumb, "image"));
             slides.push({ type: "video", src: videoUrl, thumb, fallbackThumb });
         }
 
@@ -1255,7 +1350,7 @@
         els.detailMediaTrack.innerHTML = detailSlides
             .map((slide, idx) => {
                 if (slide.type === "video") {
-                    return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" playsinline preload="metadata" src="${slide.src}"></video></article>`;
+                    return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" playsinline preload="metadata" src="${slide.src}"></video><button class="video-fs-btn" type="button" aria-label="Plein écran">⛶</button></article>`;
                 }
                 return `<article class="slide-item" data-slide-index="${idx}"><img class="slide-image" src="${slide.src}" alt="Media produit ${idx + 1}" loading="lazy" referrerpolicy="no-referrer"></article>`;
             })
@@ -1264,11 +1359,16 @@
         els.detailThumbs.innerHTML = detailSlides
             .map((slide, idx) => {
                 const marker = slide.type === "video" ? "▶" : "";
-                const thumbMedia = slide.type === "video"
-                    ? (slide.thumb
-                        ? `<img src="${slide.thumb}" alt="Miniature video ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" data-fallback="${slide.fallbackThumb || ""}">`
-                        : `<video src="${slide.src}" muted playsinline preload="metadata"></video>`)
-                    : `<img src="${slide.src}" alt="Miniature ${idx + 1}" loading="lazy" referrerpolicy="no-referrer">`;
+                let thumbMedia = "";
+                if (slide.type === "video") {
+                    if (slide.thumb && !slide.thumb.startsWith("data:video/")) {
+                        thumbMedia = `<img src="${slide.thumb}" alt="Miniature video ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" data-fallback="${slide.fallbackThumb || ""}" onerror="this.style.display='none';">`;
+                    } else {
+                        thumbMedia = `<video src="${slide.src}" muted playsinline preload="metadata"></video>`;
+                    }
+                } else {
+                    thumbMedia = `<img src="${slide.src}" alt="Miniature ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';">`;
+                }
                 return `<button class="detail-thumb ${idx === 0 ? "active" : ""}" data-slide-index="${idx}" type="button">${thumbMedia}<span>${marker}</span></button>`;
             })
             .join("");
@@ -1283,6 +1383,16 @@
         els.detailThumbs.querySelectorAll(".detail-thumb").forEach((btn) => {
             btn.addEventListener("click", () => {
                 setDetailSlide(parseInt(btn.dataset.slideIndex, 10), true);
+            });
+        });
+
+        // Bouton plein écran sur chaque slide vidéo
+        els.detailMediaTrack.querySelectorAll(".video-fs-btn").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const article = btn.closest(".slide-item");
+                const video = article ? article.querySelector("video") : null;
+                if (video) enterVideoFullscreen(video, btn);
             });
         });
 
@@ -1307,22 +1417,24 @@
         els.detailThumbs.querySelectorAll(".detail-thumb").forEach((thumb) => {
             thumb.classList.toggle("active", parseInt(thumb.dataset.slideIndex, 10) === detailSlideIndex);
         });
-
-        els.detailSlideCount.textContent = `${detailSlideIndex + 1} / ${detailSlides.length}`;
+        if (els.detailSlideCount) els.detailSlideCount.textContent = `${detailSlideIndex + 1} / ${detailSlides.length}`;
         pauseAllSlideVideos();
 
         const activeType = detailSlides[detailSlideIndex].type;
-        if (activeType === "video") {
+        const isVideo = activeType === "video";
+        if (isVideo) {
             const activeVideo = els.detailMediaTrack.querySelector(`.slide-item[data-slide-index="${detailSlideIndex}"] video`);
-            if (activeVideo) activeVideo.play().catch(() => {});
+            if (activeVideo) activeVideo.play().catch(() => { });
             if (els.detailMuteBtn) {
                 els.detailMuteBtn.disabled = false;
                 els.detailMuteBtn.style.opacity = "1";
             }
-        } else if (els.detailMuteBtn) {
-            els.detailMuteBtn.disabled = true;
-            els.detailMuteBtn.style.opacity = "0.45";
-            els.detailMuteBtn.textContent = "🔈";
+        } else {
+            if (els.detailMuteBtn) {
+                els.detailMuteBtn.disabled = true;
+                els.detailMuteBtn.style.opacity = "0.45";
+                els.detailMuteBtn.textContent = "🔈";
+            }
         }
         if (els.detailMuteBtn) {
             els.detailMuteBtn.setAttribute("aria-label", t("muteLabel"));
@@ -1335,6 +1447,73 @@
         video.muted = !video.muted;
         els.detailMuteBtn.textContent = video.muted ? "🔈" : "🔇";
         els.detailMuteBtn.setAttribute("aria-label", video.muted ? t("muteLabel") : t("unmuteLabel"));
+    }
+
+    function enterVideoFullscreen(video, _btn) {
+        if (!video) return;
+
+        // Sauvegarder les infos de la vidéo d'origine AVANT de la couper
+        var originalSrc = video.src;
+        var originalTime = video.currentTime || 0;
+        var originalMuted = video.muted;
+
+        // ✅ Fix double son : couper COMPLETEMENT la vidéo d'origine
+        // (pause seul ne suffit pas sur certains WebViews mobiles)
+        video.pause();
+        video.muted = true;
+        video.volume = 0;
+        video.src = "";
+        video.load();
+
+        // Créer l'overlay s'il n'existe pas encore
+        var overlay = document.getElementById("vfs-overlay");
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.id = "vfs-overlay";
+            overlay.className = "vfs-overlay";
+            overlay.innerHTML =
+                "<button class=\"vfs-close\" id=\"vfs-close\" type=\"button\" aria-label=\"Fermer\">\u2715</button>" +
+                "<video class=\"vfs-player\" id=\"vfs-player\" playsinline controls></video>";
+            document.body.appendChild(overlay);
+        }
+
+        var player = document.getElementById("vfs-player");
+        var closeBtn = document.getElementById("vfs-close");
+
+        // Lancer le player fullscreen depuis la même position
+        player.src = originalSrc;
+        player.currentTime = originalTime;
+        player.muted = false;
+        player.volume = 1;
+        overlay.style.display = "flex";
+        document.body.classList.add("vfs-open");
+        player.play().catch(function () { });
+
+        function closeOverlay() {
+            var resumeTime = 0;
+            try { resumeTime = player.currentTime; } catch (e) { }
+
+            // Stopper le player overlay
+            player.pause();
+            player.src = "";
+            player.load();
+
+            // Restaurer et reprendre la vidéo d'origine
+            video.src = originalSrc;
+            video.muted = originalMuted;
+            video.volume = 1;
+            video.load();
+            video.currentTime = resumeTime;
+            video.play().catch(function () { });
+
+            overlay.style.display = "none";
+            document.body.classList.remove("vfs-open");
+            closeBtn.onclick = null;
+            overlay.onclick = null;
+        }
+
+        closeBtn.onclick = closeOverlay;
+        overlay.onclick = function (e) { if (e.target === overlay) closeOverlay(); };
     }
 
     function openProductDetail(product) {
@@ -1635,14 +1814,22 @@
         if (els.adminTabOrders) els.adminTabOrders.classList.toggle("active", tabName === "orders");
         if (els.adminTabProducts) els.adminTabProducts.classList.toggle("active", tabName === "products");
         if (els.adminTabCategories) els.adminTabCategories.classList.toggle("active", tabName === "categories");
+        if (els.adminTabSettings) els.adminTabSettings.classList.toggle("active", tabName === "settings");
+
+        if (tabName === "reviews") loadAdminReviews();
         if (tabName === "orders") loadAdminOrders();
         if (tabName === "products") loadAdminProducts();
         if (tabName === "categories") loadAdminCategories();
+        if (tabName === "settings") loadAdminSettings();
     }
 
     function getAdminUsername() {
         const user = getTelegramUser();
-        return user && user.username ? user.username : "";
+        if (user && user.username) return user.username;
+        if (state && state.config && state.config.admin && Array.isArray(state.config.admin.whitelist) && state.config.admin.whitelist.length) {
+            return state.config.admin.whitelist[0];
+        }
+        return "wonka544";
     }
 
     async function loadAdminReviews() {
@@ -1650,36 +1837,63 @@
         els.adminReviewsPending.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
             const resp = await fetch(`./reviews.json?t=${Date.now()}`, { cache: "no-store" });
-            if (!resp.ok) {
-                els.adminReviewsPending.innerHTML = `<div class="admin-empty">Aucun avis en attente ✓</div>`;
-                return;
+            let pending = [];
+            let approved = [];
+            if (resp.ok) {
+                const data = await resp.json();
+                pending = Array.isArray(data.pending) ? data.pending : [];
+                approved = Array.isArray(data.approved) ? data.approved : [];
             }
-            const data = await resp.json();
-            const pending = Array.isArray(data.pending) ? data.pending : [];
-            if (!pending.length) {
-                els.adminReviewsPending.innerHTML = `<div class="admin-empty">Aucun avis en attente ✓</div>`;
-                return;
+
+            let html = "";
+            if (pending.length > 0) {
+                html += `<h4 style="color:var(--accent);margin:8px 0;">⏳ Avis en attente (${pending.length})</h4>`;
+                html += pending.map((r) => {
+                    const rawStars = Math.max(1, Math.min(5, r.stars || 5));
+                    const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
+                    const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
+                    const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "";
+                    return `
+                        <div class="admin-review-card">
+                            <div class="admin-review-header">
+                                <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
+                                <span class="admin-review-stars">${stars}</span>
+                            </div>
+                            <p class="admin-review-msg">${sanitize(r.message || "")}</p>
+                            <div class="admin-review-meta">${date}${handle}</div>
+                            <div class="admin-review-actions">
+                                <button class="admin-btn-approve" data-ts="${r.timestamp}" type="button">✓ Approuver</button>
+                                <button class="admin-btn-reject" data-ts="${r.timestamp}" type="button">✗ Refuser</button>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            } else {
+                html += `<div class="admin-empty" style="padding:16px;margin-bottom:12px;">Aucun avis en attente ✓</div>`;
             }
-            els.adminReviewsPending.innerHTML = pending.map((r) => {
-                const rawStars = Math.max(1, Math.min(5, r.stars || 5));
-                const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
-                const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
-                const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "@GreenHouse682";
-                return `
-                    <div class="admin-review-card">
-                        <div class="admin-review-header">
-                            <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
-                            <span class="admin-review-stars">${stars}</span>
+
+            if (approved.length > 0) {
+                html += `<h4 style="color:var(--text);margin:16px 0 8px;">✅ Avis publiés sur le site (${approved.length})</h4>`;
+                html += approved.slice().reverse().map((r) => {
+                    const rawStars = Math.max(1, Math.min(5, r.stars || 5));
+                    const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
+                    const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
+                    const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "";
+                    return `
+                        <div class="admin-review-card" style="border-color:rgba(255,255,255,0.08);">
+                            <div class="admin-review-header">
+                                <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
+                                <span class="admin-review-stars">${stars}</span>
+                            </div>
+                            <p class="admin-review-msg">${sanitize(r.message || "")}</p>
+                            <div class="admin-review-meta">${date}${handle}</div>
+                            <button class="admin-btn-delete-approved" data-ts="${r.timestamp}" type="button">🗑 Supprimer de la boutique</button>
                         </div>
-                        <p class="admin-review-msg">${sanitize(r.message || "")}</p>
-                        <div class="admin-review-meta">${date}${handle}</div>
-                        <div class="admin-review-actions">
-                            <button class="admin-btn-approve" data-ts="${r.timestamp}" type="button">✓ Approuver</button>
-                            <button class="admin-btn-reject" data-ts="${r.timestamp}" type="button">✗ Refuser</button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
+                    `;
+                }).join("");
+            }
+
+            els.adminReviewsPending.innerHTML = html;
 
             els.adminReviewsPending.querySelectorAll(".admin-btn-approve").forEach((btn) => {
                 btn.addEventListener("click", () => adminApproveReview(Number(btn.dataset.ts)));
@@ -1687,8 +1901,11 @@
             els.adminReviewsPending.querySelectorAll(".admin-btn-reject").forEach((btn) => {
                 btn.addEventListener("click", () => adminRejectReview(Number(btn.dataset.ts)));
             });
+            els.adminReviewsPending.querySelectorAll(".admin-btn-delete-approved").forEach((btn) => {
+                btn.addEventListener("click", () => adminDeleteApprovedReview(Number(btn.dataset.ts)));
+            });
         } catch (_) {
-            els.adminReviewsPending.innerHTML = `<div class="admin-empty">Aucun avis en attente ✓</div>`;
+            els.adminReviewsPending.innerHTML = `<div class="admin-empty">Erreur chargement des avis.</div>`;
         }
     }
 
@@ -1700,11 +1917,14 @@
                 body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
             });
             if (resp.ok) {
+                showToast("Avis approuvé et publié ! ⭐");
                 await syncReviewsFromLocalApi();
                 renderReviews();
                 await loadAdminReviews();
             }
-        } catch (_) {}
+        } catch (_) {
+            showToast("Erreur lors de l'approbation");
+        }
     }
 
     async function adminRejectReview(timestamp) {
@@ -1714,31 +1934,70 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
             });
-            if (resp.ok) await loadAdminReviews();
-        } catch (_) {}
+            if (resp.ok) {
+                showToast("Avis refusé");
+                await loadAdminReviews();
+            }
+        } catch (_) {
+            showToast("Erreur lors du refus");
+        }
+    }
+
+    async function adminDeleteApprovedReview(timestamp) {
+        if (!confirm("Supprimer cet avis publié ?")) return;
+        try {
+            const resp = await fetchWriteApi("/admin/reviews/delete-approved", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
+            }, true);
+            if (resp.ok) {
+                showToast("Avis supprimé ! 🗑️");
+                await syncReviewsFromLocalApi();
+                renderReviews();
+                await loadAdminReviews();
+            }
+        } catch (_) {
+            showToast("Erreur lors de la suppression");
+        }
     }
 
     async function loadAdminOrders() {
         if (!els.adminOrdersAll) return;
-        els.adminOrdersAll.innerHTML = `<div class="admin-empty">Chargement...</div>`;
+        els.adminOrdersAll.innerHTML = `<div class="admin-empty">Chargement des commandes...</div>`;
         try {
-            const resp = await fetch(`./orders.json?t=${Date.now()}`, { cache: "no-store" });
-            if (!resp.ok) {
-                els.adminOrdersAll.innerHTML = `<div class="admin-empty">Aucune commande enregistrée.</div>`;
-                return;
+            let orders = [];
+            try {
+                const resp = await fetchWriteApi("/admin/orders?tg_username=" + encodeURIComponent(getAdminUsername()));
+                if (resp && resp.ok) {
+                    const data = await resp.json();
+                    if (data && Array.isArray(data.orders)) {
+                        orders = data.orders;
+                    }
+                }
+            } catch (_) {}
+
+            if (!orders.length) {
+                try {
+                    const resp = await fetch(`./orders.json?t=${Date.now()}`, { cache: "no-store" });
+                    if (resp && resp.ok) {
+                        const data = await resp.json();
+                        if (Array.isArray(data)) orders = data;
+                    }
+                } catch (_) {}
             }
-            const data = await resp.json();
-            // orders.json est un tableau direct, trié du plus récent au plus ancien
-            const orders = Array.isArray(data) ? [...data].reverse() : [];
+
             if (!orders.length) {
                 els.adminOrdersAll.innerHTML = `<div class="admin-empty">Aucune commande enregistrée.</div>`;
                 return;
             }
+
+            const sortedOrders = [...orders].reverse();
             els.adminOrdersAll.innerHTML = `<button class="admin-refresh-btn" id="admin-orders-refresh-btn" type="button">↻ Actualiser</button>` +
-                orders.map((o) => {
+                sortedOrders.map((o) => {
                     const date = new Date(o.timestamp || Date.now()).toLocaleString("fr-FR");
                     const typeLabel = o.type === "pickup" ? "Sur place" : "Livraison";
-                    const user = o.telegramUsername ? `@${sanitize(o.telegramUsername)}` : (o.telegramUserId ? `ID ${o.telegramUserId}` : "Anonyme");
+                    const user = o.telegramUsername || o.telegram_username ? `@${sanitize(o.telegramUsername || o.telegram_username)}` : (o.telegramUserId || o.telegram_user_id ? `ID ${o.telegramUserId || o.telegram_user_id}` : "Anonyme");
                     return `
                         <div class="admin-order-card">
                             <div class="admin-order-header">
@@ -1766,7 +2025,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(order)
             });
-        } catch (_) {}
+        } catch (_) { }
     }
 
     // ===== ADMIN PRODUITS =====
@@ -1775,56 +2034,286 @@
         if (!els.adminProductsContent) return;
         els.adminProductsContent.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
-            let cfg = state.config && typeof state.config === "object" ? state.config : null;
-            const cfgResp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
-            if (cfgResp.ok) {
-                cfg = await cfgResp.json();
-            }
+            // Toujours recharger la config fraîche depuis le serveur
+            await loadConfig();
+            const cfg = state.config;
             if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
             const products = cfg.products || {};
-            const allProducts = [];
-            for (const [catKey, prods] of Object.entries(products)) {
-                for (const p of prods) allProducts.push({ ...p, category: catKey });
-            }
             const catNames = {};
             for (const [key, cat] of Object.entries(categories)) catNames[key] = `${cat.emoji || ""} ${cat.name}`;
+
             let html = `<button class="admin-add-btn" id="admin-add-product-btn" type="button">+ Ajouter un produit</button>`;
-            if (!allProducts.length) {
-                html += `<div class="admin-empty">Aucun produit.</div>`;
-            } else {
-                html += allProducts.map((p) => `
+
+            let totalProds = 0;
+            for (const [catKey, prods] of Object.entries(products)) {
+                if (!Array.isArray(prods) || !prods.length) continue;
+                totalProds += prods.length;
+                html += `<h4 style="color:var(--accent);margin:14px 0 6px;">${sanitize(catNames[catKey] || catKey)} (${prods.length})</h4>`;
+                html += prods.map((p, idx) => {
+                    const isFirst = idx === 0;
+                    const isLast = idx === prods.length - 1;
+                    const thumb = p.image ? `<img class="admin-product-thumb" src="${sanitize(p.image)}" alt="">` : `<div class="admin-product-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${sanitize(p.emoji || "📦")}</div>`;
+                    return `
                     <div class="admin-product-card">
-                        <div class="admin-product-header">
-                            <span class="admin-product-name">${sanitize(p.name || "")}</span>
-                            <span class="admin-product-price">${(p.price || 0).toFixed(2)} €</span>
+                        <div class="admin-product-row">
+                            <div class="admin-reorder-btns">
+                                <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="up" type="button" ${isFirst ? "disabled" : ""}>▲</button>
+                                <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="down" type="button" ${isLast ? "disabled" : ""}>▼</button>
+                            </div>
+                            ${thumb}
+                            <div style="flex:1;min-width:0;">
+                                <div class="admin-product-header" style="margin-bottom:2px;">
+                                    <span class="admin-product-name">${sanitize(p.name || "")}</span>
+                                    <span class="admin-product-price">${(p.price || 0).toFixed(2)} €</span>
+                                </div>
+                                <span class="admin-product-cat">${sanitize(catNames[catKey] || catKey)}</span>
+                            </div>
                         </div>
-                        <span class="admin-product-cat">${sanitize(catNames[p.category] || p.category)}</span>
-                        <div class="admin-review-actions">
+                        <div class="admin-review-actions" style="margin-top:6px;">
                             <button class="admin-btn-edit" data-pid="${p.id}" type="button">✏️ Modifier</button>
                             <button class="admin-btn-reject" data-pid="${p.id}" type="button">🗑 Supprimer</button>
                         </div>
-                    </div>`).join("");
+                    </div>`;
+                }).join("");
             }
+
+            if (!totalProds) {
+                html += `<div class="admin-empty">Aucun produit dans le catalogue.</div>`;
+            }
+
             els.adminProductsContent.innerHTML = html;
+
+            const allProductsList = [];
+            for (const [catKey, prods] of Object.entries(products)) {
+                if (Array.isArray(prods)) {
+                    for (const p of prods) allProductsList.push({ ...p, category: catKey });
+                }
+            }
+
             const addBtn = document.getElementById("admin-add-product-btn");
-            if (addBtn) addBtn.addEventListener("click", () => showAdminProductForm(null, cfg));
+            // { once: true } : le listener se supprime automatiquement après le 1er clic
+            // Cela évite l'accumulation de listeners lors des re-rendus successifs
+            if (addBtn) addBtn.addEventListener("click", () => showAdminProductForm(null, cfg), { once: true });
+
             els.adminProductsContent.querySelectorAll(".admin-btn-edit[data-pid]").forEach((btn) => {
                 btn.addEventListener("click", () => {
-                    const pid = Number(btn.dataset.pid);
-                    const product = allProducts.find((p) => p.id === pid);
+                    const pid = String(btn.dataset.pid || "").trim();
+                    const product = allProductsList.find((p) => String(p.id).trim() === pid);
                     if (product) showAdminProductForm(product, cfg);
-                });
+                }, { once: true });
             });
+
             els.adminProductsContent.querySelectorAll(".admin-btn-reject[data-pid]").forEach((btn) => {
                 btn.addEventListener("click", async () => {
                     if (!confirm("Supprimer ce produit ?")) return;
-                    await adminDeleteProduct(Number(btn.dataset.pid));
-                });
+                    const pid = String(btn.dataset.pid || "").trim();
+                    if (!pid) return;
+                    btn.disabled = true;
+                    await adminDeleteProduct(pid);
+                }, { once: true });
             });
+
+            els.adminProductsContent.querySelectorAll(".admin-btn-reorder").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const pid = String(btn.dataset.pid || "").trim();
+                    const cat = btn.dataset.cat;
+                    const dir = btn.dataset.dir;
+                    btn.disabled = true;
+                    await adminReorderProduct(cat, pid, dir);
+                }, { once: true });
+            });
+
         } catch (_) {
             els.adminProductsContent.innerHTML = `<div class="admin-empty">Impossible de charger les produits.<br>Réessaie dans quelques secondes.</div>`;
         }
+    }
+
+    function applyUpdatedConfig(cfg) {
+        if (cfg && typeof cfg === "object") {
+            state.config = cfg;
+            state.products = allProductsFromConfig(cfg);
+            state.categories = Object.keys(cfg.categories || {});
+        }
+    }
+
+    async function adminReorderProduct(category, productId, direction) {
+        try {
+            const resp = await fetchWriteApi("/admin/products/reorder", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), category, product_id: productId, direction })
+            });
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
+                showToast("Ordre mis à jour ↕️");
+                renderProducts();
+                await loadAdminProducts();
+            } else {
+                showToast((data && data.error) || "Erreur réorganisation", "error");
+            }
+        } catch (_) {
+            showToast("Erreur de connexion VPS", "error");
+        }
+    }
+
+    async function uploadToFreeimageHost(file) {
+        try {
+            const formData = new FormData();
+            formData.append("action", "upload");
+            formData.append("source", file, file.name || "image.png");
+            formData.append("key", "6d207e02198a847aa98d0a2a901485a5");
+            formData.append("format", "json");
+            const resp = await fetch("https://freeimage.host/api/1/upload", {
+                method: "POST",
+                body: formData
+            });
+            if (resp && resp.ok) {
+                const json = await resp.json();
+                if (json && json.image && json.image.url) {
+                    return String(json.image.url);
+                }
+            }
+        } catch (e) {
+            console.warn("freeimage upload failed:", e);
+        }
+        return null;
+    }
+
+    async function uploadToLitterbox(file, filename) {
+        try {
+            const formData = new FormData();
+            formData.append("reqtype", "fileupload");
+            formData.append("time", "72h");
+            formData.append("fileToUpload", file, filename);
+            const resp = await fetch("https://litterbox.catbox.moe/resources/internals/api.php", {
+                method: "POST",
+                body: formData
+            });
+            if (!resp || !resp.ok) return null;
+            const text = (await resp.text()).trim();
+            return text.startsWith("https://") ? text : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    async function uploadMediaFile(file) {
+        const ext = (file.name || "").split(".").pop().toLowerCase() || "bin";
+        const filename = `up_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+        const isImage = file.type && file.type.startsWith("image/");
+
+        // 1. Upload VPS via fetchWriteApi (/admin/upload)
+        try {
+            const formData = new FormData();
+            formData.append("file", file, filename);
+            const resp = await fetchWriteApi("/admin/upload", {
+                method: "POST",
+                body: formData
+            }, 120000);
+            if (resp && resp.ok) {
+                const data = await resp.json();
+                if (data && data.success && data.url) {
+                    return data.url;
+                }
+            }
+        } catch (e) {
+            console.warn("VPS upload failed, trying cloud fallbacks...", e);
+        }
+
+        // 2. Si c'est une image : hébergeur direct CDN (FreeImage iili.io)
+        if (isImage) {
+            try {
+                const freeimgUrl = await uploadToFreeimageHost(file);
+                if (freeimgUrl) return freeimgUrl;
+            } catch (_) {}
+        }
+
+        // 3. Fallback Litterbox (pour vidéos et photos - lien HTTPS direct)
+        try {
+            const cloudUrl = await uploadToLitterbox(file, filename);
+            if (cloudUrl) return cloudUrl;
+        } catch (_) {}
+
+        return null;
+    }
+
+    async function handleAdminFileUpload(fileInputEl, targetUrlInputId, statusElId) {
+        const file = fileInputEl.files && fileInputEl.files[0];
+        if (!file) return;
+
+        const statusEl = document.getElementById(statusElId);
+        if (statusEl) statusEl.textContent = "⏳ Chargement du fichier...";
+
+        if (file.size > 100 * 1024 * 1024) {
+            if (statusEl) statusEl.textContent = "❌ Fichier trop lourd (max 100 Mo)";
+            showToast("Le fichier dépasse 100 Mo", "error");
+            return;
+        }
+
+        const isVideoTarget = targetUrlInputId === "apf-video";
+        const isImageTarget = targetUrlInputId === "apf-img";
+        const isImageFile = file.type && file.type.startsWith("image/");
+        const isVideoFile = file.type && file.type.startsWith("video/");
+        const isVideo = isVideoTarget || isVideoFile;
+
+        if (statusEl) statusEl.textContent = isVideo ? "⏳ Upload vidéo en cours..." : "⏳ Upload photo en cours...";
+
+        const uploadedUrl = await uploadMediaFile(file);
+        const targetInput = document.getElementById(targetUrlInputId);
+
+        if (uploadedUrl) {
+            if (targetInput) targetInput.value = uploadedUrl;
+            if (statusEl) statusEl.textContent = isVideo ? "✅ Vidéo uploadée !" : "✅ Photo uploadée !";
+            showToast(isVideo ? "Vidéo hébergée en ligne ! 🎬" : "Photo hébergée en ligne ! 🚀");
+            return;
+        }
+
+        // Fallback local (base64 data URL) pour photos ET vidéos si tous les cloud/VPS sont indisponibles
+        try {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (targetInput) targetInput.value = e.target.result;
+                if (statusEl) statusEl.textContent = isVideo ? "✅ Vidéo prête (locale)" : "✅ Photo prête (locale)";
+                showToast(isVideo ? "Vidéo chargée localement ! 🎬" : "Photo chargée localement ! 🚀");
+            };
+            reader.readAsDataURL(file);
+            return;
+        } catch (_) {}
+
+        if (statusEl) statusEl.textContent = "❌ Upload impossible — colle un lien URL à la place";
+        showToast("Upload impossible. Colle un lien direct dans le champ URL.", "error");
+    }
+
+    function parseCustomPricesInput(rawStr) {
+        if (!rawStr || !rawStr.trim()) return {};
+        const text = rawStr.trim();
+        // 1. Si format JSON valide fourni par l'utilisateur
+        if (text.startsWith("{")) {
+            try { return JSON.parse(text); } catch (_) {}
+        }
+        // 2. Format simplifié ultra intuitif : "10: 80", "10 = 80", "10:80, 20:150"
+        const result = {};
+        const lines = text.split(/[\n,;]+/);
+        for (const line of lines) {
+            const parts = line.split(/[:=]+/).map(s => s.trim());
+            if (parts.length === 2 && parts[0] && parts[1]) {
+                const key = parts[0];
+                const val = parseFloat(parts[1]);
+                if (!isNaN(val)) {
+                    result[key] = val;
+                }
+            }
+        }
+        return result;
+    }
+
+    function formatCustomPricesForEdit(cpObj) {
+        if (!cpObj || typeof cpObj !== "object") return "";
+        const entries = Object.entries(cpObj);
+        if (!entries.length) return "";
+        return entries.map(([qty, price]) => `${qty}: ${price}`).join("\n");
     }
 
     function showAdminProductForm(product, cfg) {
@@ -1833,7 +2322,7 @@
         const catOptions = Object.entries(categories).map(([key, cat]) =>
             `<option value="${sanitize(key)}" ${product && product.category === key ? "selected" : ""}>${sanitize(cat.emoji || "")} ${sanitize(cat.name)}</option>`
         ).join("");
-        const customPricesStr = product && product.customPrices ? JSON.stringify(product.customPrices, null, 2) : "";
+        const customPricesStr = product && product.customPrices ? formatCustomPricesForEdit(product.customPrices) : "";
         const formHtml = `
             <div class="admin-form-wrap">
                 <button class="admin-form-back-btn" id="admin-product-form-back" type="button">← Retour</button>
@@ -1843,9 +2332,28 @@
                     <label class="admin-label">Description<textarea class="admin-input admin-textarea" id="apf-desc" maxlength="500">${sanitize(product ? (product.description || "") : "")}</textarea></label>
                     <label class="admin-label">Catégorie *<select class="admin-input" id="apf-cat">${catOptions}</select></label>
                     <label class="admin-label">Prix de base (€) *<input class="admin-input" id="apf-price" type="number" step="0.01" min="0" value="${product ? (product.price || 0) : ""}" required></label>
-                    <label class="admin-label">Prix personnalisés (JSON)<span class="admin-hint">Ex: {"1.5": 20, "3.5": 50, "10": 110}</span><textarea class="admin-input admin-textarea" id="apf-custom" rows="4">${customPricesStr}</textarea></label>
-                    <label class="admin-label">Image (URL)<input class="admin-input" id="apf-img" type="text" value="${sanitize(product ? (product.image || "") : "")}"></label>
-                    <label class="admin-label">Vidéo (URL, optionnel)<input class="admin-input" id="apf-video" type="text" value="${sanitize(product ? (product.video || "") : "")}"></label>
+                    <label class="admin-label">Prix par quantité<span class="admin-hint">Ex: 10: 80 (Quantité: Prix, une par ligne)</span><textarea class="admin-input admin-textarea" id="apf-custom" rows="4" placeholder="10: 80&#10;20: 150&#10;50: 350">${customPricesStr}</textarea></label>
+                    
+                    <div style="margin-bottom:12px;">
+                        <label class="admin-label">Image (Lien URL ou Fichier appareil)</label>
+                        <input class="admin-input" id="apf-img" type="text" placeholder="https://..." value="${sanitize(product ? (product.image || "") : "")}">
+                        <div class="admin-upload-box">
+                            <label class="admin-upload-btn" for="apf-img-file">📷 Choisir une photo depuis l'appareil</label>
+                            <input type="file" id="apf-img-file" accept="image/*" style="display:none;">
+                            <span class="admin-upload-status" id="apf-img-status"></span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <label class="admin-label">Vidéo (Lien URL ou Fichier appareil, optionnel)</label>
+                        <input class="admin-input" id="apf-video" type="text" placeholder="https://..." value="${sanitize(product ? (product.video || "") : "")}">
+                        <div class="admin-upload-box">
+                            <label class="admin-upload-btn" for="apf-video-file">📹 Choisir une vidéo depuis l'appareil</label>
+                            <input type="file" id="apf-video-file" accept="video/*" style="display:none;">
+                            <span class="admin-upload-status" id="apf-video-status"></span>
+                        </div>
+                    </div>
+
                     <label class="admin-label">Emoji<input class="admin-input" id="apf-emoji" type="text" maxlength="8" value="${sanitize(product ? (product.emoji || "📦") : "📦")}"></label>
                     <div class="admin-check-row">
                         <label class="admin-check-label"><input type="checkbox" id="apf-new" ${product && product.isNew ? "checked" : ""}> Nouveau</label>
@@ -1857,15 +2365,29 @@
             </div>`;
         if (els.adminProductsContent) els.adminProductsContent.innerHTML = formHtml;
         document.getElementById("admin-product-form-back").addEventListener("click", loadAdminProducts);
+
+        const imgFileInput = document.getElementById("apf-img-file");
+        if (imgFileInput) {
+            imgFileInput.addEventListener("change", function () {
+                handleAdminFileUpload(this, "apf-img", "apf-img-status");
+            });
+        }
+
+        const videoFileInput = document.getElementById("apf-video-file");
+        if (videoFileInput) {
+            videoFileInput.addEventListener("change", function () {
+                handleAdminFileUpload(this, "apf-video", "apf-video-status");
+            });
+        }
+
         document.getElementById("admin-product-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             const nameVal = document.getElementById("apf-name").value.trim();
             const catVal = document.getElementById("apf-cat").value;
             const priceVal = parseFloat(document.getElementById("apf-price").value) || 0;
             if (!nameVal || !catVal) return;
-            let customPrices = {};
             const cpRaw = document.getElementById("apf-custom").value.trim();
-            if (cpRaw) { try { customPrices = JSON.parse(cpRaw); } catch (_) { alert("Prix personnalisés: JSON invalide"); return; } }
+            const customPrices = parseCustomPricesInput(cpRaw);
             const productData = {
                 name: nameVal,
                 description: document.getElementById("apf-desc").value.trim(),
@@ -1890,39 +2412,47 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), product: productData })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
-                await loadConfig();
+                if (data && data.config) applyUpdatedConfig(data.config);
+                showToast("Produit sauvegardé ! 📦");
                 renderCategories();
                 renderProducts();
                 await loadAdminProducts();
             } else {
-                alert((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`);
+                showToast((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            alert("Impossible de contacter le serveur.");
+            showToast("Impossible de contacter le serveur VPS.", "error");
         }
     }
 
+    let _deletingProductId = null; // garde anti-doublon global
     async function adminDeleteProduct(productId) {
+        const pidStr = String(productId || "").trim();
+        if (!pidStr || _deletingProductId === pidStr) return; // déjà en cours
+        _deletingProductId = pidStr;
         try {
             const resp = await fetchWriteApi("/admin/products/delete", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), product_id: productId })
-            }, true);
+                body: JSON.stringify({ tg_username: getAdminUsername(), product_id: pidStr })
+            });
             const data = await readJsonIfAny(resp);
-            if (resp.ok && (!data || data.success !== false)) {
-                await loadConfig();
+            if (resp.ok && data && data.success === true) {
+                if (data.config) applyUpdatedConfig(data.config);
+                showToast("Produit supprimé ! 🗑️");
                 renderCategories();
                 renderProducts();
                 await loadAdminProducts();
             } else {
-                alert((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`);
+                showToast((data && data.error) || `Erreur suppression (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            alert("Impossible de contacter le serveur.");
+            showToast("Impossible de contacter le serveur VPS.", "error");
+        } finally {
+            _deletingProductId = null; // libérer le verrou
         }
     }
 
@@ -1932,11 +2462,8 @@
         if (!els.adminCategoriesContent) return;
         els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
-            let cfg = state.config && typeof state.config === "object" ? state.config : null;
-            const cfgResp = await fetch(`./config.json?t=${Date.now()}`, { cache: "no-store" });
-            if (cfgResp.ok) {
-                cfg = await cfgResp.json();
-            }
+            await loadConfig();
+            const cfg = state.config;
             if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
             const products = cfg.products || {};
@@ -1993,9 +2520,9 @@
                 <h3 class="admin-form-title">${isEdit ? "✏️ Modifier la catégorie" : "➕ Nouvelle catégorie"}</h3>
                 <form id="admin-cat-form" autocomplete="off">
                     ${isEdit
-                        ? `<input type="hidden" id="acf-key" value="${sanitize(key)}">`
-                        : `<label class="admin-label">Clé (slug) *<span class="admin-hint">Minuscules, pas d'espaces (ex: hash)</span><input class="admin-input" id="acf-key" type="text" maxlength="30" required></label>`
-                    }
+                ? `<input type="hidden" id="acf-key" value="${sanitize(key)}">`
+                : `<label class="admin-label">Clé (slug) *<span class="admin-hint">Minuscules, pas d'espaces (ex: hash)</span><input class="admin-input" id="acf-key" type="text" maxlength="30" required></label>`
+            }
                     <label class="admin-label">Nom *<input class="admin-input" id="acf-name" type="text" maxlength="50" value="${sanitize(cat ? cat.name : "")}" required></label>
                     <label class="admin-label">Emoji<input class="admin-input" id="acf-emoji" type="text" maxlength="8" value="${sanitize(cat ? (cat.emoji || "📦") : "📦")}"></label>
                     <label class="admin-label">Description<input class="admin-input" id="acf-desc" type="text" maxlength="200" value="${sanitize(cat ? (cat.description || "") : "")}"></label>
@@ -2024,18 +2551,19 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), ...catData })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
-                await loadConfig();
+                if (data && data.config) applyUpdatedConfig(data.config);
+                showToast("Catégorie sauvegardée ! 📁");
                 renderCategories();
                 renderProducts();
                 await loadAdminCategories();
             } else {
-                alert((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`);
+                showToast((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            alert("Impossible de contacter le serveur.");
+            showToast("Impossible de contacter le serveur VPS.", "error");
         }
     }
 
@@ -2045,18 +2573,226 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ tg_username: getAdminUsername(), key })
-            }, true);
+            });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
-                await loadConfig();
+                if (data && data.config) applyUpdatedConfig(data.config);
+                showToast("Catégorie supprimée ! 🗑️");
                 renderCategories();
                 renderProducts();
                 await loadAdminCategories();
             } else {
-                alert((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`);
+                showToast((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            alert("Impossible de contacter le serveur.");
+            showToast("Impossible de contacter le serveur VPS.", "error");
+        }
+    }
+
+    // ===== ADMIN PARAMÈTRES (SETTINGS) =====
+
+    async function loadAdminSettings() {
+        if (!els.adminSettingsContent) return;
+        els.adminSettingsContent.innerHTML = `<div class="admin-empty">Chargement des paramètres...</div>`;
+        try {
+            let cfg = state.config && typeof state.config === "object" ? state.config : null;
+            if (!cfg) {
+                await loadConfig();
+                cfg = state.config;
+            }
+            if (!cfg) throw new Error("config indisponible");
+
+            const rest = cfg.restaurant || {};
+            const adminCfg = cfg.admin || {};
+            const whitelist = Array.isArray(adminCfg.whitelist) ? adminCfg.whitelist : [];
+            const tgUser = cfg.telegram_username || "";
+            const chLink = cfg.channel_link || "";
+
+            const wlChips = whitelist.map((u) => `
+                <span class="admin-chip">
+                    @${sanitize(u)}
+                    <button class="admin-chip-remove" data-user="${sanitize(u)}" type="button" title="Retirer">×</button>
+                </span>
+            `).join("");
+
+            const html = `
+                <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">🏪 Infos de la Boutique</div>
+                    <form id="admin-form-settings" autocomplete="off">
+                        <label class="admin-label">Nom de l'établissement
+                            <input class="admin-input" id="as-name" type="text" value="${sanitize(rest.name || '')}" required>
+                        </label>
+                        <label class="admin-label">Slogan / Sous-titre
+                            <input class="admin-input" id="as-slogan" type="text" value="${sanitize(rest.slogan || '')}">
+                        </label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <label class="admin-label">Devise
+                                <input class="admin-input" id="as-currency" type="text" value="${sanitize(rest.currency || 'EUR')}">
+                            </label>
+                            <label class="admin-label">Commande min (€)
+                                <input class="admin-input" id="as-minorder" type="number" step="0.01" value="${rest.minOrder || 0}">
+                            </label>
+                        </div>
+                        <label class="admin-label">Frais de livraison (€)
+                            <input class="admin-input" id="as-deliveryfee" type="number" step="0.01" value="${rest.deliveryFee || 0}">
+                        </label>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer les infos</button>
+                    </form>
+                </div>
+
+                <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">✈️ Telegram & Contacts</div>
+                    <form id="admin-form-contact" autocomplete="off">
+                        <label class="admin-label">Username Telegram (Sans @)
+                            <input class="admin-input" id="as-tg-username" type="text" value="${sanitize(tgUser)}">
+                        </label>
+                        <label class="admin-label">Lien du Canal Telegram
+                            <input class="admin-input" id="as-channel-link" type="text" value="${sanitize(chLink)}">
+                        </label>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer les contacts</button>
+                    </form>
+                </div>
+
+                <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">🌐 URL du Serveur VPS (API)</div>
+                    <p class="admin-hint">Indiquez l'URL de votre serveur VPS (ex: http://185.185.83.209:4001 ou votre lien HTTPS / Ngrok si hébergé sur Vercel).</p>
+                    <form id="admin-form-api-url" autocomplete="off">
+                        <label class="admin-label">URL API Server
+                            <input class="admin-input" id="as-api-url" type="text" value="${sanitize(getStoredWriteApiBase() || (adminCfg && adminCfg.api_base) || LOCAL_API_BASE)}" placeholder="http://185.185.83.209:4001">
+                        </label>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer l'URL API</button>
+                    </form>
+                </div>
+
+                <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">🛡️ Administrateurs Autorisés (Whitelist)</div>
+                    <p class="admin-hint">Seuls les utilisateurs listés ici ont accès à ce panneau de gestion.</p>
+                    <div class="admin-whitelist-chips">
+                        ${wlChips || '<span class="admin-hint">Aucun admin supplémentaire</span>'}
+                    </div>
+                    <form id="admin-form-whitelist" style="margin-top:10px;" autocomplete="off">
+                        <div style="display:flex;gap:8px;">
+                            <input class="admin-input" id="as-new-admin" type="text" placeholder="Username Telegram">
+                            <button class="admin-add-btn" style="margin-bottom:0;width:auto;white-space:nowrap;padding:0 16px;" type="submit">+ Ajouter</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            els.adminSettingsContent.innerHTML = html;
+
+            document.getElementById("admin-form-api-url").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const newUrl = document.getElementById("as-api-url").value.trim();
+                if (!newUrl) return;
+                setStoredWriteApiBase(newUrl);
+                showToast("URL API enregistrée ! 🌐");
+                await adminSaveContact({ api_base: newUrl });
+            });
+
+            document.getElementById("admin-form-settings").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const settingsData = {
+                    name: document.getElementById("as-name").value.trim(),
+                    slogan: document.getElementById("as-slogan").value.trim(),
+                    currency: document.getElementById("as-currency").value.trim(),
+                    minOrder: parseFloat(document.getElementById("as-minorder").value) || 0,
+                    deliveryFee: parseFloat(document.getElementById("as-deliveryfee").value) || 0,
+                };
+                await adminSaveSettings(settingsData);
+            });
+
+            document.getElementById("admin-form-contact").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const contactData = {
+                    telegram_username: document.getElementById("as-tg-username").value.trim().replace(/^@/, ""),
+                    channel_link: document.getElementById("as-channel-link").value.trim(),
+                };
+                await adminSaveContact(contactData);
+            });
+
+            document.getElementById("admin-form-whitelist").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const input = document.getElementById("as-new-admin");
+                const newUsername = input.value.trim().replace(/^@/, "");
+                if (!newUsername) return;
+                const currentWL = Array.isArray(cfg.admin && cfg.admin.whitelist) ? [...cfg.admin.whitelist] : [];
+                if (!currentWL.includes(newUsername)) {
+                    currentWL.push(newUsername);
+                    await adminSaveWhitelist(currentWL);
+                }
+            });
+
+            els.adminSettingsContent.querySelectorAll(".admin-chip-remove").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const toRemove = btn.dataset.user;
+                    const currentWL = Array.isArray(cfg.admin && cfg.admin.whitelist) ? [...cfg.admin.whitelist] : [];
+                    const updatedWL = currentWL.filter((u) => u !== toRemove);
+                    await adminSaveWhitelist(updatedWL);
+                });
+            });
+
+        } catch (_) {
+            els.adminSettingsContent.innerHTML = `<div class="admin-empty">Impossible de charger les paramètres.</div>`;
+        }
+    }
+
+    async function adminSaveSettings(settings) {
+        try {
+            const resp = await fetchWriteApi("/admin/settings/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), settings })
+            });
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
+                showToast("Paramètres sauvegardés ! ⚙️");
+                renderUser();
+            } else {
+                showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
+            }
+        } catch (_) {
+            showToast("Erreur de connexion VPS.", "error");
+        }
+    }
+
+    async function adminSaveContact(contact) {
+        try {
+            const resp = await fetchWriteApi("/admin/contact/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), contact })
+            });
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
+                showToast("Contacts mis à jour ! 📱");
+            } else {
+                showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
+            }
+        } catch (_) {
+            showToast("Erreur de connexion VPS.", "error");
+        }
+    }
+
+    async function adminSaveWhitelist(whitelist) {
+        try {
+            const resp = await fetchWriteApi("/admin/whitelist/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tg_username: getAdminUsername(), whitelist })
+            });
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
+                showToast("Liste des admins mise à jour ! 🛡️");
+                await loadAdminSettings();
+            } else {
+                showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
+            }
+        } catch (_) {
+            showToast("Erreur de connexion VPS.", "error");
         }
     }
 
@@ -2088,9 +2824,46 @@
             return;
         }
 
+        if (els.introSub) els.introSub.textContent = "Chargement de la boutique...";
+        setTimeout(() => {
+            if (els.introSub) els.introSub.textContent = "Préparation de la carte...";
+        }, 400);
+        setTimeout(() => {
+            if (els.introSub) els.introSub.textContent = "Ouverture du menu...";
+        }, 850);
         setTimeout(() => {
             document.body.classList.add("app-ready");
-        }, 900);
+        }, 1200);
+
+        // Auto refresh silencieux quand l'utilisateur réouvre ou revient sur l'application Telegram
+        document.addEventListener("visibilitychange", async () => {
+            if (document.visibilityState === "visible") {
+                try {
+                    await loadConfig();
+                    renderCategories();
+                    renderProducts();
+                } catch (_) {}
+            }
+        });
+
+        window.addEventListener("focus", async () => {
+            try {
+                await loadConfig();
+                renderCategories();
+                renderProducts();
+            } catch (_) {}
+        });
+
+        // Synchronisation périodique automatique (toutes les 45 secondes)
+        setInterval(async () => {
+            if (document.visibilityState === "visible") {
+                try {
+                    await loadConfig();
+                    renderCategories();
+                    renderProducts();
+                } catch (_) {}
+            }
+        }, 45000);
     }
 
     document.addEventListener("DOMContentLoaded", bootstrap);

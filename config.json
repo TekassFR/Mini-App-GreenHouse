@@ -3,15 +3,16 @@
     "name": "Restaurant Menu",
     "description": "Mini-App Telegram pour commandes en ligne",
     "currency": "€",
-    "delivery_fee": 2.50,
-    "min_order": 15.00
+    "delivery_fee": 2.5,
+    "min_order": 15.0
   },
   "admin": {
-    "telegram_username": "GreenHouse682",
-    "channel_link": "https://t.me/+my0XrYsNth80OGE0",
-    "api_base": "http://192.168.1.135:3000",
+    "api_base": "https://wieldable-blah-fineness.ngrok-free.dev",
+    "telegram_username": "wonka544",
+    "channel_link": "https://t.me/+Hi2aQ4aYPn85ZTQ0",
     "whitelist": [
-      "GreenHouse682"
+      "wonka544",
+      "tekasspaslatete"
     ]
   },
   "categories": {
@@ -19,68 +20,119 @@
       "name": "Hash",
       "emoji": "🍫",
       "description": "Nos produits en Hash"
-    },
-    "pasta": {
-      "name": "Weed",
-      "emoji": "🌿",
-      "description": "Nos produits en Weed"
     }
   },
   "products": {
     "pizza": [
       {
-        "id": 2,
-        "name": "Richard Mille",
-        "description": "Hash premium aux notes puissante, texture sèche/sableuse, pressage léger, idéal pour les amateurs de qualité 🔥💎.",
-        "price": 10,
-        "emoji": "🍫",
-        "image": "https://i.ibb.co/Kx0Fb4rR/93398cad-274a-468b-959f-36e3589b37b4.jpg",
+        "id": 23,
+        "name": "Jaune mousseux 🧽",
+        "description": "Jaune au top du top rapport qualité prix 🏆",
+        "price": 10.0,
+        "emoji": "🧽🤯",
+        "image": "https://litter.catbox.moe/ytn3o9.png",
+        "video": "https://litter.catbox.moe/8l7xqn.mp4",
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/nyPKpcm.mp4",
         "customPrices": {
-          "5": 40.00,
-          "10": 70.00,
-          "100": 380.00
-        }
-      }
-    ],
-    "pasta": [
-      {
-        "id": 8,
-        "name": "RS11",
-        "description": "La RS11 est un extraordinaire cannabis une variété qui captive l'imagination avec son profil de saveur unique et ses effets puissants.",
-        "price": 20.00,
-        "emoji": "🌿",
-        "image": "https://i.imgur.com/i4GMB7v.png",
-        "category": "pasta",
-        "isNew": true,
-        "isPromo": false,
-        "video": "https://i.imgur.com/9tcFE8l.mp4",
-        "customPrices": {
-          "1.5": 20.00,
-          "3.5": 50.00,
-          "5": 60.00,
-          "10": 120.00
+          "2g": 10,
+          "4g": 20,
+          "10g": 50,
+          "50g": 160,
+          "100g": 300
         }
       },
       {
-        "id": 7,
-        "name": "Ice Cream Cake",
-        "description": "La Ice Cream Cake est une hybride américaine extrêmement puissante, dotée d'un profil terpénique intense et d'un taux de THC très élevé, compris entre 23-27% en moyenne.",
-        "price": 20.00,
-        "emoji": "🌿",
-        "image": "https://i.imgur.com/O0deSzA.png.jpeg",
-        "category": "pasta",
+        "id": 24,
+        "name": "Bonbon 🍬 thc 🤯",
+        "description": "Bonbon thc super goûtu super défonce ! au top du top 💪🤯",
+        "price": 30.0,
+        "emoji": "🍬",
+        "image": "https://litter.catbox.moe/sttbqx.png",
+        "video": "https://litter.catbox.moe/fjja4n.mp4",
+        "category": "pizza",
         "isNew": true,
         "isPromo": false,
-        "video": "https://i.imgur.com/gt63FTa.mp4",
         "customPrices": {
-          "1.5": 20.00,
-          "3.5": 50.00,
-          "5": 70.00,
-          "10": 130.00
+          "2b": 20,
+          "4b": 40,
+          "10b": 60
+        }
+      },
+      {
+        "id": 28,
+        "name": "STATIC ⚡️PLASMA 🚀",
+        "description": "Vous connaissez déjà 🤝 produit au top du top produit de fous explosion 🤯 de saveur 👅 les vrais connaisse déjà rien que a voir en vidéo 🤩🚀",
+        "price": 20.0,
+        "emoji": "📦",
+        "image": "https://litter.catbox.moe/uxw1aq.png",
+        "video": "https://litter.catbox.moe/tuqwt6.mp4",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "customPrices": {
+          "1": 20,
+          "2": 40,
+          "10": 160,
+          "50": 700,
+          "5g": 90,
+          "100": 1250
+        }
+      },
+      {
+        "id": 27,
+        "name": "Static forbiden fruits 🍇",
+        "description": "Static très goûtu 👅arrière goût fruité 🍇🍒 meilleur rapport qualité prix bonne défonce ‼️🤝",
+        "price": 10.0,
+        "emoji": "⚡️",
+        "image": "https://litter.catbox.moe/rnqswi.png",
+        "video": "https://litter.catbox.moe/9etn68.mp4",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "customPrices": {
+          "1": 10,
+          "2": 20,
+          "10": 80,
+          "100": 500,
+          "50g": 270
+        }
+      },
+      {
+        "id": 25,
+        "name": "Frozen 🧊 blue Berry",
+        "description": "Frozen pétant pour les fin palais régalez vous c’est des produit de qualité 🤝🫡",
+        "price": 10.0,
+        "emoji": "🧊",
+        "image": "https://litter.catbox.moe/zr5uj9.png",
+        "video": "https://litter.catbox.moe/5k7bhv.mp4",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "customPrices": {
+          "1": 10,
+          "2": 20,
+          "10": 90,
+          "50": 400,
+          "100": 700
+        }
+      },
+      {
+        "id": 26,
+        "name": "Puff usa 🇺🇸 runtz x litty",
+        "description": "Puff tout droit des usa 🇺🇸 jusqu’à chez vous produit de fous 🤪 régalez vous ‼️",
+        "price": 80.0,
+        "emoji": "💨",
+        "image": "https://litter.catbox.moe/h99cd8.png",
+        "video": "https://litter.catbox.moe/svpjdj.mp4",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "customPrices": {
+          "1": 80,
+          "2": 160,
+          "5": 300
         }
       }
     ]
