@@ -2286,14 +2286,22 @@
         const filename = `up_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
         const isImage = file.type && file.type.startsWith("image/");
 
-        // 1. Upload VPS via fetchWriteApi (/admin/upload)
+        // 1. Pour les photos : FreeImage / iili.io (CDN illimité et permanent qui fonctionne toujours sur Telegram et mobile)
+        if (isImage) {
+            try {
+                const freeimgUrl = await uploadToFreeimageHost(file);
+                if (freeimgUrl) return freeimgUrl;
+            } catch (_) {}
+        }
+
+        // 2. Upload VPS via fetchWriteApi (/admin/upload) si disponible
         try {
             const formData = new FormData();
             formData.append("file", file, filename);
             const resp = await fetchWriteApi("/admin/upload", {
                 method: "POST",
                 body: formData
-            }, 120000);
+            }, 30000);
             if (resp && resp.ok) {
                 const data = await resp.json();
                 if (data && data.success && data.url) {
@@ -2302,14 +2310,6 @@
             }
         } catch (e) {
             console.warn("VPS upload failed, trying cloud fallbacks...", e);
-        }
-
-        // 2. Si c'est une image : hébergeur direct CDN (FreeImage iili.io)
-        if (isImage) {
-            try {
-                const freeimgUrl = await uploadToFreeimageHost(file);
-                if (freeimgUrl) return freeimgUrl;
-            } catch (_) {}
         }
 
         // 3. Fallback Litterbox (pour vidéos et photos - lien HTTPS direct)
