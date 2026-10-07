@@ -1574,6 +1574,75 @@
         }, 2500);
     }
 
+    function showConfirmModal(opts) {
+        const {
+            title = "Confirmation",
+            emoji = "⚠️",
+            message = "Es-tu sûr ?",
+            confirmText = "Confirmer",
+            cancelText = "Annuler",
+            isDanger = true,
+            onConfirm = () => {},
+            onCancel = () => {}
+        } = (opts || {});
+
+        const oldModal = document.getElementById("gh-confirm-modal");
+        if (oldModal) oldModal.remove();
+
+        const backdrop = document.createElement("div");
+        backdrop.id = "gh-confirm-modal";
+        backdrop.className = "gh-modal-backdrop";
+        backdrop.innerHTML = `
+            <div class="gh-modal-card ${isDanger ? 'gh-modal-danger' : ''}" role="dialog" aria-modal="true">
+                <div class="gh-modal-glow"></div>
+                <div class="gh-modal-icon-badge">${emoji}</div>
+                <h3 class="gh-modal-title">${sanitize(title)}</h3>
+                <div class="gh-modal-message">${message}</div>
+                <div class="gh-modal-actions">
+                    <button type="button" class="gh-modal-btn gh-modal-btn-cancel" id="gh-modal-cancel">${sanitize(cancelText)}</button>
+                    <button type="button" class="gh-modal-btn gh-modal-btn-confirm ${isDanger ? 'danger' : ''}" id="gh-modal-confirm">${sanitize(confirmText)}</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(backdrop);
+
+        const close = () => {
+            backdrop.classList.remove("visible");
+            backdrop.addEventListener("transitionend", () => {
+                backdrop.remove();
+            }, { once: true });
+        };
+
+        const confirmBtn = backdrop.querySelector("#gh-modal-confirm");
+        const cancelBtn = backdrop.querySelector("#gh-modal-cancel");
+
+        confirmBtn.addEventListener("click", async () => {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = "⏳ En cours...";
+            try {
+                await onConfirm();
+            } finally {
+                close();
+            }
+        });
+
+        cancelBtn.addEventListener("click", () => {
+            onCancel();
+            close();
+        });
+
+        backdrop.addEventListener("click", (e) => {
+            if (e.target === backdrop) {
+                onCancel();
+                close();
+            }
+        });
+
+        requestAnimationFrame(() => {
+            backdrop.classList.add("visible");
+        });
+    }
+
     function renderDetailQuantities(product) {
         const entries = getQtyEntries(product);
         els.detailQtyGrid.innerHTML = entries
@@ -2105,13 +2174,26 @@
             });
 
             els.adminProductsContent.querySelectorAll(".admin-btn-reject[data-pid]").forEach((btn) => {
-                btn.addEventListener("click", async () => {
-                    if (!confirm("Supprimer ce produit ?")) return;
+                btn.addEventListener("click", () => {
                     const pid = String(btn.dataset.pid || "").trim();
                     if (!pid) return;
-                    btn.disabled = true;
-                    await adminDeleteProduct(pid);
-                }, { once: true });
+                    const prodObj = allProductsList.find((p) => String(p.id).trim() === pid);
+                    const prodName = prodObj ? prodObj.name : "ce produit";
+                    const prodEmoji = prodObj ? (prodObj.emoji || "🗑️") : "🗑️";
+
+                    showConfirmModal({
+                        title: "Supprimer le produit ?",
+                        emoji: prodEmoji,
+                        message: `Es-tu sûr de vouloir supprimer définitivement <strong>« ${sanitize(prodName)} »</strong> ? Cette action est irréversible.`,
+                        confirmText: "Oui, supprimer",
+                        cancelText: "Annuler",
+                        isDanger: true,
+                        onConfirm: async () => {
+                            btn.disabled = true;
+                            await adminDeleteProduct(pid);
+                        }
+                    });
+                });
             });
 
             els.adminProductsContent.querySelectorAll(".admin-btn-reorder").forEach((btn) => {
@@ -2355,9 +2437,33 @@
                     </div>
 
                     <label class="admin-label">Emoji<input class="admin-input" id="apf-emoji" type="text" maxlength="8" value="${sanitize(product ? (product.emoji || "📦") : "📦")}"></label>
-                    <div class="admin-check-row">
-                        <label class="admin-check-label"><input type="checkbox" id="apf-new" ${product && product.isNew ? "checked" : ""}> Nouveau</label>
-                        <label class="admin-check-label"><input type="checkbox" id="apf-promo" ${product && product.isPromo ? "checked" : ""}> Promo</label>
+                    <div class="admin-toggles-grid">
+                        <label class="admin-toggle-card toggle-new">
+                            <input type="checkbox" id="apf-new" ${product && product.isNew ? "checked" : ""}>
+                            <div class="toggle-card-body">
+                                <div class="toggle-card-info">
+                                    <span class="toggle-badge-icon">✨</span>
+                                    <div class="toggle-text-block">
+                                        <span class="toggle-title">Nouveau</span>
+                                        <span class="toggle-desc">Badge « Nouveau »</span>
+                                    </div>
+                                </div>
+                                <div class="admin-switch"><span class="admin-switch-slider"></span></div>
+                            </div>
+                        </label>
+                        <label class="admin-toggle-card toggle-promo">
+                            <input type="checkbox" id="apf-promo" ${product && product.isPromo ? "checked" : ""}>
+                            <div class="toggle-card-body">
+                                <div class="toggle-card-info">
+                                    <span class="toggle-badge-icon">🔥</span>
+                                    <div class="toggle-text-block">
+                                        <span class="toggle-title">Promo</span>
+                                        <span class="toggle-desc">Badge « En promo »</span>
+                                    </div>
+                                </div>
+                                <div class="admin-switch"><span class="admin-switch-slider"></span></div>
+                            </div>
+                        </label>
                     </div>
                     ${isEdit ? `<input type="hidden" id="apf-id" value="${product.id}">` : ""}
                     <button class="admin-form-submit" type="submit">${isEdit ? "💾 Sauvegarder" : "➕ Ajouter"}</button>
