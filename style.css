@@ -1936,18 +1936,52 @@ body.detail-open .bottom-nav {
 .admin-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 9px 12px;
+    padding: 10px 14px;
     background: rgba(14, 10, 26, 0.85);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 12px;
     color: var(--text);
     font-size: 0.88rem;
     outline: none;
     font-family: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .admin-input:focus {
-    border-color: var(--accent-2);
+    border-color: var(--accent);
+    background: rgba(20, 15, 38, 0.95);
+    box-shadow: 0 0 14px rgba(139, 92, 246, 0.25);
+}
+
+/* Selecteur de catégorie stylé D.A. */
+select.admin-input,
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: rgba(14, 10, 26, 0.9);
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+    padding-right: 40px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+select.admin-input:hover,
+select:hover {
+    border-color: rgba(167, 139, 250, 0.4);
+    background-color: rgba(22, 17, 44, 0.92);
+}
+
+select.admin-input option,
+select option {
+    background: #14102c;
+    color: #f0e8ff;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .admin-textarea {
