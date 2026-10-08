@@ -1,18 +1,19 @@
 {
   "restaurant": {
-    "name": "Restaurant Menu",
     "description": "Mini-App Telegram pour commandes en ligne",
-    "currency": "€",
     "delivery_fee": 2.5,
-    "min_order": 15.0
+    "min_order": 15.0,
+    "name": "GreenHouse 68",
+    "currency": "€"
   },
   "admin": {
     "api_base": "https://wieldable-blah-fineness.ngrok-free.dev",
-    "telegram_username": "wonka544",
+    "telegram_username": "GreenHouse682",
     "channel_link": "https://t.me/+Hi2aQ4aYPn85ZTQ0",
     "whitelist": [
+      "GreenHouse682",
       "tekasspaslatete",
-      "greenhouse682"
+      "wonka544"
     ]
   },
   "categories": {
@@ -20,32 +21,51 @@
       "name": "Hash",
       "emoji": "🍫",
       "description": "Nos produits en Hash"
+    },
+    "tuj": {
+      "name": "Gh",
+      "emoji": "📦",
+      "description": "Gg"
     }
   },
   "products": {
     "pizza": [
       {
-        "id": 29,
-        "name": "DOUBLE STATIC",
-        "description": "Double Static un régal pour les connaisseurs ⚡ Qualité exceptionnelle, curage au top 💎.",
-        "price": 10.0,
-        "emoji": "📦",
-        "image": "https://iili.io/nEGpbPs.png",
-        "video": "https://i.imgur.com/Q35eV6X.mp4",
+        "id": 33,
+        "name": "DOUBLE STATIC SIFT 🥭",
+        "description": "Un static sift au rendez vous pour vous régalez. Odeur et défonce garantie certifier ✅ Gout très terpy et prononcée saveurs légèrement fruitée,citronée\n⭐️⭐️⭐️⭐️⭐️",
+        "price": 20.0,
+        "emoji": "🥇",
+        "image": "https://wieldable-blah-fineness.ngrok-free.dev/uploads/up_1791445626474_4d4079ea.jpeg",
+        "video": "https://wieldable-blah-fineness.ngrok-free.dev/uploads/up_1791469483374_6eabfa26.mp4",
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
         "customPrices": {
-          "1": 10.0,
-          "2": 20.0,
-          "5": 50.0,
-          "10": 70.0,
-          "50": 270.0,
-          "100": 500.0,
-          "500": 2300.0,
-          "1000": 4300.0
+          "3": 40,
+          "5": 70,
+          "10": 130,
+          "1.5": 20,
+          "2.2": 30
+        }
+      },
+      {
+        "id": 34,
+        "name": "Eggs Frozen 🇲🇦🥇",
+        "description": "Ancelott Tropi 🍦🌴\nVoici notre gamme dolive du maroc🇲🇦🥇\nSec pétante comme vous les aimez avec un curage d'exception ! ✅ Niveau défonce je vous en parle pas, pour une saveur très gustative en bouche qui sera vous laissez bouche bé 😉\n\n⭐️⭐️⭐️⭐️",
+        "price": 60.0,
+        "emoji": "📦",
+        "image": "https://wieldable-blah-fineness.ngrok-free.dev/uploads/up_1791469648637_64edd50f.jpeg",
+        "video": "https://wieldable-blah-fineness.ngrok-free.dev/uploads/up_1791469668870_fc1da3c8.mp4",
+        "category": "pizza",
+        "isNew": true,
+        "isPromo": false,
+        "customPrices": {
+          "5": 60,
+          "10": 110
         }
       }
-    ]
+    ],
+    "tuj": []
   }
 }

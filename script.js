@@ -320,10 +320,10 @@
 
     function getPrimaryTelegramUsername() {
         if (!state.config || !state.config.admin || !state.config.admin.telegram_username) {
-            return "Passionterps67"; // Valeur par défaut si la configuration n'est pas disponible
+            return "GreenHouse682"; // Valeur par défaut si la configuration n'est pas disponible
         }
         const parts = state.config.admin.telegram_username.split(/[\s,]+/);
-        return parts[0] || "Passionterps67";
+        return parts[0] || "GreenHouse682";
     }
 
     let detailSlides = [];
@@ -358,7 +358,7 @@
             pickup: "Sur place",
             deliveryAddress: "Adresse de livraison",
             pickupTime: "Heure d'arrivee",
-            deliveryPlaceholder: "Ex: 10 rue de Paris, 54000 Nancy",
+            deliveryPlaceholder: "Ex: 10 rue de la République, 68000 Colmar",
             total: "Total",
             clear: "Vider",
             checkout: "Commander",
@@ -438,7 +438,7 @@
             pickup: "Pickup",
             deliveryAddress: "Delivery address",
             pickupTime: "Pickup time",
-            deliveryPlaceholder: "Ex: 10 Rue de Paris, 54000 Nancy",
+            deliveryPlaceholder: "Ex: 10 Rue de la République, 68000 Colmar",
             total: "Total",
             clear: "Clear",
             checkout: "Order",
@@ -518,7 +518,7 @@
             pickup: "Abholung",
             deliveryAddress: "Lieferadresse",
             pickupTime: "Abholzeit",
-            deliveryPlaceholder: "Bsp: 10 Rue de Paris, 54000 Nancy",
+            deliveryPlaceholder: "Bsp: 10 Rue de la République, 68000 Colmar",
             total: "Gesamt",
             clear: "Leeren",
             checkout: "Bestellen",
@@ -874,7 +874,7 @@
         els.profileMemberFull.textContent = t("memberSincePhrase", { month: monthData.monthLong, year });
         els.profileMemberShort.textContent = `${monthData.monthShort}. ${String(year).slice(-2)}`;
 
-        const adminUserRaw = state.config && state.config.admin ? state.config.admin.telegram_username : "Passionterps67";
+        const adminUserRaw = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
         const formattedAdmins = adminUserRaw.split(/[\s,]+/).map((u) => `@${u}`).join(" / ");
         els.infoContactUsername.textContent = `Telegram: ${formattedAdmins}`;
 
