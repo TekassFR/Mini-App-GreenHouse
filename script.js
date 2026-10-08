@@ -946,7 +946,7 @@
 
         let mediaHtml = "";
         if (rawImg && !rawImg.startsWith("data:video/")) {
-            mediaHtml = `<img src="${sanitize(rawImg)}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;\\'>📦</div>';">`;
+            mediaHtml = `<img class="card-product-img" data-img-src="${sanitize(rawImg)}" src="${sanitize(rawImg)}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;\\'>📦</div>';">`;
         } else if (playableVid) {
             mediaHtml = `<video class="card-preview-video" data-video-src="${sanitize(playableVid)}" muted playsinline webkit-playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
         } else {
@@ -979,6 +979,9 @@
         els.productGrid.innerHTML = source.map(productCardTemplate).join("");
         els.productGrid.querySelectorAll(".card-preview-video").forEach((v) => {
             if (v.dataset.videoSrc) attachVideoSource(v, v.dataset.videoSrc);
+        });
+        els.productGrid.querySelectorAll(".card-product-img").forEach((img) => {
+            if (img.dataset.imgSrc && img.dataset.imgSrc.includes("ngrok")) attachImageSource(img, img.dataset.imgSrc);
         });
         els.productGrid.querySelectorAll(".product-card").forEach((card) => {
             card.addEventListener("click", () => {
@@ -1317,6 +1320,33 @@
         videoEl.src = url;
     }
 
+    async function attachImageSource(imgEl, rawUrl) {
+        if (!imgEl || !rawUrl) return;
+        const url = String(rawUrl).trim();
+        if (!url) return;
+        if (url.includes("ngrok-free.dev") || url.includes("ngrok.app") || url.includes("ngrok.io")) {
+            if (ngrokBlobCache.has(url)) {
+                imgEl.src = ngrokBlobCache.get(url);
+                return;
+            }
+            try {
+                const resp = await fetch(url, {
+                    headers: { "ngrok-skip-browser-warning": "true" }
+                });
+                if (resp.ok) {
+                    const blob = await resp.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    ngrokBlobCache.set(url, blobUrl);
+                    imgEl.src = blobUrl;
+                    return;
+                }
+            } catch (err) {
+                console.warn("Erreur chargement image ngrok:", err);
+            }
+        }
+        imgEl.src = url;
+    }
+
     function getVideoPreviewImage(videoUrl) {
         if (!videoUrl) return "";
         const v = String(videoUrl).trim();
@@ -1410,7 +1440,7 @@
                 if (slide.type === "video") {
                     return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" autoplay muted playsinline webkit-playsinline loop preload="auto" data-video-src="${slide.src}"></video><button class="video-fs-btn" type="button" aria-label="Plein écran">⛶</button></article>`;
                 }
-                return `<article class="slide-item" data-slide-index="${idx}"><img class="slide-image" src="${slide.src}" alt="Media produit ${idx + 1}" loading="lazy" referrerpolicy="no-referrer"></article>`;
+                return `<article class="slide-item" data-slide-index="${idx}"><img class="slide-image" data-img-src="${slide.src}" src="${slide.src}" alt="Media produit ${idx + 1}" loading="lazy" referrerpolicy="no-referrer"></article>`;
             })
             .join("");
 
@@ -1425,7 +1455,7 @@
                         thumbMedia = `<video class="thumb-video" data-video-src="${slide.src}" muted playsinline preload="metadata"></video>`;
                     }
                 } else {
-                    thumbMedia = `<img src="${slide.src}" alt="Miniature ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';">`;
+                    thumbMedia = `<img src="${slide.src}" data-img-src="${slide.src}" class="detail-thumb-img" alt="Miniature ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';">`;
                 }
                 return `<button class="detail-thumb ${idx === 0 ? "active" : ""}" data-slide-index="${idx}" type="button">${thumbMedia}<span>${marker}</span></button>`;
             })
@@ -1458,6 +1488,13 @@
 
         els.detailThumbs.querySelectorAll(".thumb-video").forEach((video) => {
             if (video.dataset.videoSrc) attachVideoSource(video, video.dataset.videoSrc);
+        });
+
+        els.detailMediaTrack.querySelectorAll(".slide-image").forEach((img) => {
+            if (img.dataset.imgSrc && img.dataset.imgSrc.includes("ngrok")) attachImageSource(img, img.dataset.imgSrc);
+        });
+        els.detailThumbs.querySelectorAll(".detail-thumb-img").forEach((img) => {
+            if (img.dataset.imgSrc && img.dataset.imgSrc.includes("ngrok")) attachImageSource(img, img.dataset.imgSrc);
         });
 
         // Bouton plein écran sur chaque slide vidéo
@@ -1602,7 +1639,11 @@
         els.detailName.textContent = sanitize(product.name || "Product");
         els.detailDescription.textContent = sanitize(product.description || "");
         els.detailCategoryChip.textContent = `${sanitize(categoryMeta.emoji || "📦")} ${sanitize(categoryMeta.name || product.category)}`;
-        els.detailBrandImage.src = sanitize(product.image || "https://picsum.photos/seed/brand-red/260/260");
+        if (product.image && product.image.includes("ngrok")) {
+            attachImageSource(els.detailBrandImage, product.image);
+        } else {
+            els.detailBrandImage.src = sanitize(product.image || "https://picsum.photos/seed/brand-red/260/260");
+        }
 
         renderDetailCarousel();
 
