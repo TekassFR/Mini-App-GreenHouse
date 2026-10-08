@@ -1297,9 +1297,34 @@
         if (!videoEl || !rawUrl) return;
         const url = getPlayableVideo(rawUrl);
         if (!url) return;
+
+        videoEl.muted = true;
+        videoEl.defaultMuted = true;
+        videoEl.playsInline = true;
+        videoEl.setAttribute("playsinline", "");
+        videoEl.setAttribute("webkit-playsinline", "");
+
+        const applySrc = (src) => {
+            if (videoEl.src !== src) {
+                videoEl.src = src;
+                try { videoEl.load(); } catch (_) {}
+            }
+            const tryPlay = () => {
+                videoEl.muted = true;
+                const p = videoEl.play();
+                if (p && typeof p.catch === "function") p.catch(() => {});
+            };
+            if (videoEl.readyState >= 2) {
+                tryPlay();
+            } else {
+                videoEl.addEventListener("canplay", tryPlay, { once: true });
+                videoEl.addEventListener("loadeddata", tryPlay, { once: true });
+            }
+        };
+
         if (url.includes("ngrok-free.dev") || url.includes("ngrok.app") || url.includes("ngrok.io")) {
             if (ngrokBlobCache.has(url)) {
-                videoEl.src = ngrokBlobCache.get(url);
+                applySrc(ngrokBlobCache.get(url));
                 return;
             }
             try {
@@ -1310,14 +1335,14 @@
                     const blob = await resp.blob();
                     const blobUrl = URL.createObjectURL(blob);
                     ngrokBlobCache.set(url, blobUrl);
-                    videoEl.src = blobUrl;
+                    applySrc(blobUrl);
                     return;
                 }
             } catch (err) {
                 console.warn("Erreur chargement video ngrok:", err);
             }
         }
-        videoEl.src = url;
+        applySrc(url);
     }
 
     async function attachImageSource(imgEl, rawUrl) {
@@ -1443,7 +1468,8 @@
         els.detailMediaTrack.innerHTML = detailSlides
             .map((slide, idx) => {
                 if (slide.type === "video") {
-                    return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" autoplay muted playsinline webkit-playsinline loop preload="auto" data-video-src="${slide.src}"></video><button class="video-fs-btn" type="button" aria-label="Plein écran">⛶</button></article>`;
+                    const posterAttr = slide.thumb ? `poster="${sanitize(slide.thumb)}"` : (slide.fallbackThumb ? `poster="${sanitize(slide.fallbackThumb)}"` : "");
+                    return `<article class="slide-item slide-item-video" data-slide-index="${idx}"><video class="slide-video" autoplay muted playsinline webkit-playsinline loop preload="auto" ${posterAttr} data-video-src="${slide.src}"></video><button class="video-play-btn" type="button" aria-label="Lire la vidéo">▶</button><button class="video-fs-btn" type="button" aria-label="Plein écran">⛶</button></article>`;
                 }
                 return `<article class="slide-item" data-slide-index="${idx}"><img class="slide-image" data-img-src="${slide.src}" src="${slide.src}" alt="Media produit ${idx + 1}" loading="lazy" referrerpolicy="no-referrer"></article>`;
             })
@@ -1479,16 +1505,31 @@
             });
         });
 
-        // Charger et lier les sources vidéo avec bypass ngrok si applicable
-        els.detailMediaTrack.querySelectorAll(".slide-video").forEach((video) => {
-            if (video.dataset.videoSrc) attachVideoSource(video, video.dataset.videoSrc);
-            video.addEventListener("click", () => {
+        // Configurer les vidéos de slide : poster, bouton play, et chargement immédiat
+        els.detailMediaTrack.querySelectorAll(".slide-item-video").forEach((article) => {
+            const video = article.querySelector("video");
+            const playBtn = article.querySelector(".video-play-btn");
+            if (!video) return;
+
+            video.addEventListener("play", () => article.classList.add("playing"));
+            video.addEventListener("playing", () => article.classList.add("playing"));
+            video.addEventListener("pause", () => article.classList.remove("playing"));
+            video.addEventListener("ended", () => article.classList.remove("playing"));
+
+            const togglePlay = (e) => {
+                if (e.target.closest(".video-fs-btn")) return;
                 if (video.paused) {
+                    video.muted = true;
                     video.play().catch(() => {});
                 } else {
                     video.pause();
                 }
-            });
+            };
+
+            article.addEventListener("click", togglePlay);
+            if (playBtn) playBtn.addEventListener("click", togglePlay);
+
+            if (video.dataset.videoSrc) attachVideoSource(video, video.dataset.videoSrc);
         });
 
         els.detailThumbs.querySelectorAll(".thumb-video").forEach((video) => {
@@ -1650,13 +1691,14 @@
             els.detailBrandImage.src = sanitize(product.image || "https://picsum.photos/seed/brand-red/260/260");
         }
 
-        renderDetailCarousel();
-
         renderDetailQuantities(product);
         els.detailOverlay.scrollTop = 0;
         els.detailOverlay.style.display = "block";
         document.body.style.overflow = "hidden";
         document.body.classList.add("detail-open");
+
+        renderDetailCarousel();
+        setDetailSlide(0, false);
     }
 
     function closeProductDetail() {
