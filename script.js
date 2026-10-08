@@ -86,8 +86,8 @@
         storageScope: "guest"
     };
 
-    // URL du bot VPS par défaut pour les API d'écriture (save, delete, reorder, settings, etc.)
-    const LOCAL_API_BASE = "http://185.185.83.209:4001";
+    // URL du bot VPS (HTTPS ngrok pour compatibilité Vercel sans mixed content)
+    const LOCAL_API_BASE = "https://wieldable-blah-fineness.ngrok-free.dev";
 
     // Cloudinary : hébergement permanent des vidéos, converties en MP4 H.264 (lisible iPhone + Android)
     const CLOUDINARY_CLOUD_NAME = "";      // ex: "dxxxxxx"
@@ -948,7 +948,7 @@
         if (rawImg && !rawImg.startsWith("data:video/")) {
             mediaHtml = `<img src="${sanitize(rawImg)}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;\\'>📦</div>';">`;
         } else if (playableVid) {
-            mediaHtml = `<video src="${sanitize(playableVid)}#t=0.1" muted playsinline webkit-playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
+            mediaHtml = `<video class="card-preview-video" data-video-src="${sanitize(playableVid)}" muted playsinline webkit-playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
         } else {
             mediaHtml = `<div style="width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;">📦</div>`;
         }
@@ -977,6 +977,9 @@
             : state.products.filter((p) => p.category === state.category);
 
         els.productGrid.innerHTML = source.map(productCardTemplate).join("");
+        els.productGrid.querySelectorAll(".card-preview-video").forEach((v) => {
+            if (v.dataset.videoSrc) attachVideoSource(v, v.dataset.videoSrc);
+        });
         els.productGrid.querySelectorAll(".product-card").forEach((card) => {
             card.addEventListener("click", () => {
                 const id = parseInt(card.dataset.productId, 10);
@@ -1285,6 +1288,35 @@
         return v;
     }
 
+    const ngrokBlobCache = new Map();
+
+    async function attachVideoSource(videoEl, rawUrl) {
+        if (!videoEl || !rawUrl) return;
+        const url = getPlayableVideo(rawUrl);
+        if (!url) return;
+        if (url.includes("ngrok-free.dev") || url.includes("ngrok.app") || url.includes("ngrok.io")) {
+            if (ngrokBlobCache.has(url)) {
+                videoEl.src = ngrokBlobCache.get(url);
+                return;
+            }
+            try {
+                const resp = await fetch(url, {
+                    headers: { "ngrok-skip-browser-warning": "true" }
+                });
+                if (resp.ok) {
+                    const blob = await resp.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    ngrokBlobCache.set(url, blobUrl);
+                    videoEl.src = blobUrl;
+                    return;
+                }
+            } catch (err) {
+                console.warn("Erreur chargement video ngrok:", err);
+            }
+        }
+        videoEl.src = url;
+    }
+
     function getVideoPreviewImage(videoUrl) {
         if (!videoUrl) return "";
         const v = String(videoUrl).trim();
@@ -1376,7 +1408,7 @@
         els.detailMediaTrack.innerHTML = detailSlides
             .map((slide, idx) => {
                 if (slide.type === "video") {
-                    return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" autoplay muted playsinline webkit-playsinline loop preload="auto" src="${slide.src}"></video><button class="video-fs-btn" type="button" aria-label="Plein écran">⛶</button></article>`;
+                    return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" autoplay muted playsinline webkit-playsinline loop preload="auto" data-video-src="${slide.src}"></video><button class="video-fs-btn" type="button" aria-label="Plein écran">⛶</button></article>`;
                 }
                 return `<article class="slide-item" data-slide-index="${idx}"><img class="slide-image" src="${slide.src}" alt="Media produit ${idx + 1}" loading="lazy" referrerpolicy="no-referrer"></article>`;
             })
@@ -1390,7 +1422,7 @@
                     if (slide.thumb && !slide.thumb.startsWith("data:video/")) {
                         thumbMedia = `<img src="${slide.thumb}" alt="Miniature video ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" data-fallback="${slide.fallbackThumb || ""}" onerror="this.style.display='none';">`;
                     } else {
-                        thumbMedia = `<video src="${slide.src}" muted playsinline preload="metadata"></video>`;
+                        thumbMedia = `<video class="thumb-video" data-video-src="${slide.src}" muted playsinline preload="metadata"></video>`;
                     }
                 } else {
                     thumbMedia = `<img src="${slide.src}" alt="Miniature ${idx + 1}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none';">`;
@@ -1412,8 +1444,9 @@
             });
         });
 
-        // Clic direct sur la vidéo pour play / pause
+        // Charger et lier les sources vidéo avec bypass ngrok si applicable
         els.detailMediaTrack.querySelectorAll(".slide-video").forEach((video) => {
+            if (video.dataset.videoSrc) attachVideoSource(video, video.dataset.videoSrc);
             video.addEventListener("click", () => {
                 if (video.paused) {
                     video.play().catch(() => {});
@@ -1421,6 +1454,10 @@
                     video.pause();
                 }
             });
+        });
+
+        els.detailThumbs.querySelectorAll(".thumb-video").forEach((video) => {
+            if (video.dataset.videoSrc) attachVideoSource(video, video.dataset.videoSrc);
         });
 
         // Bouton plein écran sur chaque slide vidéo
@@ -2582,9 +2619,11 @@
                     <div style="font-size:0.75rem; color:#10b981; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
                         <span>▶ Aperçu direct (lisible iPhone & Android) :</span>
                     </div>
-                    <video src="${sanitize(url)}" controls playsinline webkit-playsinline style="width:100%; max-height:180px; border-radius:8px; background:#000; display:block;" onerror="this.parentElement.innerHTML='<div style=\\'color:#f87171;font-size:0.75rem;padding:6px;\\'>⚠️ Impossible de charger cette vidéo. Vérifie l\\'URL ou utilise un lien MP4 direct.</div>';"></video>
+                    <video id="apf-preview-video-el" controls playsinline webkit-playsinline style="width:100%; max-height:180px; border-radius:8px; background:#000; display:block;" onerror="this.parentElement.innerHTML='<div style=\\'color:#f87171;font-size:0.75rem;padding:6px;\\'>⚠️ Impossible de charger cette vidéo. Vérifie l\\'URL ou utilise un lien MP4 direct.</div>';"></video>
                 </div>
             `;
+            const vEl = document.getElementById("apf-preview-video-el");
+            if (vEl) attachVideoSource(vEl, url);
         }
 
         const videoInputEl = document.getElementById("apf-video");
