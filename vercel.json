@@ -16,7 +16,6 @@
     { "source": "/save-review", "destination": "/api/proxy" },
     { "source": "/save-order", "destination": "/api/proxy" },
     { "source": "/uploads/:path*", "destination": "/api/proxy" },
-    { "source": "/admin/upload", "destination": "/api/upload" },
     { "source": "/admin/:path*", "destination": "/api/proxy" }
   ]
 }
