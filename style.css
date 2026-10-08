@@ -476,6 +476,26 @@ body.app-ready .intro-screen {
     color: #110c22;
 }
 
+.badge.video-pill {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    left: auto;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95));
+    color: #ffffff;
+    border-radius: 8px;
+    padding: 3px 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 2;
+    letter-spacing: 0.02em;
+}
+
 .product-body {
     padding: 10px 10px 12px;
 }
