@@ -1382,6 +1382,11 @@
         // changer le MIME ne transcode pas le contenu et casse la lecture sur Chrome.
         // iOS Safari lit nativement video/quicktime.
 
+        // Convertir les liens absolus ngrok en /uploads/ (relayés proprement par Vercel sans avertissement)
+        if (/^https?:\/\/[^\/]*ngrok[^\/]*\/uploads\//i.test(s)) {
+            s = s.replace(/^https?:\/\/[^\/]*ngrok[^\/]*\/uploads\//i, "/uploads/");
+        }
+
         return s;
     }
 
@@ -2431,15 +2436,7 @@
             if (cloudVideo) return cloudVideo;
         }
 
-        // 1. Pour les photos : FreeImage / iili.io (CDN illimité et permanent qui fonctionne toujours sur Telegram et mobile)
-        if (isImage) {
-            try {
-                const freeimgUrl = await uploadToFreeimageHost(file);
-                if (freeimgUrl) return freeimgUrl;
-            } catch (_) {}
-        }
-
-        // 2. Upload VPS via fetchWriteApi (/admin/upload) si disponible
+        // 1. Upload direct vers le serveur VPS (/admin/upload) sans censure ni limite
         try {
             const formData = new FormData();
             formData.append("file", file, filename);
@@ -2454,7 +2451,7 @@
                 }
             }
         } catch (e) {
-            console.warn("VPS upload failed, trying cloud fallbacks...", e);
+            console.warn("VPS upload failed, trying cloud fallback...", e);
         }
 
         // 3. Fallback Litterbox (pour vidéos et photos - lien HTTPS direct)
