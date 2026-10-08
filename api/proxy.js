@@ -113,22 +113,38 @@ module.exports = async function handler(req, res) {
     const rawUrl = req.headers['x-matched-path'] || req.headers['x-invoke-path'] || req.url || '/';
     const route = rawUrl.replace(/^\/api\/proxy/, '').replace(/\?.*$/, '') || '/';
 
-    // ── Proxy /uploads/:filename directly from VPS (bypasses ngrok warning) ──
+    // ── Proxy /uploads/:filename directly from VPS (supports HTTP Range / 206 for iOS Safari) ──
     if (route.startsWith('/uploads/') && req.method === 'GET') {
         const filename = route.replace('/uploads/', '');
         const ngrokBase = process.env.NGROK_URL || 'https://wieldable-blah-fineness.ngrok-free.dev';
         const vpsUrl = `${ngrokBase}/uploads/${filename}`;
         const https = require('https');
         return new Promise((resolve) => {
-            https.get(vpsUrl, {
-                headers: { 'ngrok-skip-browser-warning': 'true', 'User-Agent': 'Vercel-Media-Proxy/1.0' }
-            }, (upstream) => {
-                const contentType = upstream.headers['content-type'] || 'application/octet-stream';
-                res.writeHead(upstream.statusCode, {
+            const reqHeaders = {
+                'ngrok-skip-browser-warning': 'true',
+                'User-Agent': 'Vercel-Media-Proxy/1.0'
+            };
+            if (req.headers.range) {
+                reqHeaders['range'] = req.headers.range;
+            }
+
+            https.get(vpsUrl, { headers: reqHeaders }, (upstream) => {
+                const resHeaders = {
                     ...CORS,
-                    'Content-Type': contentType,
-                    'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800'
-                });
+                    'Content-Type': upstream.headers['content-type'] || 'application/octet-stream',
+                    'Accept-Ranges': 'bytes'
+                };
+                if (upstream.headers['content-range']) {
+                    resHeaders['Content-Range'] = upstream.headers['content-range'];
+                }
+                if (upstream.headers['content-length']) {
+                    resHeaders['Content-Length'] = upstream.headers['content-length'];
+                }
+                if (upstream.statusCode === 200) {
+                    resHeaders['Cache-Control'] = 'public, max-age=86400, stale-while-revalidate=604800';
+                }
+
+                res.writeHead(upstream.statusCode, resHeaders);
                 upstream.pipe(res);
                 upstream.on('end', resolve);
             }).on('error', (err) => {
