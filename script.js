@@ -94,6 +94,13 @@
     const CLOUDINARY_UPLOAD_PRESET = "";   // preset "Unsigned"
     const CLOUDINARY_VIDEO_TRANSFORM = "f_mp4,vc_h264,q_auto";
 
+    function getCloudinaryConfig() {
+        const adminCfg = (state.config && state.config.admin) || {};
+        let name = adminCfg.cloudinary_cloud_name || localStorage.getItem("cloudinary_cloud_name") || CLOUDINARY_CLOUD_NAME || "";
+        let preset = adminCfg.cloudinary_upload_preset || localStorage.getItem("cloudinary_upload_preset") || CLOUDINARY_UPLOAD_PRESET || "";
+        return { name: String(name).trim(), preset: String(preset).trim() };
+    }
+
     // Transforme une URL vidéo Cloudinary en MP4 H.264 universel
     function toUniversalVideoUrl(url) {
         const s = String(url || "");
@@ -934,11 +941,14 @@
         if (product.isNew) badge = `<span class="badge new">${t("badgeNew")}</span>`;
         else if (product.isPromo) badge = `<span class="badge promo">${t("badgePromo")}</span>`;
 
+        const playableVid = rawVideo ? getPlayableVideo(rawVideo) : "";
+        const videoBadge = playableVid ? `<span class="badge video-pill" title="Vidéo disponible">▶ Vidéo</span>` : "";
+
         let mediaHtml = "";
         if (rawImg && !rawImg.startsWith("data:video/")) {
             mediaHtml = `<img src="${sanitize(rawImg)}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;\\'>📦</div>';">`;
-        } else if (rawVideo) {
-            mediaHtml = `<video src="${sanitize(getPlayableVideo(rawVideo))}#t=0.1" muted playsinline webkit-playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
+        } else if (playableVid) {
+            mediaHtml = `<video src="${sanitize(playableVid)}#t=0.1" muted playsinline webkit-playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
         } else {
             mediaHtml = `<div style="width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;">📦</div>`;
         }
@@ -949,6 +959,7 @@
                     ${mediaHtml}
                     <span class="status-dot" aria-hidden="true"></span>
                     ${badge}
+                    ${videoBadge}
                     <div class="product-media-tools" aria-hidden="true">🧊🚀⚡️</div>
                 </div>
                 <div class="product-body">
@@ -1337,14 +1348,14 @@
             slides.push({ type, src });
         });
 
-        if (cleanImg && !cleanImg.startsWith("data:video/")) {
-            slides.unshift({ type: "image", src: sanitize(cleanImg) });
-        }
         const videoUrl = getPlayableVideo(cleanVid);
         if (videoUrl) {
             const fallbackThumb = sanitize(cleanImg);
             const thumb = sanitize(cleanMediaUrl(getVideoPreviewImage(videoUrl) || fallbackThumb, "image"));
             slides.push({ type: "video", src: videoUrl, thumb, fallbackThumb });
+        }
+        if (cleanImg && !cleanImg.startsWith("data:video/")) {
+            slides.push({ type: "image", src: sanitize(cleanImg) });
         }
 
         const dedup = [];
@@ -1365,7 +1376,7 @@
         els.detailMediaTrack.innerHTML = detailSlides
             .map((slide, idx) => {
                 if (slide.type === "video") {
-                    return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" muted playsinline webkit-playsinline loop preload="auto" src="${slide.src}"></video><button class="video-fs-btn" type="button" aria-label="Plein écran">⛶</button></article>`;
+                    return `<article class="slide-item" data-slide-index="${idx}"><video class="slide-video" autoplay muted playsinline webkit-playsinline loop preload="auto" src="${slide.src}"></video><button class="video-fs-btn" type="button" aria-label="Plein écran">⛶</button></article>`;
                 }
                 return `<article class="slide-item" data-slide-index="${idx}"><img class="slide-image" src="${slide.src}" alt="Media produit ${idx + 1}" loading="lazy" referrerpolicy="no-referrer"></article>`;
             })
@@ -1398,6 +1409,17 @@
         els.detailThumbs.querySelectorAll(".detail-thumb").forEach((btn) => {
             btn.addEventListener("click", () => {
                 setDetailSlide(parseInt(btn.dataset.slideIndex, 10), true);
+            });
+        });
+
+        // Clic direct sur la vidéo pour play / pause
+        els.detailMediaTrack.querySelectorAll(".slide-video").forEach((video) => {
+            video.addEventListener("click", () => {
+                if (video.paused) {
+                    video.play().catch(() => {});
+                } else {
+                    video.pause();
+                }
             });
         });
 
@@ -2279,12 +2301,13 @@
     }
 
     async function uploadToCloudinary(file) {
-        if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) return null;
+        const { name, preset } = getCloudinaryConfig();
+        if (!name || !preset) return null;
         try {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-            const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, {
+            formData.append("upload_preset", preset);
+            const resp = await fetch(`https://api.cloudinary.com/v1_1/${name}/auto/upload`, {
                 method: "POST",
                 body: formData
             });
@@ -2390,19 +2413,31 @@
         const targetInput = document.getElementById(targetUrlInputId);
 
         if (uploadedUrl) {
-            if (targetInput) targetInput.value = uploadedUrl;
-            if (statusEl) statusEl.textContent = isVideo ? "✅ Vidéo uploadée !" : "✅ Photo uploadée !";
+            if (targetInput) {
+                targetInput.value = uploadedUrl;
+                targetInput.dispatchEvent(new Event("input"));
+            }
+            if (statusEl) statusEl.textContent = isVideo ? "✅ Vidéo prête & en ligne !" : "✅ Photo uploadée !";
             showToast(isVideo ? "Vidéo hébergée en ligne ! 🎬" : "Photo hébergée en ligne ! 🚀");
             return;
         }
 
-        // Fallback local (base64 data URL) pour photos ET vidéos si tous les cloud/VPS sont indisponibles
+        if (isVideo) {
+            if (statusEl) statusEl.textContent = "💡 Colle un lien direct MP4 ci-dessus (ex: Imgur, Discord, Streamable)";
+            showToast("Privilégie un lien direct .mp4 ou active Cloudinary dans les paramètres !", "info", 6000);
+            return;
+        }
+
+        // Fallback local (base64 data URL) uniquement pour photos
         try {
             const reader = new FileReader();
             reader.onload = function(e) {
-                if (targetInput) targetInput.value = e.target.result;
-                if (statusEl) statusEl.textContent = isVideo ? "✅ Vidéo prête (locale)" : "✅ Photo prête (locale)";
-                showToast(isVideo ? "Vidéo chargée localement ! 🎬" : "Photo chargée localement ! 🚀");
+                if (targetInput) {
+                    targetInput.value = e.target.result;
+                    targetInput.dispatchEvent(new Event("input"));
+                }
+                if (statusEl) statusEl.textContent = "✅ Photo prête (locale)";
+                showToast("Photo chargée localement ! 🚀");
             };
             reader.readAsDataURL(file);
             return;
@@ -2471,13 +2506,17 @@
                     </div>
 
                     <div style="margin-bottom:12px;">
-                        <label class="admin-label">Vidéo (Lien URL ou Fichier appareil, optionnel)</label>
-                        <input class="admin-input" id="apf-video" type="text" placeholder="https://..." value="${sanitize(product ? (product.video || "") : "")}">
+                        <label class="admin-label">Vidéo (Lien direct .mp4 ou Fichier appareil, optionnel)</label>
+                        <input class="admin-input" id="apf-video" type="text" placeholder="https://... (ex: lien direct .mp4)" value="${sanitize(product ? (product.video || "") : "")}">
                         <div class="admin-upload-box">
                             <label class="admin-upload-btn" for="apf-video-file">📹 Choisir une vidéo depuis l'appareil</label>
                             <input type="file" id="apf-video-file" accept="video/*" style="display:none;">
                             <span class="admin-upload-status" id="apf-video-status"></span>
                         </div>
+                        <p class="admin-hint" style="margin-top:6px; font-size:0.73rem; color:#9ca3af; line-height:1.4;">
+                            💡 <strong>iPhone & Android :</strong> Privilégie un lien direct vidéo <code>.mp4</code> (ex: Imgur, Discord, Streamable, Cloudinary). Les MP4 (H.264) démarrent instantanément sur tous les smartphones.
+                        </p>
+                        <div id="apf-video-preview" style="margin-top:8px;"></div>
                     </div>
 
                     <label class="admin-label">Emoji<input class="admin-input" id="apf-emoji" type="text" maxlength="8" value="${sanitize(product ? (product.emoji || "📦") : "📦")}"></label>
@@ -2528,6 +2567,34 @@
             videoFileInput.addEventListener("change", function () {
                 handleAdminFileUpload(this, "apf-video", "apf-video-status");
             });
+        }
+
+        function updateAdminVideoPreview(val) {
+            const previewEl = document.getElementById("apf-video-preview");
+            if (!previewEl) return;
+            const url = getPlayableVideo(String(val || "").trim());
+            if (!url) {
+                previewEl.innerHTML = "";
+                return;
+            }
+            previewEl.innerHTML = `
+                <div style="padding:10px; border-radius:12px; background:rgba(0,0,0,0.5); border:1px solid rgba(139,92,246,0.3); margin-top:6px;">
+                    <div style="font-size:0.75rem; color:#10b981; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                        <span>▶ Aperçu direct (lisible iPhone & Android) :</span>
+                    </div>
+                    <video src="${sanitize(url)}" controls playsinline webkit-playsinline style="width:100%; max-height:180px; border-radius:8px; background:#000; display:block;" onerror="this.parentElement.innerHTML='<div style=\\'color:#f87171;font-size:0.75rem;padding:6px;\\'>⚠️ Impossible de charger cette vidéo. Vérifie l\\'URL ou utilise un lien MP4 direct.</div>';"></video>
+                </div>
+            `;
+        }
+
+        const videoInputEl = document.getElementById("apf-video");
+        if (videoInputEl) {
+            videoInputEl.addEventListener("input", function () {
+                updateAdminVideoPreview(this.value);
+            });
+            if (videoInputEl.value.trim()) {
+                updateAdminVideoPreview(videoInputEl.value.trim());
+            }
         }
 
         document.getElementById("admin-product-form").addEventListener("submit", async (e) => {
@@ -2839,6 +2906,20 @@
                 </div>
 
                 <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">☁️ Hébergement Vidéo Cloudinary (Optionnel)</div>
+                    <p class="admin-hint">Permet la conversion automatique de n'importe quelle vidéo iPhone (.mov / 4K) en MP4 fluide compatible iPhone & Android. Créez un compte gratuit sur cloudinary.com pour obtenir ces identifiants.</p>
+                    <form id="admin-form-cloudinary" autocomplete="off">
+                        <label class="admin-label">Cloud Name
+                            <input class="admin-input" id="as-cloud-name" type="text" value="${sanitize(getCloudinaryConfig().name)}" placeholder="ex: moncompte">
+                        </label>
+                        <label class="admin-label">Upload Preset (Unsigned)
+                            <input class="admin-input" id="as-upload-preset" type="text" value="${sanitize(getCloudinaryConfig().preset)}" placeholder="ex: greenhouse_preset">
+                        </label>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer Cloudinary</button>
+                    </form>
+                </div>
+
+                <div class="admin-settings-card">
                     <div class="admin-settings-card-title">🛡️ Administrateurs Autorisés (Whitelist)</div>
                     <p class="admin-hint">Seuls les utilisateurs listés ici ont accès à ce panneau de gestion.</p>
                     <div class="admin-whitelist-chips">
@@ -2854,6 +2935,19 @@
             `;
 
             els.adminSettingsContent.innerHTML = html;
+
+            const cloudForm = document.getElementById("admin-form-cloudinary");
+            if (cloudForm) {
+                cloudForm.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const cName = document.getElementById("as-cloud-name").value.trim();
+                    const cPreset = document.getElementById("as-upload-preset").value.trim();
+                    localStorage.setItem("cloudinary_cloud_name", cName);
+                    localStorage.setItem("cloudinary_upload_preset", cPreset);
+                    showToast("Paramètres Cloudinary enregistrés ! ☁️");
+                    await adminSaveContact({ cloudinary_cloud_name: cName, cloudinary_upload_preset: cPreset });
+                });
+            }
 
             document.getElementById("admin-form-api-url").addEventListener("submit", async (e) => {
                 e.preventDefault();
