@@ -741,6 +741,10 @@
         badge.textContent = state.cart.length;
     }
 
+    // Historique local vidé une fois par client : les commandes d'avant le correctif des prix par palier
+    // pouvaient avoir un faux total, et la base n'en garde plus aucune. Changer la valeur pour revider.
+    const ORDERS_RESET_ID = "2026-10-09";
+
     function loadLocal() {
         state.storageScope = resolveStorageScope();
         try {
@@ -759,15 +763,17 @@
             } catch (_) {
                 state.cart = [];
             }
-            state.orders = Array.isArray(orders) ? orders : [];
+            const ordersReset = localStorage.getItem(storageKey("orders_reset")) !== ORDERS_RESET_ID;
+            state.orders = !ordersReset && Array.isArray(orders) ? orders : [];
             state.reviews = Array.isArray(reviews) ? reviews : [];
             state.language = ["fr", "en", "de"].includes(language) ? language : "fr";
 
             // One-time migration from legacy non-scoped keys to user-scoped keys.
             if (!scopedCartRaw || !scopedOrdersRaw || !scopedReviewsRaw || !scopedLanguageRaw
-                || JSON.stringify(state.cart) !== JSON.stringify(savedCart)) {
+                || JSON.stringify(state.cart) !== JSON.stringify(savedCart) || ordersReset) {
                 saveLocal();
             }
+            if (ordersReset) localStorage.setItem(storageKey("orders_reset"), ORDERS_RESET_ID);
         } catch (_) {
             state.cart = [];
             state.orders = [];
