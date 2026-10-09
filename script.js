@@ -7,6 +7,18 @@
         tg.expand();
     }
 
+    const introTitle = document.querySelector(".intro-card h1");
+    if (introTitle) {
+        const letters = [...introTitle.textContent.trim()].map((ch, i) => {
+            const span = document.createElement("span");
+            span.textContent = ch === " " ? " " : ch;
+            span.style.setProperty("--i", i);
+            return span;
+        });
+        introTitle.replaceChildren(...letters);
+        introTitle.classList.add("split");
+    }
+
     function applyBrandColor() {
         const meta = document.querySelector('meta[name="brand-color"]');
         const hex = meta ? meta.content.trim() : "";
@@ -233,6 +245,15 @@
         intro: document.getElementById("intro-screen"),
         introSub: document.getElementById("intro-sub"),
         brandSubtitle: document.getElementById("brand-subtitle"),
+        tickerTexts: document.querySelectorAll(".ticker-text"),
+        musicPlayer: document.getElementById("music-player"),
+        musicToggle: document.getElementById("mp-toggle"),
+        musicTitle: document.getElementById("mp-title"),
+        musicPlay: document.getElementById("mp-play"),
+        musicPrev: document.getElementById("mp-prev"),
+        musicNext: document.getElementById("mp-next"),
+        musicMute: document.getElementById("mp-mute"),
+        musicVolume: document.getElementById("mp-volume"),
         userChip: document.getElementById("user-chip"),
         categoryTabs: document.getElementById("category-tabs"),
         productGrid: document.getElementById("product-grid"),
@@ -1252,7 +1273,11 @@
         document.documentElement.lang = state.language;
 
         if (els.introSub) els.introSub.textContent = t("introSub");
-        if (els.brandSubtitle) els.brandSubtitle.textContent = t("brandSubtitle");
+        const shopCfg = state.config || {};
+        if (els.brandSubtitle) els.brandSubtitle.textContent = (shopCfg.restaurant && shopCfg.restaurant.slogan) || t("brandSubtitle");
+        if (!els.tickerDefault && els.tickerTexts[0]) els.tickerDefault = els.tickerTexts[0].textContent;
+        const tickerText = shopCfg.admin && shopCfg.admin.ticker_text ? `${shopCfg.admin.ticker_text} ✦` : els.tickerDefault;
+        els.tickerTexts.forEach((span) => { span.textContent = tickerText; });
 
         if (els.cartTitle) els.cartTitle.textContent = t("cartTitle");
         if (els.cartDesc) els.cartDesc.textContent = t("cartDesc");
@@ -2115,13 +2140,8 @@
         if (tabName === "settings") loadAdminSettings();
     }
 
-    function getAdminUsername() {
-        const user = getTelegramUser();
-        if (user && user.username) return user.username;
-        if (state && state.config && state.config.admin && Array.isArray(state.config.admin.whitelist) && state.config.admin.whitelist.length) {
-            return state.config.admin.whitelist[0];
-        }
-        return (state && state.config && state.config.admin && state.config.admin.telegram_username) || "";
+    function getAdminInitData() {
+        return (tg && tg.initData) || "";
     }
 
     async function loadAdminReviews() {
@@ -2139,7 +2159,7 @@
 
             let html = "";
             if (pending.length > 0) {
-                html += `<h4 style="color:var(--accent);margin:8px 0;">⏳ Avis en attente (${pending.length})</h4>`;
+                html += `<h4 class="admin-section-title">En attente · ${pending.length}</h4>`;
                 html += pending.map((r) => {
                     const rawStars = Math.max(1, Math.min(5, r.stars || 5));
                     const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
@@ -2154,32 +2174,32 @@
                             <p class="admin-review-msg">${sanitize(r.message || "")}</p>
                             <div class="admin-review-meta">${date}${handle}</div>
                             <div class="admin-review-actions">
-                                <button class="admin-btn-approve" data-ts="${r.timestamp}" type="button">✓ Approuver</button>
-                                <button class="admin-btn-reject" data-ts="${r.timestamp}" type="button">✗ Refuser</button>
+                                <button class="admin-btn-approve" data-ts="${r.timestamp}" type="button">Publier</button>
+                                <button class="admin-btn-reject" data-ts="${r.timestamp}" type="button">Refuser</button>
                             </div>
                         </div>
                     `;
                 }).join("");
             } else {
-                html += `<div class="admin-empty" style="padding:16px;margin-bottom:12px;">Aucun avis en attente ✓</div>`;
+                html += `<div class="admin-empty">Aucun avis en attente</div>`;
             }
 
             if (approved.length > 0) {
-                html += `<h4 style="color:var(--text);margin:16px 0 8px;">✅ Avis publiés sur le site (${approved.length})</h4>`;
+                html += `<h4 class="admin-section-title">Publiés · ${approved.length}</h4>`;
                 html += approved.slice().reverse().map((r) => {
                     const rawStars = Math.max(1, Math.min(5, r.stars || 5));
                     const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
                     const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
                     const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "";
                     return `
-                        <div class="admin-review-card" style="border-color:rgba(255,255,255,0.08);">
+                        <div class="admin-review-card">
                             <div class="admin-review-header">
                                 <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
                                 <span class="admin-review-stars">${stars}</span>
                             </div>
                             <p class="admin-review-msg">${sanitize(r.message || "")}</p>
                             <div class="admin-review-meta">${date}${handle}</div>
-                            <button class="admin-btn-delete-approved" data-ts="${r.timestamp}" type="button">🗑 Supprimer de la boutique</button>
+                            <button class="admin-btn-delete-approved" data-ts="${r.timestamp}" type="button">Retirer de la boutique</button>
                         </div>
                     `;
                 }).join("");
@@ -2206,7 +2226,7 @@
             const resp = await fetchWriteApi("/admin/reviews/approve", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
+                body: JSON.stringify({ init_data: getAdminInitData(), timestamp })
             });
             if (resp.ok) {
                 showToast("Avis approuvé et publié ! ⭐");
@@ -2224,7 +2244,7 @@
             const resp = await fetchWriteApi("/admin/reviews/reject", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
+                body: JSON.stringify({ init_data: getAdminInitData(), timestamp })
             });
             if (resp.ok) {
                 showToast("Avis refusé");
@@ -2241,7 +2261,7 @@
             const resp = await fetchWriteApi("/admin/reviews/delete-approved", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
+                body: JSON.stringify({ init_data: getAdminInitData(), timestamp })
             }, true);
             if (resp.ok) {
                 showToast("Avis supprimé ! 🗑️");
@@ -2260,7 +2280,7 @@
         try {
             let orders = [];
             try {
-                const resp = await fetchWriteApi("/admin/orders?tg_username=" + encodeURIComponent(getAdminUsername()));
+                const resp = await fetchWriteApi("/admin/orders?init_data=" + encodeURIComponent(getAdminInitData()));
                 if (resp && resp.ok) {
                     const data = await resp.json();
                     if (data && Array.isArray(data.orders)) {
@@ -2285,7 +2305,7 @@
             }
 
             const sortedOrders = [...orders].reverse();
-            els.adminOrdersAll.innerHTML = `<button class="admin-refresh-btn" id="admin-orders-refresh-btn" type="button">↻ Actualiser</button>` +
+            els.adminOrdersAll.innerHTML = `<button class="admin-refresh-btn" id="admin-orders-refresh-btn" type="button">Actualiser</button>` +
                 sortedOrders.map((o) => {
                     const date = new Date(o.timestamp || Date.now()).toLocaleString("fr-FR");
                     const typeLabel = o.type === "pickup" ? "Sur place" : "Livraison";
@@ -2298,8 +2318,7 @@
                             </div>
                             <span class="admin-order-type">${typeLabel}</span>
                             <p class="admin-order-summary">${sanitize(o.summary || "")}</p>
-                            <span class="admin-order-user">👤 ${user}</span>
-                            <span class="admin-order-date">📅 ${date}</span>
+                            <span class="admin-order-user">${user} · ${date}</span>
                         </div>
                     `;
                 }).join("");
@@ -2333,41 +2352,36 @@
             const categories = cfg.categories || {};
             const products = cfg.products || {};
             const catNames = {};
-            for (const [key, cat] of Object.entries(categories)) catNames[key] = `${cat.emoji || ""} ${cat.name}`;
+            for (const [key, cat] of Object.entries(categories)) catNames[key] = cat.name;
 
-            let html = `<button class="admin-add-btn" id="admin-add-product-btn" type="button">+ Ajouter un produit</button>`;
+            let html = `<div class="admin-group"><button class="admin-add-btn" id="admin-add-product-btn" type="button">Ajouter un produit…</button></div>`;
 
             let totalProds = 0;
             for (const [catKey, prods] of Object.entries(products)) {
                 if (!Array.isArray(prods) || !prods.length) continue;
                 totalProds += prods.length;
-                html += `<h4 style="color:var(--accent);margin:14px 0 6px;">${sanitize(catNames[catKey] || catKey)} (${prods.length})</h4>`;
+                html += `<h4 class="admin-section-title">${sanitize(catNames[catKey] || catKey)} · ${prods.length}</h4><div class="admin-group">`;
                 html += prods.map((p, idx) => {
                     const isFirst = idx === 0;
                     const isLast = idx === prods.length - 1;
-                    const thumb = p.image ? `<img class="admin-product-thumb" src="${sanitize(p.image)}" alt="">` : `<div class="admin-product-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${sanitize(p.emoji || "📦")}</div>`;
+                    const thumb = p.image ? `<img class="admin-product-thumb" src="${sanitize(p.image)}" alt="">` : `<span class="admin-product-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${sanitize(p.emoji || "📦")}</span>`;
+                    const details = [`${(p.price || 0).toFixed(2)} €`, p.isPromo ? "Promo" : "", p.isNew ? "Nouveau" : ""].filter(Boolean).join(" · ");
                     return `
                     <div class="admin-product-card">
-                        <div class="admin-product-row">
-                            <div class="admin-reorder-btns">
-                                <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="up" type="button" ${isFirst ? "disabled" : ""}>▲</button>
-                                <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="down" type="button" ${isLast ? "disabled" : ""}>▼</button>
-                            </div>
+                        <div class="admin-reorder-btns">
+                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="up" type="button" aria-label="Monter" ${isFirst ? "disabled" : ""}>▲</button>
+                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="down" type="button" aria-label="Descendre" ${isLast ? "disabled" : ""}>▼</button>
+                        </div>
+                        <button class="admin-btn-edit" data-pid="${p.id}" type="button">
                             ${thumb}
-                            <div style="flex:1;min-width:0;">
-                                <div class="admin-product-header" style="margin-bottom:2px;">
-                                    <span class="admin-product-name">${sanitize(p.name || "")}</span>
-                                    <span class="admin-product-price">${(p.price || 0).toFixed(2)} €</span>
-                                </div>
-                                <span class="admin-product-cat">${sanitize(catNames[catKey] || catKey)}</span>
-                            </div>
-                        </div>
-                        <div class="admin-review-actions" style="margin-top:6px;">
-                            <button class="admin-btn-edit" data-pid="${p.id}" type="button">✏️ Modifier</button>
-                            <button class="admin-btn-reject" data-pid="${p.id}" type="button">🗑 Supprimer</button>
-                        </div>
+                            <span class="admin-row-text">
+                                <span class="admin-product-name">${sanitize(p.name || "")}</span>
+                                <span class="admin-product-cat">${details}</span>
+                            </span>
+                            <span class="admin-chevron" aria-hidden="true"></span>
+                        </button>
                     </div>`;
-                }).join("");
+                }).join("") + `</div>`;
             }
 
             if (!totalProds) {
@@ -2394,29 +2408,6 @@
                     const product = allProductsList.find((p) => String(p.id).trim() === pid);
                     if (product) showAdminProductForm(product, cfg);
                 }, { once: true });
-            });
-
-            els.adminProductsContent.querySelectorAll(".admin-btn-reject[data-pid]").forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    const pid = String(btn.dataset.pid || "").trim();
-                    if (!pid) return;
-                    const prodObj = allProductsList.find((p) => String(p.id).trim() === pid);
-                    const prodName = prodObj ? prodObj.name : "ce produit";
-                    const prodEmoji = prodObj ? (prodObj.emoji || "🗑️") : "🗑️";
-
-                    showConfirmModal({
-                        title: "Supprimer le produit ?",
-                        emoji: prodEmoji,
-                        message: `Es-tu sûr de vouloir supprimer définitivement <strong>« ${sanitize(prodName)} »</strong> ? Cette action est irréversible.`,
-                        confirmText: "Oui, supprimer",
-                        cancelText: "Annuler",
-                        isDanger: true,
-                        onConfirm: async () => {
-                            btn.disabled = true;
-                            await adminDeleteProduct(pid);
-                        }
-                    });
-                });
             });
 
             els.adminProductsContent.querySelectorAll(".admin-btn-reorder").forEach((btn) => {
@@ -2447,7 +2438,7 @@
             const resp = await fetchWriteApi("/admin/products/reorder", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), category, product_id: productId, direction })
+                body: JSON.stringify({ init_data: getAdminInitData(), category, product_id: productId, direction })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
@@ -2515,6 +2506,7 @@
             xhr.open("POST", url, true);
             xhr.timeout = timeoutMs || 180000;
             xhr.setRequestHeader("ngrok-skip-browser-warning", "69420");
+            xhr.setRequestHeader("X-Telegram-Init-Data", (tg && tg.initData) || "");
 
             if (xhr.upload && typeof onProgress === "function") {
                 xhr.upload.onprogress = function(e) {
@@ -2701,8 +2693,8 @@
         const customPricesStr = product && product.customPrices ? formatCustomPricesForEdit(product.customPrices) : "";
         const formHtml = `
             <div class="admin-form-wrap">
-                <button class="admin-form-back-btn" id="admin-product-form-back" type="button">← Retour</button>
-                <h3 class="admin-form-title">${isEdit ? "✏️ Modifier le produit" : "➕ Nouveau produit"}</h3>
+                <button class="admin-form-back-btn" id="admin-product-form-back" type="button">‹ Produits</button>
+                <h3 class="admin-form-title">${isEdit ? "Modifier le produit" : "Nouveau produit"}</h3>
                 <form id="admin-product-form" autocomplete="off">
                     <label class="admin-label">Nom *<input class="admin-input" id="apf-name" type="text" maxlength="100" value="${sanitize(product ? product.name : "")}" required></label>
                     <label class="admin-label">Description<textarea class="admin-input admin-textarea" id="apf-desc" maxlength="500">${sanitize(product ? (product.description || "") : "")}</textarea></label>
@@ -2710,27 +2702,24 @@
                     <label class="admin-label">Prix de base (€) *<input class="admin-input" id="apf-price" type="number" step="0.01" min="0" value="${product ? (product.price || 0) : ""}" required></label>
                     <label class="admin-label">Prix par quantité<span class="admin-hint">Ex: 10: 80 (Quantité: Prix, une par ligne)</span><textarea class="admin-input admin-textarea" id="apf-custom" rows="4" placeholder="10: 80&#10;20: 150&#10;50: 350">${customPricesStr}</textarea></label>
                     
-                    <div style="margin-bottom:12px;">
-                        <label class="admin-label">Image (Lien URL ou Fichier appareil)</label>
-                        <input class="admin-input" id="apf-img" type="text" placeholder="https://..." value="${sanitize(product ? (product.image || "") : "")}">
+                    <div class="admin-field">
+                        <span class="admin-field-label">Photo</span>
+                        <input class="admin-input" id="apf-img" type="text" placeholder="Lien https://" value="${sanitize(product ? (product.image || "") : "")}">
                         <div class="admin-upload-box">
-                            <label class="admin-upload-btn" for="apf-img-file">📷 Choisir une photo depuis l'appareil</label>
+                            <label class="admin-upload-btn" for="apf-img-file">Choisir une photo…</label>
                             <input type="file" id="apf-img-file" accept="image/*" style="display:none;">
                             <span class="admin-upload-status" id="apf-img-status"></span>
                         </div>
                     </div>
 
-                    <div style="margin-bottom:12px;">
-                        <label class="admin-label">Vidéo (Lien direct .mp4 ou Fichier appareil, optionnel)</label>
-                        <input class="admin-input" id="apf-video" type="text" placeholder="https://... (ex: lien direct .mp4)" value="${sanitize(product ? (product.video || "") : "")}">
+                    <div class="admin-field">
+                        <span class="admin-field-label">Vidéo (optionnel)</span>
+                        <input class="admin-input" id="apf-video" type="text" placeholder="Lien direct .mp4" value="${sanitize(product ? (product.video || "") : "")}">
                         <div class="admin-upload-box">
-                            <label class="admin-upload-btn" for="apf-video-file">📹 Choisir une vidéo depuis l'appareil</label>
+                            <label class="admin-upload-btn" for="apf-video-file">Choisir une vidéo…</label>
                             <input type="file" id="apf-video-file" accept="video/*" style="display:none;">
                             <span class="admin-upload-status" id="apf-video-status"></span>
                         </div>
-                        <p class="admin-hint" style="margin-top:6px; font-size:0.73rem; line-height:1.4;">
-                            💡 Le plus simple : choisis la vidéo depuis ton téléphone, elle est envoyée automatiquement.
-                        </p>
                         <div id="apf-video-preview" style="margin-top:8px;"></div>
                     </div>
 
@@ -2740,7 +2729,6 @@
                             <input type="checkbox" id="apf-new" ${product && product.isNew ? "checked" : ""}>
                             <div class="toggle-card-body">
                                 <div class="toggle-card-info">
-                                    <span class="toggle-badge-icon">✨</span>
                                     <div class="toggle-text-block">
                                         <span class="toggle-title">Nouveau</span>
                                         <span class="toggle-desc">Badge « Nouveau »</span>
@@ -2753,7 +2741,6 @@
                             <input type="checkbox" id="apf-promo" ${product && product.isPromo ? "checked" : ""}>
                             <div class="toggle-card-body">
                                 <div class="toggle-card-info">
-                                    <span class="toggle-badge-icon">🔥</span>
                                     <div class="toggle-text-block">
                                         <span class="toggle-title">Promo</span>
                                         <span class="toggle-desc">Badge « En promo »</span>
@@ -2764,11 +2751,30 @@
                         </label>
                     </div>
                     ${isEdit ? `<input type="hidden" id="apf-id" value="${product.id}">` : ""}
-                    <button class="admin-form-submit" type="submit">${isEdit ? "💾 Sauvegarder" : "➕ Ajouter"}</button>
+                    <button class="admin-form-submit" type="submit">${isEdit ? "Enregistrer" : "Ajouter le produit"}</button>
                 </form>
+                ${isEdit ? `<button class="admin-form-delete" id="apf-delete" type="button">Supprimer le produit</button>` : ""}
             </div>`;
         if (els.adminProductsContent) els.adminProductsContent.innerHTML = formHtml;
         document.getElementById("admin-product-form-back").addEventListener("click", loadAdminProducts);
+
+        const deleteBtn = document.getElementById("apf-delete");
+        if (deleteBtn) {
+            deleteBtn.addEventListener("click", () => {
+                showConfirmModal({
+                    title: "Supprimer le produit ?",
+                    emoji: product.emoji || "🗑️",
+                    message: `Es-tu sûr de vouloir supprimer définitivement <strong>« ${sanitize(product.name || "")} »</strong> ? Cette action est irréversible.`,
+                    confirmText: "Oui, supprimer",
+                    cancelText: "Annuler",
+                    isDanger: true,
+                    onConfirm: async () => {
+                        deleteBtn.disabled = true;
+                        await adminDeleteProduct(String(product.id));
+                    }
+                });
+            });
+        }
 
         const imgFileInput = document.getElementById("apf-img-file");
         if (imgFileInput) {
@@ -2793,10 +2799,8 @@
                 return;
             }
             previewEl.innerHTML = `
-                <div style="padding:10px; border-radius:12px; background:rgba(0,0,0,0.5); border:1px solid rgba(139,92,246,0.3); margin-top:6px;">
-                    <div style="font-size:0.75rem; color:#10b981; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-                        <span>▶ Aperçu direct (lisible iPhone & Android) :</span>
-                    </div>
+                <div style="margin:4px 0 10px;">
+                    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:6px;">Aperçu</div>
                     <video id="apf-preview-video-el" controls playsinline webkit-playsinline style="width:100%; max-height:180px; border-radius:8px; background:#000; display:block;" onerror="this.parentElement.innerHTML='<div style=\\'color:#f87171;font-size:0.75rem;padding:6px;\\'>⚠️ Impossible de charger cette vidéo. Vérifie l\\'URL ou utilise un lien MP4 direct.</div>';"></video>
                 </div>
             `;
@@ -2845,7 +2849,7 @@
             const resp = await fetchWriteApi("/admin/products/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), product: productData })
+                body: JSON.stringify({ init_data: getAdminInitData(), product: productData })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
@@ -2871,7 +2875,7 @@
             const resp = await fetchWriteApi("/admin/products/delete", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), product_id: pidStr })
+                body: JSON.stringify({ init_data: getAdminInitData(), product_id: pidStr })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && data && data.success === true) {
@@ -2901,25 +2905,22 @@
             if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
             const products = cfg.products || {};
-            let html = `<button class="admin-add-btn" id="admin-add-cat-btn" type="button">+ Ajouter une catégorie</button>`;
+            let html = `<div class="admin-group"><button class="admin-add-btn" id="admin-add-cat-btn" type="button">Ajouter une catégorie…</button></div>`;
             const catEntries = Object.entries(categories);
             if (!catEntries.length) {
                 html += `<div class="admin-empty">Aucune catégorie.</div>`;
             } else {
-                html += catEntries.map(([key, cat]) => {
+                html += `<h4 class="admin-section-title">Catégories · ${catEntries.length}</h4><div class="admin-group">` + catEntries.map(([key, cat]) => {
                     const count = (products[key] || []).length;
                     return `
                     <div class="admin-product-card">
-                        <div class="admin-product-header">
-                            <span class="admin-product-name">${sanitize(cat.emoji || "")} ${sanitize(cat.name || key)}</span>
-                            <span class="admin-product-price">${count} produit${count !== 1 ? "s" : ""}</span>
-                        </div>
-                        <div class="admin-review-actions">
-                            <button class="admin-btn-edit" data-ckey="${sanitize(key)}" type="button">✏️ Modifier</button>
-                            <button class="admin-btn-reject" data-ckey="${sanitize(key)}" type="button">🗑 Supprimer</button>
-                        </div>
+                        <button class="admin-btn-edit" data-ckey="${sanitize(key)}" type="button">
+                            <span class="admin-row-text"><span class="admin-product-name">${sanitize(cat.emoji || "")} ${sanitize(cat.name || key)}</span></span>
+                            <span class="admin-row-value">${count} produit${count !== 1 ? "s" : ""}</span>
+                            <span class="admin-chevron" aria-hidden="true"></span>
+                        </button>
                     </div>`;
-                }).join("");
+                }).join("") + `</div>`;
             }
             els.adminCategoriesContent.innerHTML = html;
             const addBtn = document.getElementById("admin-add-cat-btn");
@@ -2929,31 +2930,6 @@
                     const key = btn.dataset.ckey;
                     const cat = categories[key];
                     if (cat) showAdminCategoryForm(key, cat);
-                });
-            });
-        els.adminCategoriesContent.querySelectorAll(".admin-btn-reject[data-ckey]").forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    const key = btn.dataset.ckey;
-                    const catObj = categories[key];
-                    const catName = catObj ? (catObj.name || key) : key;
-                    const catEmoji = catObj ? (catObj.emoji || "📁") : "📁";
-                    const count = (products[key] || []).length;
-                    const msg = count > 0
-                        ? `Supprimer définitivement la catégorie <strong>« ${sanitize(catName)} »</strong> et ses <strong>${count} produit(s)</strong> associés ?`
-                        : `Supprimer définitivement la catégorie <strong>« ${sanitize(catName)} »</strong> ?`;
-
-                    showConfirmModal({
-                        title: "Supprimer la catégorie ?",
-                        emoji: catEmoji,
-                        message: msg,
-                        confirmText: "Oui, supprimer",
-                        cancelText: "Annuler",
-                        isDanger: true,
-                        onConfirm: async () => {
-                            btn.disabled = true;
-                            await adminDeleteCategory(key);
-                        }
-                    });
                 });
             });
         } catch (_) {
@@ -2974,18 +2950,41 @@
         const isEdit = !!key;
         const formHtml = `
             <div class="admin-form-wrap">
-                <button class="admin-form-back-btn" id="admin-cat-form-back" type="button">← Retour</button>
-                <h3 class="admin-form-title">${isEdit ? "✏️ Modifier la catégorie" : "➕ Nouvelle catégorie"}</h3>
+                <button class="admin-form-back-btn" id="admin-cat-form-back" type="button">‹ Catégories</button>
+                <h3 class="admin-form-title">${isEdit ? "Modifier la catégorie" : "Nouvelle catégorie"}</h3>
                 <form id="admin-cat-form" autocomplete="off">
                     <input type="hidden" id="acf-key" value="${isEdit ? sanitize(key) : ""}">
                     <label class="admin-label">Nom *<input class="admin-input" id="acf-name" type="text" maxlength="50" value="${sanitize(cat ? cat.name : "")}" required></label>
                     <label class="admin-label">Emoji<input class="admin-input" id="acf-emoji" type="text" maxlength="8" value="${sanitize(cat ? (cat.emoji || "📦") : "📦")}"></label>
                     <label class="admin-label">Description<input class="admin-input" id="acf-desc" type="text" maxlength="200" value="${sanitize(cat ? (cat.description || "") : "")}"></label>
-                    <button class="admin-form-submit" type="submit">${isEdit ? "💾 Sauvegarder" : "➕ Ajouter"}</button>
+                    <button class="admin-form-submit" type="submit">${isEdit ? "Enregistrer" : "Ajouter la catégorie"}</button>
                 </form>
+                ${isEdit ? `<button class="admin-form-delete" id="acf-delete" type="button">Supprimer la catégorie</button>` : ""}
             </div>`;
         if (els.adminCategoriesContent) els.adminCategoriesContent.innerHTML = formHtml;
         document.getElementById("admin-cat-form-back").addEventListener("click", loadAdminCategories);
+
+        const deleteBtn = document.getElementById("acf-delete");
+        if (deleteBtn) {
+            deleteBtn.addEventListener("click", () => {
+                const count = ((state.config && state.config.products && state.config.products[key]) || []).length;
+                const catName = sanitize(cat.name || key);
+                showConfirmModal({
+                    title: "Supprimer la catégorie ?",
+                    emoji: cat.emoji || "📁",
+                    message: count > 0
+                        ? `Supprimer définitivement la catégorie <strong>« ${catName} »</strong> et ses <strong>${count} produit(s)</strong> associés ?`
+                        : `Supprimer définitivement la catégorie <strong>« ${catName} »</strong> ?`,
+                    confirmText: "Oui, supprimer",
+                    cancelText: "Annuler",
+                    isDanger: true,
+                    onConfirm: async () => {
+                        deleteBtn.disabled = true;
+                        await adminDeleteCategory(key);
+                    }
+                });
+            });
+        }
         document.getElementById("admin-cat-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             const catName = document.getElementById("acf-name").value.trim();
@@ -3006,7 +3005,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    tg_username: getAdminUsername(),
+                    init_data: getAdminInitData(),
                     ...catData,
                     category: { ...catData }
                 })
@@ -3032,7 +3031,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    tg_username: getAdminUsername(),
+                    init_data: getAdminInitData(),
                     key: key,
                     cat_key: key
                 })
@@ -3068,70 +3067,136 @@
             const rest = cfg.restaurant || {};
             const adminCfg = cfg.admin || {};
             const whitelist = Array.isArray(adminCfg.whitelist) ? adminCfg.whitelist : [];
-            const tgUser = cfg.telegram_username || "";
-            const chLink = cfg.channel_link || "";
+            const tgUser = adminCfg.telegram_username || cfg.telegram_username || "";
+            const chLink = adminCfg.channel_link || cfg.channel_link || "";
+            const tickerText = adminCfg.ticker_text || (els.tickerTexts[0] ? els.tickerTexts[0].textContent.replace(/\s+/g, " ").replace(/\s*✦\s*$/, "").trim() : "");
+            const musicTracks = getMusicPlaylist();
+            const musicRows = musicTracks.map((track, i) => `
+                <div class="admin-list-row">
+                    <span class="admin-row-text"><span class="admin-product-name">${sanitize(track.title || `Piste ${i + 1}`)}</span></span>
+                    <span class="admin-reorder-btns">
+                        <button class="admin-btn-reorder" data-music-move="${i}" data-dir="-1" type="button" aria-label="Monter" ${i === 0 ? "disabled" : ""}>▲</button>
+                        <button class="admin-btn-reorder" data-music-move="${i}" data-dir="1" type="button" aria-label="Descendre" ${i === musicTracks.length - 1 ? "disabled" : ""}>▼</button>
+                    </span>
+                    <button class="admin-row-remove" data-music-remove="${i}" type="button">Retirer</button>
+                </div>
+            `).join("");
+            const welcomePhoto = adminCfg.welcome_photo || "";
+            const welcomeMessage = adminCfg.welcome_message
+                || `*🕵🏻 Bienvenue chez ${String(rest.name || "").toUpperCase()} !*\n\nSi vous souhaitez faire une commande ou nous contacter, utilisez les options ci-dessous.`;
 
             const wlChips = whitelist.map((u) => `
-                <span class="admin-chip">
-                    @${sanitize(u)}
-                    <button class="admin-chip-remove" data-user="${sanitize(u)}" type="button" title="Retirer">×</button>
-                </span>
+                <div class="admin-list-row">
+                    <span>@${sanitize(u)}</span>
+                    <button class="admin-chip-remove" data-user="${sanitize(u)}" type="button">Retirer</button>
+                </div>
             `).join("");
 
             const html = `
+                <h4 class="admin-section-title">Boutique</h4>
                 <div class="admin-settings-card">
-                    <div class="admin-settings-card-title">🏪 Infos de la Boutique</div>
                     <form id="admin-form-settings" autocomplete="off">
-                        <label class="admin-label">Nom de l'établissement
+                        <label class="admin-label">Nom
                             <input class="admin-input" id="as-name" type="text" value="${sanitize(rest.name || '')}" required>
                         </label>
-                        <label class="admin-label">Slogan / Sous-titre
-                            <input class="admin-input" id="as-slogan" type="text" value="${sanitize(rest.slogan || '')}">
+                        <label class="admin-label">Sous-titre
+                            <input class="admin-input" id="as-slogan" type="text" placeholder="Menu premium 2026">
                         </label>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                            <label class="admin-label">Devise
-                                <input class="admin-input" id="as-currency" type="text" value="${sanitize(rest.currency || 'EUR')}">
-                            </label>
-                            <label class="admin-label">Commande min (€)
-                                <input class="admin-input" id="as-minorder" type="number" step="0.01" value="${rest.minOrder || 0}">
-                            </label>
-                        </div>
-                        <label class="admin-label">Frais de livraison (€)
+                        <label class="admin-label">Devise
+                            <input class="admin-input" id="as-currency" type="text" value="${sanitize(rest.currency || 'EUR')}">
+                        </label>
+                        <label class="admin-label">Commande min. (€)
+                            <input class="admin-input" id="as-minorder" type="number" step="0.01" value="${rest.minOrder || 0}">
+                        </label>
+                        <label class="admin-label">Livraison (€)
                             <input class="admin-input" id="as-deliveryfee" type="number" step="0.01" value="${rest.deliveryFee || 0}">
                         </label>
-                        <button class="admin-form-submit" type="submit">💾 Enregistrer les infos</button>
+                        <button class="admin-form-submit" type="submit">Enregistrer</button>
                     </form>
                 </div>
 
+                <h4 class="admin-section-title">Telegram</h4>
                 <div class="admin-settings-card">
-                    <div class="admin-settings-card-title">✈️ Telegram & Contacts</div>
                     <form id="admin-form-contact" autocomplete="off">
-                        <label class="admin-label">Username Telegram (Sans @)
+                        <label class="admin-label">Pseudo (sans @)
                             <input class="admin-input" id="as-tg-username" type="text" value="${sanitize(tgUser)}">
                         </label>
-                        <label class="admin-label">Lien du Canal Telegram
+                        <label class="admin-label">Lien du canal
                             <input class="admin-input" id="as-channel-link" type="text" value="${sanitize(chLink)}">
                         </label>
-                        <button class="admin-form-submit" type="submit">💾 Enregistrer les contacts</button>
+                        <button class="admin-form-submit" type="submit">Enregistrer</button>
                     </form>
                 </div>
 
+                <h4 class="admin-section-title">Banderole défilante</h4>
                 <div class="admin-settings-card">
-                    <div class="admin-settings-card-title">🛡️ Accès à la gestion</div>
-                    <p class="admin-hint">Seules les personnes listées ici peuvent ouvrir ce panneau.</p>
-                    <div class="admin-whitelist-chips">
-                        ${wlChips || '<span class="admin-hint">Aucun admin supplémentaire</span>'}
-                    </div>
-                    <form id="admin-form-whitelist" style="margin-top:10px;" autocomplete="off">
-                        <div style="display:flex;gap:8px;">
-                            <input class="admin-input" id="as-new-admin" type="text" placeholder="@pseudo Telegram">
-                            <button class="admin-add-btn" style="margin-bottom:0;width:auto;white-space:nowrap;padding:0 16px;" type="submit">+ Ajouter</button>
-                        </div>
+                    <form id="admin-form-ticker" autocomplete="off">
+                        <label class="admin-label">
+                            <textarea class="admin-input admin-textarea" id="as-ticker-text" rows="3" maxlength="300" aria-label="Texte de la banderole"></textarea>
+                        </label>
+                        <button class="admin-form-submit" type="submit">Enregistrer</button>
                     </form>
                 </div>
+                <p class="admin-hint admin-footnote">Emojis acceptés. Sépare les infos avec ✦. Vide = texte par défaut.</p>
+
+                <h4 class="admin-section-title">Accueil du bot (/start)</h4>
+                <div class="admin-settings-card">
+                    <form id="admin-form-welcome" autocomplete="off">
+                        <div class="admin-field">
+                            <span class="admin-field-label">Photo</span>
+                            <input class="admin-input" id="as-welcome-photo" type="text" placeholder="Lien https:// (vide = photo actuelle)">
+                            <div class="admin-upload-box">
+                                <label class="admin-upload-btn" for="as-welcome-photo-file">Choisir une photo…</label>
+                                <input type="file" id="as-welcome-photo-file" accept="image/*" style="display:none;">
+                                <span class="admin-upload-status" id="as-welcome-photo-status"></span>
+                            </div>
+                        </div>
+                        <label class="admin-label">Message
+                            <textarea class="admin-input admin-textarea" id="as-welcome-message" rows="5" maxlength="500"></textarea>
+                        </label>
+                        <button class="admin-form-submit" type="submit">Enregistrer</button>
+                    </form>
+                </div>
+                <p class="admin-hint admin-footnote">*texte* = gras. Vide = message par défaut.</p>
+
+                <h4 class="admin-section-title">Musique</h4>
+                <div class="admin-settings-card">
+                    ${musicRows}
+                    <form id="admin-form-music" autocomplete="off">
+                        <div class="admin-field">
+                            <input class="admin-input" id="as-music-title" type="text" maxlength="80" placeholder="Titre du son">
+                            <input class="admin-input" id="as-music-url" type="text" placeholder="Lien .mp3">
+                            <div class="admin-upload-box">
+                                <label class="admin-upload-btn" for="as-music-file">Choisir un son…</label>
+                                <input type="file" id="as-music-file" accept="audio/*" style="display:none;">
+                                <span class="admin-upload-status" id="as-music-status"></span>
+                            </div>
+                        </div>
+                        <button class="admin-form-submit" type="submit">Ajouter à la playlist</button>
+                    </form>
+                </div>
+                <p class="admin-hint admin-footnote">Démarre après l'écran d'accueil, en boucle. Si le téléphone bloque le son automatique, la musique se lance au premier toucher.</p>
+
+                <h4 class="admin-section-title">Accès à la gestion</h4>
+                <div class="admin-settings-card">
+                    ${wlChips}
+                    <form id="admin-form-whitelist" class="admin-inline-form" autocomplete="off">
+                        <input class="admin-input" id="as-new-admin" type="text" placeholder="@pseudo Telegram">
+                        <button class="admin-inline-btn" type="submit">Ajouter</button>
+                    </form>
+                </div>
+                <p class="admin-hint admin-footnote">Seules ces personnes peuvent ouvrir la gestion.</p>
+
+                <h4 class="admin-section-title">Bot</h4>
+                <button class="admin-form-delete" id="as-restart-bot" type="button">Redémarrer le bot</button>
+                <p class="admin-hint admin-footnote">Si le bot ne répond plus. Il revient tout seul en 10 secondes environ.</p>
             `;
 
             els.adminSettingsContent.innerHTML = html;
+            document.getElementById("as-slogan").value = rest.slogan || "";
+            document.getElementById("as-ticker-text").value = tickerText;
+            document.getElementById("as-welcome-photo").value = welcomePhoto;
+            document.getElementById("as-welcome-message").value = welcomeMessage;
 
             document.getElementById("admin-form-settings").addEventListener("submit", async (e) => {
                 e.preventDefault();
@@ -3143,6 +3208,13 @@
                     deliveryFee: parseFloat(document.getElementById("as-deliveryfee").value) || 0,
                 };
                 await adminSaveSettings(settingsData);
+                applyTranslations();
+            });
+
+            document.getElementById("admin-form-ticker").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                await adminSaveContact({ ticker_text: document.getElementById("as-ticker-text").value.trim() }, "Banderole mise à jour ! 📣");
+                applyTranslations();
             });
 
             document.getElementById("admin-form-contact").addEventListener("submit", async (e) => {
@@ -3152,6 +3224,89 @@
                     channel_link: document.getElementById("as-channel-link").value.trim(),
                 };
                 await adminSaveContact(contactData);
+            });
+
+            document.getElementById("as-welcome-photo-file").addEventListener("change", function () {
+                handleAdminFileUpload(this, "as-welcome-photo", "as-welcome-photo-status");
+            });
+
+            document.getElementById("admin-form-welcome").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const photo = document.getElementById("as-welcome-photo").value.trim();
+                if (photo.startsWith("data:")) {
+                    showToast("Photo non envoyée au serveur, réessaie ou colle un lien https.", "error");
+                    return;
+                }
+                await adminSaveContact({
+                    welcome_photo: photo,
+                    welcome_message: document.getElementById("as-welcome-message").value.trim(),
+                }, "Accueil du bot mis à jour ! 👋");
+            });
+
+            const saveMusicPlaylist = async (tracks, successMsg) => {
+                if (await adminSaveContact({ music_playlist: JSON.stringify(tracks) }, successMsg)) {
+                    syncMusicPlaylist();
+                    await loadAdminSettings();
+                }
+            };
+
+            document.getElementById("as-music-file").addEventListener("change", async function () {
+                const file = this.files && this.files[0];
+                if (!file) return;
+                const statusEl = document.getElementById("as-music-status");
+                statusEl.textContent = "Envoi : 0 %";
+                const url = await uploadMediaFile(file, (percent) => {
+                    statusEl.textContent = percent < 99 ? `Envoi : ${percent} %` : "Enregistrement…";
+                });
+                if (!url) {
+                    statusEl.textContent = "Échec de l'envoi";
+                    showToast("Upload impossible. Vérifie que le bot tourne bien.", "error");
+                    return;
+                }
+                document.getElementById("as-music-url").value = url;
+                const titleEl = document.getElementById("as-music-title");
+                if (!titleEl.value.trim()) titleEl.value = file.name.replace(/\.[^.]+$/, "");
+                statusEl.textContent = "Son prêt";
+            });
+
+            document.getElementById("admin-form-music").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const url = document.getElementById("as-music-url").value.trim();
+                if (!/^https?:\/\//i.test(url)) {
+                    showToast("Ajoute un son (fichier ou lien https).", "error");
+                    return;
+                }
+                const title = document.getElementById("as-music-title").value.trim() || `Piste ${musicTracks.length + 1}`;
+                await saveMusicPlaylist([...musicTracks, { title, url }], "Son ajouté à la playlist 🎵");
+            });
+
+            els.adminSettingsContent.querySelectorAll("[data-music-remove]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const index = Number(btn.dataset.musicRemove);
+                    saveMusicPlaylist(musicTracks.filter((_, i) => i !== index), "Son retiré");
+                });
+            });
+
+            els.adminSettingsContent.querySelectorAll("[data-music-move]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const from = Number(btn.dataset.musicMove);
+                    const to = from + Number(btn.dataset.dir);
+                    const tracks = [...musicTracks];
+                    [tracks[from], tracks[to]] = [tracks[to], tracks[from]];
+                    saveMusicPlaylist(tracks, "Ordre mis à jour");
+                });
+            });
+
+            document.getElementById("as-restart-bot").addEventListener("click", () => {
+                showConfirmModal({
+                    title: "Redémarrer le bot ?",
+                    emoji: "🔄",
+                    message: "Le bot sera coupé quelques secondes puis repartira tout seul.",
+                    confirmText: "Oui, redémarrer",
+                    cancelText: "Annuler",
+                    isDanger: false,
+                    onConfirm: adminRestartBot
+                });
             });
 
             document.getElementById("admin-form-whitelist").addEventListener("submit", async (e) => {
@@ -3185,7 +3340,7 @@
             const resp = await fetchWriteApi("/admin/settings/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), settings })
+                body: JSON.stringify({ init_data: getAdminInitData(), settings })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
@@ -3200,23 +3355,42 @@
         }
     }
 
-    async function adminSaveContact(contact) {
+    async function adminRestartBot() {
         try {
-            const resp = await fetchWriteApi("/admin/contact/save", {
+            const resp = await fetchWriteApi("/admin/restart", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), contact })
+                body: JSON.stringify({ init_data: (tg && tg.initData) || "" })
             });
             const data = await readJsonIfAny(resp);
-            if (resp.ok && (!data || data.success !== false)) {
-                if (data && data.config) applyUpdatedConfig(data.config);
-                showToast("Contacts mis à jour ! 📱");
+            if (resp.ok && data && data.success) {
+                showToast("Redémarrage en cours, retour dans 10 secondes environ 🔄");
             } else {
-                showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
+                showToast((data && data.error) || "Redémarrage impossible.", "error");
             }
         } catch (_) {
             showToast("Connexion impossible, réessaie.", "error");
         }
+    }
+
+    async function adminSaveContact(contact, successMsg = "Contacts mis à jour ! 📱") {
+        try {
+            const resp = await fetchWriteApi("/admin/contact/save", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ init_data: getAdminInitData(), contact })
+            });
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
+                if (data && data.config) applyUpdatedConfig(data.config);
+                showToast(successMsg);
+                return true;
+            }
+            showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
+        } catch (_) {
+            showToast("Connexion impossible, réessaie.", "error");
+        }
+        return false;
     }
 
     async function adminSaveWhitelist(whitelist) {
@@ -3224,7 +3398,7 @@
             const resp = await fetchWriteApi("/admin/whitelist/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tg_username: getAdminUsername(), whitelist })
+                body: JSON.stringify({ init_data: getAdminInitData(), whitelist })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
@@ -3240,6 +3414,143 @@
     }
 
     // ===== FIN ADMIN PANEL =====
+
+    const music = { audio: new Audio(), tracks: [], index: 0, errors: 0, resumeOnShow: false, autostart: null };
+
+    function getMusicPlaylist() {
+        try {
+            const list = JSON.parse((state.config && state.config.admin && state.config.admin.music_playlist) || "[]");
+            return Array.isArray(list) ? list.filter((t) => t && t.url) : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function renderMusicPlayer() {
+        if (!els.musicPlayer) return;
+        const track = music.tracks[music.index];
+        els.musicPlayer.hidden = !music.tracks.length;
+        els.musicPlayer.classList.toggle("playing", !music.audio.paused);
+        els.musicPlayer.classList.toggle("muted", music.audio.muted);
+        els.musicTitle.textContent = track ? (track.title || `Piste ${music.index + 1}`) : "";
+        els.musicPlay.setAttribute("aria-label", music.audio.paused ? "Lecture" : "Pause");
+    }
+
+    function loadMusicTrack(index) {
+        music.index = (index + music.tracks.length) % music.tracks.length;
+        music.audio.src = music.tracks[music.index].url;
+        renderMusicPlayer();
+    }
+
+    function playMusic() {
+        if (!music.tracks.length) return Promise.resolve();
+        if (!music.audio.getAttribute("src")) loadMusicTrack(music.index);
+        return music.audio.play().catch(() => {});
+    }
+
+    function cancelMusicAutostart() {
+        if (music.autostart) document.removeEventListener("pointerup", music.autostart, true);
+        music.autostart = null;
+    }
+
+    function syncMusicPlaylist() {
+        const currentUrl = music.tracks[music.index] ? music.tracks[music.index].url : "";
+        music.tracks = getMusicPlaylist();
+        const kept = music.tracks.findIndex((t) => t.url === currentUrl);
+        if (kept >= 0) {
+            music.index = kept;
+        } else {
+            music.audio.pause();
+            music.audio.removeAttribute("src");
+            music.index = 0;
+        }
+        renderMusicPlayer();
+    }
+
+    function startMusicPlayer() {
+        syncMusicPlaylist();
+        if (!music.tracks.length || localStorage.getItem("gh-music-paused")) return;
+        playMusic().then(() => {
+            if (!music.audio.paused) return;
+            music.autostart = (e) => {
+                if (e.target.closest && e.target.closest("#music-player")) return;
+                cancelMusicAutostart();
+                playMusic();
+            };
+            document.addEventListener("pointerup", music.autostart, true);
+        });
+    }
+
+    function bindMusicPlayer() {
+        if (!els.musicPlayer) return;
+        const savedVolume = parseFloat(localStorage.getItem("gh-music-volume"));
+        music.audio.volume = 0.5;
+        els.musicVolume.hidden = music.audio.volume !== 0.5;
+        music.audio.volume = Number.isFinite(savedVolume) ? savedVolume : 0.6;
+        music.audio.muted = localStorage.getItem("gh-music-muted") === "1";
+        els.musicVolume.value = music.audio.volume;
+
+        ["play", "pause", "volumechange"].forEach((evt) => music.audio.addEventListener(evt, renderMusicPlayer));
+        music.audio.addEventListener("play", () => localStorage.removeItem("gh-music-paused"));
+        music.audio.addEventListener("playing", () => { music.errors = 0; });
+        music.audio.addEventListener("ended", () => {
+            loadMusicTrack(music.index + 1);
+            playMusic();
+        });
+        music.audio.addEventListener("error", () => {
+            if (!music.audio.getAttribute("src") || ++music.errors >= music.tracks.length) return;
+            loadMusicTrack(music.index + 1);
+            playMusic();
+        });
+
+        els.musicToggle.addEventListener("click", () => {
+            els.musicPlayer.classList.toggle("open");
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+        });
+        els.musicPlay.addEventListener("click", () => {
+            cancelMusicAutostart();
+            if (music.audio.paused) {
+                playMusic();
+            } else {
+                music.audio.pause();
+                localStorage.setItem("gh-music-paused", "1");
+            }
+        });
+        els.musicPrev.addEventListener("click", () => {
+            cancelMusicAutostart();
+            if (music.audio.currentTime > 3) music.audio.currentTime = 0;
+            else loadMusicTrack(music.index - 1);
+            playMusic();
+        });
+        els.musicNext.addEventListener("click", () => {
+            cancelMusicAutostart();
+            loadMusicTrack(music.index + 1);
+            playMusic();
+        });
+        els.musicMute.addEventListener("click", () => {
+            music.audio.muted = !music.audio.muted;
+            localStorage.setItem("gh-music-muted", music.audio.muted ? "1" : "0");
+        });
+        els.musicVolume.addEventListener("input", () => {
+            music.audio.volume = Number(els.musicVolume.value);
+            music.audio.muted = false;
+            localStorage.setItem("gh-music-volume", els.musicVolume.value);
+            localStorage.setItem("gh-music-muted", "0");
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden && !music.audio.paused) {
+                music.resumeOnShow = true;
+                music.audio.pause();
+            } else if (!document.hidden && music.resumeOnShow) {
+                music.resumeOnShow = false;
+                playMusic();
+            }
+        });
+        document.addEventListener("play", (e) => {
+            if (e.target.tagName === "VIDEO" && !e.target.muted) music.audio.pause();
+        }, true);
+    }
 
     async function bootstrap() {
         if (!isTelegramMobileClient()) {
@@ -3262,6 +3573,7 @@
             applyTranslations();
             attachNavigation();
             bindActions();
+            bindMusicPlayer();
         } catch (error) {
             document.body.innerHTML = `<div style="padding:20px;color:#fff">Erreur: ${sanitize(error.message)}</div>`;
             return;
@@ -3275,7 +3587,9 @@
             if (els.introSub) els.introSub.textContent = "Ouverture du menu...";
         }, 850);
         setTimeout(() => {
-            document.body.classList.add("app-ready");
+            document.body.classList.add("app-ready", "app-entering");
+            setTimeout(() => document.body.classList.remove("app-entering"), 900);
+            startMusicPlayer();
         }, 1200);
 
         // Auto refresh silencieux quand l'utilisateur réouvre ou revient sur l'application Telegram
@@ -3285,6 +3599,7 @@
                     await loadConfig();
                     renderCategories();
                     renderProducts();
+                    syncMusicPlaylist();
                 } catch (_) {}
             }
         });
