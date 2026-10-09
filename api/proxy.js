@@ -98,8 +98,10 @@ async function buildConfig(client) {
     const admin = {};
     const adminRows = await client.query('SELECT key, value FROM admin_settings');
     for (const r of adminRows.rows) admin[r.key] = r.value;
-    const wlRows = await client.query('SELECT username FROM admin_whitelist');
+    const wlRows = await client.query('SELECT username, user_id IS NOT NULL AS linked FROM admin_whitelist');
     admin.whitelist = wlRows.rows.map(r => r.username);
+    // lié = compte Telegram rattaché à la première connexion vérifiée ; l'id lui-même n'est jamais renvoyé
+    admin.whitelist_linked = Object.fromEntries(wlRows.rows.map(r => [r.username, Boolean(r.linked)]));
 
     const categories = {};
     const catRows = await client.query('SELECT cat_key, name, emoji, description FROM categories ORDER BY sort_order, cat_key');
@@ -117,6 +119,27 @@ async function buildConfig(client) {
     }
 
     return { restaurant, admin, categories, products };
+}
+
+// Clés de la config réservées à la gestion : jamais dans /config public
+const PRIVATE_ADMIN_KEYS = ['whitelist', 'whitelist_linked'];
+
+// Un avis se cible par son id SQL : le timestamp est choisi par le client à l'envoi,
+// un avis forgé avec le même timestamp serait publié ou supprimé en même temps.
+const REVIEW_ACTIONS = new Map([
+    ['/admin/reviews/approve', "UPDATE reviews SET status='approved' WHERE id=$1 AND status='pending' RETURNING id"],
+    ['/admin/reviews/reject', "DELETE FROM reviews WHERE id=$1 AND status='pending' RETURNING id"],
+    ['/admin/reviews/delete-approved', "DELETE FROM reviews WHERE id=$1 AND status='approved' RETURNING id"]
+]);
+
+// Id SQL d'un avis (entier > 0) ; null s'il manque ou n'est pas valide, sans repli sur le timestamp
+function reviewIdFrom(payload) {
+    const raw = payload ? payload.review_id : undefined;
+    if (typeof raw !== 'number' && typeof raw !== 'string') return null;
+    const s = String(raw).trim();
+    if (!/^\d+$/.test(s)) return null;
+    const id = Number(s);
+    return id > 0 && id < 2 ** 31 ? id : null;
 }
 
 const UPLOAD_PATH_RE = /^\/uploads\/[A-Za-z0-9_.-]+\.(?:png|jpe?g|gif|webp|heic|heif|mp4|mov|avi|webm|m4v|mkv|3gp|mp3|m4a|aac|wav|ogg)$/i;
@@ -226,7 +249,7 @@ module.exports = async function handler(req, res) {
         // ── GET /config ──────────────────────────────────────────────────
         if (route === '/config' && req.method === 'GET') {
             const cfg = await buildConfig(client);
-            delete cfg.admin.whitelist;
+            for (const k of PRIVATE_ADMIN_KEYS) delete cfg.admin[k];
             return json(res, cfg);
         }
 
@@ -239,7 +262,7 @@ module.exports = async function handler(req, res) {
 
         // ── GET /reviews ──────────────────────────────────────────────────
         if (route === '/reviews' && req.method === 'GET') {
-            const rows = await client.query("SELECT author, stars, message, timestamp FROM reviews WHERE status='approved' ORDER BY timestamp DESC LIMIT 200");
+            const rows = await client.query("SELECT id, author, stars, message, timestamp FROM reviews WHERE status='approved' ORDER BY timestamp DESC LIMIT 200");
             return json(res, { success: true, reviews: rows.rows, count: rows.rows.length });
         }
 
@@ -417,32 +440,20 @@ module.exports = async function handler(req, res) {
         // ── GET /admin/reviews/pending ────────────────────────────────────
         if (route === '/admin/reviews/pending' && req.method === 'GET') {
             if (!await isAdmin(client, req.headers['x-telegram-init-data'])) return json(res, { error: 'Forbidden' }, 403);
-            const rows = await client.query("SELECT * FROM reviews WHERE status='pending' ORDER BY timestamp ASC");
-            return json(res, { success: true, reviews: rows.rows, count: rows.rows.length });
+            // Même réponse que willy.py : clé « pending », plus récents d'abord
+            const rows = await client.query("SELECT * FROM reviews WHERE status='pending' ORDER BY timestamp DESC");
+            return json(res, { success: true, pending: rows.rows });
         }
 
-        // ── POST /admin/reviews/approve ───────────────────────────────────
-        if (route === '/admin/reviews/approve' && req.method === 'POST') {
+        // ── POST /admin/reviews/approve | reject | delete-approved ────────
+        if (REVIEW_ACTIONS.has(route) && req.method === 'POST') {
             const payload = await readBody(req);
             if (!await isAdmin(client, payload.init_data)) return json(res, { error: 'Forbidden' }, 403);
-            await client.query("UPDATE reviews SET status='approved' WHERE id=$1", [parseInt(payload.review_id)]);
-            return json(res, { success: true });
-        }
-
-        // ── POST /admin/reviews/reject ────────────────────────────────────
-        if (route === '/admin/reviews/reject' && req.method === 'POST') {
-            const payload = await readBody(req);
-            if (!await isAdmin(client, payload.init_data)) return json(res, { error: 'Forbidden' }, 403);
-            await client.query("UPDATE reviews SET status='rejected' WHERE id=$1", [parseInt(payload.review_id)]);
-            return json(res, { success: true });
-        }
-
-        // ── POST /admin/reviews/delete-approved ───────────────────────────
-        if (route === '/admin/reviews/delete-approved' && req.method === 'POST') {
-            const payload = await readBody(req);
-            if (!await isAdmin(client, payload.init_data)) return json(res, { error: 'Forbidden' }, 403);
-            await client.query("DELETE FROM reviews WHERE id=$1", [parseInt(payload.review_id)]);
-            return json(res, { success: true });
+            const reviewId = reviewIdFrom(payload);
+            if (!reviewId) return json(res, { error: "Identifiant d'avis manquant : actualise la liste des avis." }, 400);
+            const done = await client.query(REVIEW_ACTIONS.get(route), [reviewId]);
+            if (!done.rows.length) return json(res, { error: 'Avis introuvable ou déjà traité.' }, 404);
+            return json(res, { success: true, review_id: reviewId });
         }
 
         // ── POST /admin/restart ───────────────────────────────────────────

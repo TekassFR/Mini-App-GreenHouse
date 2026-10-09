@@ -20,7 +20,6 @@ Client Telegram ──▶ Vercel (ce dépôt) ──▶ tunnel Cloudflare ──
 | `index.html`, `style.css`, `script.js` | Le site : boutique et gestion |
 | `api/config.js` | `/config` de secours : catalogue lu directement dans Neon |
 | `api/proxy.js` | Secours des autres routes (avis, commandes, gestion) et relais de `/uploads/` vers le VPS |
-| `api/upload.js` | Ancien envoi vers catbox.moe, n'est plus appelé par le site |
 | `vercel.json` | Redirige `/config`, `/reviews`, `/save-*`, `/admin/*` et `/uploads/*` vers les fonctions |
 | `config.json`, `reviews.json` | Copies statiques, dernier recours si ni le VPS ni Neon ne répondent |
 | `manifest.json`, `logo.png`, `background.png` | Icône et visuels |
@@ -32,7 +31,7 @@ Ces fichiers restent **uniquement sur le VPS** et ne vont jamais sur GitHub (`.g
 | Variable | Rôle |
 |---|---|
 | `DATABASE_URL` | URL de la base Neon, la même que celle du bot |
-| `TELEGRAM_BOT_TOKEN` | Token du bot, qui sert à vérifier la signature Telegram (initData) des actions de gestion |
+| `TELEGRAM_BOT_TOKEN` | Token du bot, qui sert à vérifier la signature Telegram (initData) des commandes, des avis et des actions de gestion |
 
 ## Mettre à jour le site
 
@@ -53,7 +52,7 @@ Ces fichiers restent **uniquement sur le VPS** et ne vont jamais sur GitHub (`.g
 
 ## Gestion dans la mini-app
 
-La gestion est ouverte aux pseudos Telegram listés dans Réglages → « Accès à la gestion ». À la première connexion vérifiée, le compte Telegram est lié à son pseudo.
+La gestion est ouverte aux pseudos Telegram listés dans Réglages → « Accès à la gestion ». À la première connexion vérifiée, le compte Telegram est lié à son pseudo. La liste indique pour chaque pseudo s'il est déjà « lié » ou « en attente de première connexion ».
 
 | Onglet | Contenu |
 |---|---|
@@ -67,6 +66,7 @@ La gestion est ouverte aux pseudos Telegram listés dans Réglages → « Accès
 
 - Le panier et l'historique sont gardés sur le téléphone du client (localStorage, par compte Telegram).
 - Un produit à paliers donne une ligne par palier, par exemple « Produit (5G) », comptée au prix du palier. Le + et le − changent le nombre de sachets.
+- Un produit sans palier se vend à l'unité : aucun poids n'est affiché sur la fiche, dans le message d'ajout ni dans le panier.
 - « Commander » fait deux choses :
   - il ouvre une conversation Telegram avec l'admin, avec le message déjà rempli (détail et total) ;
   - il enregistre la commande (`/save-order`), qui apparaît dans Gestion → Commandes.

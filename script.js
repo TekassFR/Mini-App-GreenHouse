@@ -420,6 +420,7 @@
             cashOnly: "Paiement en especes uniquement.",
             detailBack: "← Retour",
             detailQty: "Selectionner la Quantite",
+            unitLabel: "À l'unité",
             add: "Ajouter",
             slidePrev: "Media precedent",
             slideNext: "Media suivant",
@@ -500,6 +501,7 @@
             cashOnly: "Cash payment only.",
             detailBack: "← Back",
             detailQty: "Select Quantity",
+            unitLabel: "Per unit",
             add: "Add",
             slidePrev: "Previous media",
             slideNext: "Next media",
@@ -580,6 +582,7 @@
             cashOnly: "Nur Barzahlung.",
             detailBack: "← Zurueck",
             detailQty: "Menge waehlen",
+            unitLabel: "Pro Stück",
             add: "Hinzufuegen",
             slidePrev: "Vorheriges Medium",
             slideNext: "Naechstes Medium",
@@ -1969,7 +1972,7 @@
         els.detailQtyGrid.innerHTML = entries
             .map((entry, idx) => `
                 <button class="qty-card ${idx === 0 ? "active" : ""}" data-qty="${entry.qty}" data-price="${entry.price}" type="button">
-                    <div class="qty-label">${entry.qty}G</div>
+                    <div class="qty-label">${entry.tier ? `${entry.qty}G` : t("unitLabel")}</div>
                     <div class="qty-price">${toPrice(entry.price).toFixed(2)}€</div>
                 </button>
             `)
@@ -2132,9 +2135,8 @@
                 return;
             }
             addToCart(state.selectedProduct, state.selectedWeight, state.selectedPrice);
-            const name = sanitize(state.selectedProduct.name);
-            const qty = state.selectedQty;
-            showToast(`${name} (${qty}G) ajouté au panier ! 🛒`);
+            // même libellé que la ligne du panier : « Produit (5G) » pour un palier, « Produit » sans palier
+            showToast(`${sanitize(cartLineName(state.selectedProduct, state.selectedWeight))} ajouté au panier ! 🛒`);
             closeProductDetail();
         });
 
@@ -2230,134 +2232,133 @@
         return (tg && tg.initData) || "";
     }
 
+    // Un avis se modère par son id SQL, jamais par son timestamp (choisi par le client à l'envoi :
+    // un avis forgé avec le même timestamp serait publié ou supprimé en même temps).
+    function reviewIdOf(review) {
+        const id = Number(review && review.id);
+        return Number.isInteger(id) && id > 0 ? id : null;
+    }
+
+    // Boutons de modération ; sans id (serveur pas encore à jour), pas de bouton mais une consigne
+    function adminReviewButtons(review, buttons) {
+        const id = reviewIdOf(review);
+        if (!id) return `<div class="admin-review-meta">Action indisponible pour cet avis : actualise la page.</div>`;
+        return buttons
+            .map(([action, cls, label]) => `<button class="${cls}" data-review-action="${action}" data-review-id="${id}" type="button">${label}</button>`)
+            .join("");
+    }
+
+    function adminReviewCard(r, actionsHtml) {
+        const rawStars = Math.max(1, Math.min(5, parseInt(r.stars, 10) || 5));
+        const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
+        // timestamp BIGINT : nombre avec willy.py, chaîne avec le secours Vercel (pg)
+        const date = new Date(Number(r.timestamp) || Date.now()).toLocaleString("fr-FR");
+        const username = r.telegram_username || r.telegramUsername;
+        const handle = username ? ` · @${sanitize(String(username))}` : "";
+        return `
+            <div class="admin-review-card">
+                <div class="admin-review-header">
+                    <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
+                    <span class="admin-review-stars">${stars}</span>
+                </div>
+                <p class="admin-review-msg">${sanitize(r.message || "")}</p>
+                <div class="admin-review-meta">${date}${handle}</div>
+                ${actionsHtml}
+            </div>
+        `;
+    }
+
     async function loadAdminReviews() {
         if (!els.adminReviewsPending) return;
         els.adminReviewsPending.innerHTML = `<div class="admin-empty">Chargement...</div>`;
         try {
-            const resp = await fetch(`./reviews.json?t=${Date.now()}`, { cache: "no-store" });
-            let pending = [];
-            let approved = [];
-            if (resp.ok) {
-                const data = await resp.json();
-                pending = Array.isArray(data.pending) ? data.pending : [];
-                approved = Array.isArray(data.approved) ? data.approved : [];
+            // En attente : route admin (initData vérifiée) ; publiés : liste publique, qui porte l'id de chaque avis
+            const [pendingResp, approvedResp] = await Promise.all([
+                fetchWriteApi("/admin/reviews/pending", { headers: { "X-Telegram-Init-Data": getAdminInitData() } }),
+                fetchWriteApi("/reviews", { method: "GET" }).catch(() => null)
+            ]);
+            const pendingData = await readJsonIfAny(pendingResp);
+            if (!pendingResp.ok || !pendingData || !Array.isArray(pendingData.pending)) {
+                els.adminReviewsPending.innerHTML = `<div class="admin-empty">${pendingResp.status === 403 ? SESSION_EXPIRED_MSG : "Erreur chargement des avis."}</div>`;
+                return;
             }
+            const approvedData = approvedResp && approvedResp.ok ? await readJsonIfAny(approvedResp) : null;
+            const pending = pendingData.pending;
+            const approved = approvedData && Array.isArray(approvedData.reviews) ? approvedData.reviews : [];
 
             let html = "";
             if (pending.length > 0) {
                 html += `<h4 class="admin-section-title">En attente · ${pending.length}</h4>`;
-                html += pending.map((r) => {
-                    const rawStars = Math.max(1, Math.min(5, r.stars || 5));
-                    const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
-                    const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
-                    const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "";
-                    return `
-                        <div class="admin-review-card">
-                            <div class="admin-review-header">
-                                <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
-                                <span class="admin-review-stars">${stars}</span>
-                            </div>
-                            <p class="admin-review-msg">${sanitize(r.message || "")}</p>
-                            <div class="admin-review-meta">${date}${handle}</div>
-                            <div class="admin-review-actions">
-                                <button class="admin-btn-approve" data-ts="${r.timestamp}" type="button">Publier</button>
-                                <button class="admin-btn-reject" data-ts="${r.timestamp}" type="button">Refuser</button>
-                            </div>
-                        </div>
-                    `;
-                }).join("");
+                html += pending.map((r) => adminReviewCard(r, `
+                    <div class="admin-review-actions">
+                        ${adminReviewButtons(r, [["approve", "admin-btn-approve", "Publier"], ["reject", "admin-btn-reject", "Refuser"]])}
+                    </div>
+                `)).join("");
             } else {
                 html += `<div class="admin-empty">Aucun avis en attente</div>`;
             }
 
             if (approved.length > 0) {
                 html += `<h4 class="admin-section-title">Publiés · ${approved.length}</h4>`;
-                html += approved.slice().reverse().map((r) => {
-                    const rawStars = Math.max(1, Math.min(5, r.stars || 5));
-                    const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
-                    const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
-                    const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "";
-                    return `
-                        <div class="admin-review-card">
-                            <div class="admin-review-header">
-                                <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
-                                <span class="admin-review-stars">${stars}</span>
-                            </div>
-                            <p class="admin-review-msg">${sanitize(r.message || "")}</p>
-                            <div class="admin-review-meta">${date}${handle}</div>
-                            <button class="admin-btn-delete-approved" data-ts="${r.timestamp}" type="button">Retirer de la boutique</button>
-                        </div>
-                    `;
-                }).join("");
+                html += approved.map((r) => adminReviewCard(r,
+                    adminReviewButtons(r, [["delete-approved", "admin-btn-delete-approved", "Retirer de la boutique"]])
+                )).join("");
             }
 
             els.adminReviewsPending.innerHTML = html;
 
-            els.adminReviewsPending.querySelectorAll(".admin-btn-approve").forEach((btn) => {
-                btn.addEventListener("click", () => adminApproveReview(Number(btn.dataset.ts)));
-            });
-            els.adminReviewsPending.querySelectorAll(".admin-btn-reject").forEach((btn) => {
-                btn.addEventListener("click", () => adminRejectReview(Number(btn.dataset.ts)));
-            });
-            els.adminReviewsPending.querySelectorAll(".admin-btn-delete-approved").forEach((btn) => {
-                btn.addEventListener("click", () => adminDeleteApprovedReview(Number(btn.dataset.ts)));
+            els.adminReviewsPending.querySelectorAll("[data-review-action]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const reviewId = Number(btn.dataset.reviewId);
+                    if (btn.dataset.reviewAction !== "delete-approved") {
+                        void adminModerateReview(btn.dataset.reviewAction, reviewId);
+                        return;
+                    }
+                    showConfirmModal({
+                        title: "Retirer cet avis ?",
+                        emoji: "🗑️",
+                        message: "L'avis sera supprimé de la boutique. Cette action est irréversible.",
+                        confirmText: "Oui, retirer",
+                        cancelText: "Annuler",
+                        isDanger: true,
+                        onConfirm: () => adminModerateReview("delete-approved", reviewId)
+                    });
+                });
             });
         } catch (_) {
             els.adminReviewsPending.innerHTML = `<div class="admin-empty">Erreur chargement des avis.</div>`;
         }
     }
 
-    async function adminApproveReview(timestamp) {
-        try {
-            const resp = await fetchWriteApi("/admin/reviews/approve", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), timestamp })
-            });
-            if (resp.ok) {
-                showToast("Avis approuvé et publié ! ⭐");
-                await syncReviewsFromLocalApi();
-                renderReviews();
-                await loadAdminReviews();
-            }
-        } catch (_) {
-            showToast("Erreur lors de l'approbation");
-        }
-    }
+    const REVIEW_MODERATION = {
+        approve: { path: "/admin/reviews/approve", done: "Avis approuvé et publié ! ⭐", failed: "Erreur lors de l'approbation" },
+        reject: { path: "/admin/reviews/reject", done: "Avis refusé", failed: "Erreur lors du refus" },
+        "delete-approved": { path: "/admin/reviews/delete-approved", done: "Avis supprimé ! 🗑️", failed: "Erreur lors de la suppression" }
+    };
 
-    async function adminRejectReview(timestamp) {
+    async function adminModerateReview(action, reviewId) {
+        const step = REVIEW_MODERATION[action];
+        if (!step || !Number.isInteger(reviewId) || reviewId <= 0) return;
         try {
-            const resp = await fetchWriteApi("/admin/reviews/reject", {
+            const resp = await fetchWriteApi(step.path, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), timestamp })
+                body: JSON.stringify({ init_data: getAdminInitData(), review_id: reviewId })
             });
-            if (resp.ok) {
-                showToast("Avis refusé");
-                await loadAdminReviews();
+            const data = await readJsonIfAny(resp);
+            if (resp.ok && (!data || data.success !== false)) {
+                showToast(step.done);
+                if (action !== "reject") {
+                    await syncReviewsFromLocalApi();
+                    renderReviews();
+                }
+            } else {
+                showToast(resp.status === 403 ? SESSION_EXPIRED_MSG : (data && data.error) || step.failed, "error");
             }
         } catch (_) {
-            showToast("Erreur lors du refus");
+            showToast(step.failed, "error");
         }
-    }
-
-    async function adminDeleteApprovedReview(timestamp) {
-        if (!confirm("Supprimer cet avis publié ?")) return;
-        try {
-            const resp = await fetchWriteApi("/admin/reviews/delete-approved", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), timestamp })
-            }, true);
-            if (resp.ok) {
-                showToast("Avis supprimé ! 🗑️");
-                await syncReviewsFromLocalApi();
-                renderReviews();
-                await loadAdminReviews();
-            }
-        } catch (_) {
-            showToast("Erreur lors de la suppression");
-        }
+        await loadAdminReviews();
     }
 
     async function loadAdminOrders() {
@@ -3079,7 +3080,12 @@
             if (!cfg) throw new Error("config indisponible");
             const verifiedAdminConfig = await fetchAdminConfig();
             if (!verifiedAdminConfig) throw new Error("accès admin refusé");
-            cfg.admin = Object.assign({}, cfg.admin, { whitelist: (verifiedAdminConfig.admin && verifiedAdminConfig.admin.whitelist) || [] });
+            const verifiedAdmin = verifiedAdminConfig.admin || {};
+            cfg.admin = Object.assign({}, cfg.admin, {
+                whitelist: verifiedAdmin.whitelist || [],
+                // pseudo → lié ou non (booléen seul, jamais l'id) ; absent avec un serveur pas encore à jour
+                whitelist_linked: verifiedAdmin.whitelist_linked && typeof verifiedAdmin.whitelist_linked === "object" ? verifiedAdmin.whitelist_linked : null
+            });
 
             const rest = cfg.restaurant || {};
             const adminCfg = cfg.admin || {};
@@ -3102,12 +3108,20 @@
             const welcomeMessage = adminCfg.welcome_message
                 || `*🕵🏻 Bienvenue chez ${String(rest.name || "").toUpperCase()} !*\n\nSi vous souhaitez faire une commande ou nous contacter, utilisez les options ci-dessous.`;
 
-            const wlChips = whitelist.map((u) => `
+            const linkedMap = adminCfg.whitelist_linked;
+            const wlChips = whitelist.map((u) => {
+                const known = linkedMap && Object.prototype.hasOwnProperty.call(linkedMap, u);
+                const status = !known ? "" : linkedMap[u] ? "✓ lié" : "⏳ en attente de première connexion";
+                return `
                 <div class="admin-list-row">
-                    <span>@${sanitize(u)}</span>
+                    <span class="admin-row-text">
+                        <span class="admin-product-name">@${sanitize(u)}</span>
+                        ${status ? `<span class="admin-hint">${status}</span>` : ""}
+                    </span>
                     <button class="admin-chip-remove" data-user="${sanitize(u)}" type="button">Retirer</button>
                 </div>
-            `).join("");
+            `;
+            }).join("");
 
             const html = `
                 <h4 class="admin-section-title">Boutique</h4>
@@ -3202,7 +3216,7 @@
                         <button class="admin-inline-btn" type="submit">Ajouter</button>
                     </form>
                 </div>
-                <p class="admin-hint admin-footnote">Seules ces personnes peuvent ouvrir la gestion.</p>
+                <p class="admin-hint admin-footnote">Seules ces personnes peuvent ouvrir la gestion. Chaque pseudo est lié à son compte Telegram dès que la personne ouvre la gestion pour la première fois.</p>
 
                 <h4 class="admin-section-title">Bot</h4>
                 <button class="admin-form-delete" id="as-restart-bot" type="button">Redémarrer le bot</button>
