@@ -117,6 +117,7 @@
         orderType: "delivery",
         selectedProduct: null,
         selectedQty: null,
+        selectedWeight: null,
         selectedPrice: 0,
         detailMedia: "image",
         reviews: [],
@@ -690,7 +691,8 @@
         return cats[categoryId] || { name: categoryId, emoji: "📦" };
     }
 
-    function getQtyEntries(product) {
+    // Palier (tier: true) : qty = poids en grammes, price = prix du sachet entier, pas un prix au gramme.
+    function getQtyEntries(product, orderType = state.orderType) {
         const custom = product.customPrices || {};
         const entries = Object.entries(custom)
             .map(([qtyRaw, priceData]) => {
@@ -700,17 +702,17 @@
                 if (typeof priceData === "object" && priceData !== null) {
                     const delivery = toPrice(priceData.delivery);
                     const pickup = toPrice(priceData.pickup);
-                    const price = state.orderType === "pickup" ? pickup : delivery;
-                    return { qty, price: price || delivery || pickup || 0 };
+                    const price = orderType === "pickup" ? pickup : delivery;
+                    return { qty, price: price || delivery || pickup || 0, tier: true };
                 }
 
-                return { qty, price: toPrice(priceData) };
+                return { qty, price: toPrice(priceData), tier: true };
             })
             .filter(Boolean)
             .sort((a, b) => a.qty - b.qty);
 
         if (entries.length) return entries;
-        return [{ qty: 1, price: toPrice(product.price) }];
+        return [{ qty: 1, price: toPrice(product.price), tier: false }];
     }
 
     function getStartingPrice(product) {
@@ -751,13 +753,19 @@
             const orders = JSON.parse(scopedOrdersRaw || localStorage.getItem("gh_orders") || "[]");
             const reviews = JSON.parse(scopedReviewsRaw || localStorage.getItem("gh_reviews") || "[]");
             const language = scopedLanguageRaw || localStorage.getItem("gh_language") || "fr";
-            state.cart = Array.isArray(cart) ? cart : [];
+            const savedCart = Array.isArray(cart) ? cart : [];
+            try {
+                state.cart = savedCart.map(migrateLegacyCartLine).filter(Boolean);
+            } catch (_) {
+                state.cart = [];
+            }
             state.orders = Array.isArray(orders) ? orders : [];
             state.reviews = Array.isArray(reviews) ? reviews : [];
             state.language = ["fr", "en", "de"].includes(language) ? language : "fr";
 
             // One-time migration from legacy non-scoped keys to user-scoped keys.
-            if (!scopedCartRaw || !scopedOrdersRaw || !scopedReviewsRaw || !scopedLanguageRaw) {
+            if (!scopedCartRaw || !scopedOrdersRaw || !scopedReviewsRaw || !scopedLanguageRaw
+                || JSON.stringify(state.cart) !== JSON.stringify(savedCart)) {
                 saveLocal();
             }
         } catch (_) {
@@ -1079,7 +1087,7 @@
         els.cartContent.style.display = "grid";
 
         let total = 0;
-        const rows = state.cart.map((item) => {
+        const rows = state.cart.map((item, index) => {
             const line = toPrice(item.unitPrice) * item.quantity;
             total += line;
             return `
@@ -1089,9 +1097,9 @@
                         <p class="muted">${formatEUR(item.unitPrice)}${t("unitSuffix")}</p>
                     </div>
                     <div class="cart-controls">
-                        <button class="qty-btn" data-id="${item.id}" data-op="minus" type="button">-</button>
+                        <button class="qty-btn" data-index="${index}" data-op="minus" type="button">-</button>
                         <span>${item.quantity}</span>
-                        <button class="qty-btn" data-id="${item.id}" data-op="plus" type="button">+</button>
+                        <button class="qty-btn" data-index="${index}" data-op="plus" type="button">+</button>
                     </div>
                 </div>
             `;
@@ -1102,35 +1110,42 @@
 
         els.cartItems.querySelectorAll(".qty-btn").forEach((btn) => {
             btn.addEventListener("click", () => {
-                const id = parseInt(btn.dataset.id, 10);
+                const index = parseInt(btn.dataset.index, 10);
                 const op = btn.dataset.op;
-                changeQty(id, op === "plus" ? 1 : -1);
+                changeQty(index, op === "plus" ? 1 : -1);
             });
         });
 
         renderProfileStats();
     }
 
-    function changeQty(productId, delta) {
-        const item = state.cart.find((c) => c.id === productId);
+    // Une ligne par (produit, palier) : plusieurs paliers du même produit ont chacun leur ligne.
+    function changeQty(index, delta) {
+        const item = state.cart[index];
         if (!item) return;
         item.quantity += delta;
         if (item.quantity <= 0) {
-            state.cart = state.cart.filter((c) => c.id !== productId);
+            state.cart.splice(index, 1);
         }
         saveLocal();
         renderCart();
     }
 
-    function addToCart(product, qty, price) {
-        const existing = state.cart.find((c) => c.id === product.id && c.unitPrice === price);
+    function cartLineName(product, weight) {
+        return weight === null ? product.name : `${product.name} (${weight}G)`;
+    }
+
+    // weight = poids du palier choisi (null sans palier) ; quantity = nombre de sachets à ce prix.
+    function addToCart(product, weight, price) {
+        const existing = state.cart.find((c) => c.id === product.id && c.weight === weight && c.unitPrice === price);
         if (existing) {
-            existing.quantity += qty;
+            existing.quantity += 1;
         } else {
             state.cart.push({
                 id: product.id,
-                name: product.name,
-                quantity: qty,
+                name: cartLineName(product, weight),
+                weight,
+                quantity: 1,
                 unitPrice: price,
                 category: product.category
             });
@@ -1138,6 +1153,29 @@
         saveLocal();
         renderCart();
         renderProfileStats();
+    }
+
+    // Avant le champ weight, un palier gardait son poids comme quantité : « 5G — 70 € » devenait
+    // {quantity: 5, unitPrice: 70}, compté 350 €. Une ancienne ligne n'est gardée que si un seul poids
+    // du produit a encore ce prix et divise la quantité (sans palier : poids 1, quantité = unités) ;
+    // sinon elle est retirée, pour ne jamais garder un faux total.
+    function migrateLegacyCartLine(line) {
+        if (!line || typeof line !== "object") return null;
+        if ("weight" in line) return line;
+        const product = allProductsFromConfig(state.config).find((p) => String(p.id) === String(line.id));
+        const quantity = toPrice(line.quantity);
+        const unitPrice = toPrice(line.unitPrice);
+        if (!product || quantity <= 0 || unitPrice <= 0) return null;
+
+        const matches = getQtyEntries(product, "delivery").concat(getQtyEntries(product, "pickup"))
+            .filter((e) => {
+                const packs = quantity / e.qty;
+                return Math.abs(e.price - unitPrice) < 0.005 && Math.round(packs) >= 1 && Math.abs(packs - Math.round(packs)) < 1e-6;
+            });
+        if (new Set(matches.map((e) => e.qty)).size !== 1) return null;
+        const entry = matches[0];
+        const weight = entry.tier ? entry.qty : null;
+        return { ...line, name: cartLineName(product, weight), weight, quantity: Math.round(quantity / entry.qty) };
     }
 
     function renderHistory() {
@@ -1789,6 +1827,7 @@
     function openProductDetail(product) {
         state.selectedProduct = product;
         state.selectedQty = null;
+        state.selectedWeight = null;
         state.selectedPrice = 0;
         state.detailMedia = "image";
         detailSlides = buildMediaSlides(product);
@@ -1932,6 +1971,7 @@
 
         const first = entries[0];
         state.selectedQty = first.qty;
+        state.selectedWeight = first.tier ? first.qty : null;
         state.selectedPrice = first.price;
         els.detailSelectedPrice.textContent = formatEUR(state.selectedPrice);
 
@@ -1940,6 +1980,7 @@
                 els.detailQtyGrid.querySelectorAll(".qty-card").forEach((c) => c.classList.remove("active"));
                 card.classList.add("active");
                 state.selectedQty = parseFloat(card.dataset.qty);
+                state.selectedWeight = first.tier ? state.selectedQty : null;
                 state.selectedPrice = parseFloat(card.dataset.price);
                 els.detailSelectedPrice.textContent = formatEUR(state.selectedPrice);
             });
@@ -2084,7 +2125,7 @@
                 alert(t("alertSelectQty"));
                 return;
             }
-            addToCart(state.selectedProduct, state.selectedQty, state.selectedPrice);
+            addToCart(state.selectedProduct, state.selectedWeight, state.selectedPrice);
             const name = sanitize(state.selectedProduct.name);
             const qty = state.selectedQty;
             showToast(`${name} (${qty}G) ajouté au panier ! 🛒`);
