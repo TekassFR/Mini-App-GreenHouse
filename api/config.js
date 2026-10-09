@@ -45,8 +45,6 @@ module.exports = async function handler(req, res) {
             const adminRows = await client.query('SELECT key, value FROM admin_settings');
             const admin = {};
             for (const r of adminRows.rows) admin[r.key] = r.value;
-            const wlRows = await client.query('SELECT username FROM admin_whitelist');
-            admin.whitelist = wlRows.rows.map(r => r.username);
 
             // Categories
             const catRows = await client.query('SELECT cat_key, name, emoji, description FROM categories ORDER BY sort_order, cat_key');
