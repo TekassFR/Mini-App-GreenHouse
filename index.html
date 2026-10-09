@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="brand-color" content="#6fbf73">
     <title>GreenHouse 68 Mini App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -58,7 +62,7 @@
                     <p id="cart-desc">Finalise ta commande en quelques secondes.</p>
                 </div>
 
-                <div class="card panel" id="cart-empty-state">Panier vide.</div>
+                <div class="card panel empty-state" id="cart-empty-state" data-emoji="🛒">Panier vide.</div>
 
                 <div id="cart-content" class="stack" style="display: none;">
                     <div class="card panel" id="cart-items"></div>
@@ -81,16 +85,16 @@
                             <label for="pickup-time" id="pickup-label">Heure d'arrivee</label>
                             <input id="pickup-time" type="time">
                         </div>
+                    </div>
 
-                        <div class="checkout-row">
-                            <div>
-                                <p class="muted" id="cart-total-label">Total</p>
-                                <p class="checkout-total" id="cart-total">0.00 EUR</p>
-                            </div>
-                            <div class="checkout-actions">
-                                <button class="btn ghost" id="clear-cart-btn" type="button">Vider</button>
-                                <button class="btn primary" id="checkout-btn" type="button">Commander</button>
-                            </div>
+                    <div class="checkout-row">
+                        <div>
+                            <p class="muted" id="cart-total-label">Total</p>
+                            <p class="checkout-total" id="cart-total">0.00 EUR</p>
+                        </div>
+                        <div class="checkout-actions">
+                            <button class="btn ghost" id="clear-cart-btn" type="button">Vider</button>
+                            <button class="btn primary" id="checkout-btn" type="button">Commander</button>
                         </div>
                     </div>
                 </div>
@@ -122,8 +126,15 @@
                     <label for="review-author" id="review-author-label">Nom</label>
                     <input id="review-author" type="text" maxlength="30" placeholder="Ton nom">
 
-                    <label for="review-stars" id="review-stars-label">Note (1-5)</label>
-                    <input id="review-stars" type="number" min="1" max="5" value="5">
+                    <label id="review-stars-label">Note (1-5)</label>
+                    <input id="review-stars" type="hidden" value="5">
+                    <div class="star-picker" id="star-picker">
+                        <button class="star-btn on" data-star="1" type="button" aria-label="1">★</button>
+                        <button class="star-btn on" data-star="2" type="button" aria-label="2">★</button>
+                        <button class="star-btn on" data-star="3" type="button" aria-label="3">★</button>
+                        <button class="star-btn on" data-star="4" type="button" aria-label="4">★</button>
+                        <button class="star-btn on" data-star="5" type="button" aria-label="5">★</button>
+                    </div>
 
                     <label for="review-message" id="review-message-label">Message</label>
                     <textarea id="review-message" rows="3" maxlength="160" placeholder="Ton retour"></textarea>
@@ -237,6 +248,7 @@
             </button>
             <button class="tab-btn" data-page="cart" type="button">
                 <span class="tab-icon" aria-hidden="true">🛒</span>
+                <span class="tab-badge" id="cart-badge" hidden></span>
                 <span class="tab-label">Panier</span>
             </button>
             <button class="tab-btn" data-page="history" type="button">

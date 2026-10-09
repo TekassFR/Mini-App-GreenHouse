@@ -7,6 +7,33 @@
         tg.expand();
     }
 
+    function applyBrandColor() {
+        const meta = document.querySelector('meta[name="brand-color"]');
+        const hex = meta ? meta.content.trim() : "";
+        if (!/^#[0-9a-f]{6}$/i.test(hex)) return;
+        const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+        const [r, g, b] = rgb.map((v) => v / 255);
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const l = (max + min) / 2;
+        const d = max - min;
+        const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+        let h = 0;
+        if (d !== 0) {
+            if (max === r) h = ((g - b) / d) % 6;
+            else if (max === g) h = (b - r) / d + 2;
+            else h = (r - g) / d + 4;
+        }
+        h = Math.round(h * 60 + 360) % 360;
+        const root = document.documentElement.style;
+        root.setProperty("--accent", hex);
+        root.setProperty("--accent-rgb", rgb.join(", "));
+        root.setProperty("--accent-2", `hsl(${h}, ${Math.round(s * 100)}%, ${Math.round(Math.max(l - 0.22, 0.15) * 100)}%)`);
+        root.setProperty("--accent-ink", `hsl(${h}, 40%, 9%)`);
+    }
+
+    applyBrandColor();
+
     function getHashParam(name) {
         const raw = String(window.location.hash || "").replace(/^#/, "");
         if (!raw) return "";
@@ -692,6 +719,20 @@
         localStorage.setItem(storageKey("orders"), JSON.stringify(state.orders));
         localStorage.setItem(storageKey("reviews"), JSON.stringify(state.reviews));
         localStorage.setItem(storageKey("language"), state.language);
+        updateCartBadge();
+    }
+
+    function paintStarPicker() {
+        const value = parseInt(els.reviewStars.value, 10) || 5;
+        document.querySelectorAll("#star-picker .star-btn").forEach((btn) => {
+            btn.classList.toggle("on", Number(btn.dataset.star) <= value);
+        });
+    }
+
+    function updateCartBadge() {
+        const badge = document.getElementById("cart-badge");
+        badge.hidden = !state.cart.length;
+        badge.textContent = state.cart.length;
     }
 
     function loadLocal() {
@@ -721,6 +762,7 @@
             state.reviews = [];
             state.language = "fr";
         }
+        updateCartBadge();
     }
 
     function normalizeReviewEntry(review) {
@@ -831,7 +873,7 @@
                 const resp = await fetchWithTimeout(`./config.json?t=${Date.now()}`, { cache: "no-store" }, 3000);
                 if (resp.ok) cfg = await resp.json();
             } catch (_) {}
-            if (!cfg) throw new Error("Impossible de charger la configuration (VPS et API Vercel inaccessibles)");
+            if (!cfg) throw new Error("Impossible de charger la boutique, réessaie dans un instant.");
         }
 
         state.config = cfg;
@@ -957,14 +999,12 @@
             <article class="product-card" data-product-id="${product.id}">
                 <div class="product-media">
                     ${mediaHtml}
-                    <span class="status-dot" aria-hidden="true"></span>
                     ${badge}
                     ${videoBadge}
-                    <div class="product-media-tools" aria-hidden="true">🧊🚀⚡️</div>
                 </div>
                 <div class="product-body">
                     <h3 class="product-title">${name}</h3>
-                    <p class="product-desc">⌂ ${shortDesc}</p>
+                    <p class="product-desc">${shortDesc}</p>
                     <span class="price-chip">${t("fromPrice", { price: formatEUR(start) })}</span>
                 </div>
             </article>
@@ -998,9 +1038,16 @@
             page.classList.toggle("active", show);
         });
 
-        els.tabs.forEach((tab) => {
-            tab.classList.toggle("active", tab.dataset.page === pageName);
+        els.tabs.forEach((tab, index) => {
+            const isActive = tab.dataset.page === pageName;
+            tab.classList.toggle("active", isActive);
+            if (isActive) document.getElementById("bottom-nav").style.setProperty("--nav-index", index);
         });
+
+        const previousPage = document.body.dataset.page;
+        if (previousPage && previousPage !== pageName && tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+        document.body.dataset.page = pageName;
+        window.scrollTo(0, 0);
 
         if (pageName === "cart") renderCart();
         if (pageName === "history") renderHistory();
@@ -1091,7 +1138,7 @@
 
     function renderHistory() {
         if (!state.orders.length) {
-            els.historyList.innerHTML = `<div class="card panel">${t("noOrder")}</div>`;
+            els.historyList.innerHTML = `<div class="card panel empty-state" data-emoji="🧾">${t("noOrder")}</div>`;
             return;
         }
 
@@ -1102,11 +1149,13 @@
                 const date = new Date(order.timestamp).toLocaleString(getLocaleCode());
                 const orderTypeText = order.type === "pickup" ? t("pickup") : t("delivery");
                 return `
-                    <article class="card panel">
-                        <h3>${t("orderWord")} #${order.id}</h3>
-                        <p class="muted">${date} - ${orderTypeText}</p>
-                        <p><strong>${t("total")}:</strong> ${formatEUR(order.total)}</p>
-                        <p class="muted">${sanitize(order.summary)}</p>
+                    <article class="card panel order-card">
+                        <div class="order-card-head">
+                            <h3>${t("orderWord")} #${order.id}</h3>
+                            <span class="order-card-total">${formatEUR(order.total)}</span>
+                        </div>
+                        <p class="muted">${date} · ${orderTypeText}</p>
+                        <p class="order-card-summary">${sanitize(order.summary)}</p>
                     </article>
                 `;
             })
@@ -1117,7 +1166,7 @@
 
     function renderReviews() {
         if (!state.reviews.length) {
-            els.reviewList.innerHTML = `<div class="card panel">${t("noReview")}</div>`;
+            els.reviewList.innerHTML = `<div class="card panel empty-state" data-emoji="💬">${t("noReview")}</div>`;
             els.reviewRating.textContent = "4.9 / 5";
             els.reviewCount.textContent = t("basedOn", { count: 0 });
             return;
@@ -1132,7 +1181,10 @@
             .reverse()
             .map((r) => `
                 <article class="card panel review-item">
-                    <h4>${sanitize(r.author)} - ${"★".repeat(r.stars)}${"☆".repeat(5 - r.stars)}</h4>
+                    <div class="review-item-head">
+                        <h4>${sanitize(r.author)}</h4>
+                        <span class="review-item-stars">${"★".repeat(r.stars)}<span class="off">${"★".repeat(5 - r.stars)}</span></span>
+                    </div>
                     <p>${sanitize(r.message)}</p>
                 </article>
             `)
@@ -1508,7 +1560,6 @@
         // Configurer les vidéos de slide : poster, bouton play, et chargement immédiat
         els.detailMediaTrack.querySelectorAll(".slide-item-video").forEach((article) => {
             const video = article.querySelector("video");
-            const playBtn = article.querySelector(".video-play-btn");
             if (!video) return;
 
             video.addEventListener("play", () => article.classList.add("playing"));
@@ -1527,7 +1578,6 @@
             };
 
             article.addEventListener("click", togglePlay);
-            if (playBtn) playBtn.addEventListener("click", togglePlay);
 
             if (video.dataset.videoSrc) attachVideoSource(video, video.dataset.videoSrc);
         });
@@ -1719,7 +1769,7 @@
         toast.id = "gh-toast";
         toast.className = "gh-toast";
         toast.innerHTML = `
-            <span class="toast-icon">✨</span>
+            <span class="toast-icon">✓</span>
             <span class="toast-message">${message}</span>
         `;
         document.body.appendChild(toast);
@@ -1935,6 +1985,15 @@
             void addReview(author, stars, message);
             els.reviewForm.reset();
             els.reviewStars.value = "5";
+            paintStarPicker();
+        });
+
+        document.getElementById("star-picker").addEventListener("click", (e) => {
+            const btn = e.target.closest(".star-btn");
+            if (!btn) return;
+            els.reviewStars.value = btn.dataset.star;
+            paintStarPicker();
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
         });
 
         els.detailCloseBtn.addEventListener("click", closeProductDetail);
@@ -2039,7 +2098,9 @@
 
     function switchAdminTab(tabName) {
         els.adminTabBtns.forEach((btn) => {
-            btn.classList.toggle("active", btn.dataset.adminTab === tabName);
+            const isActive = btn.dataset.adminTab === tabName;
+            btn.classList.toggle("active", isActive);
+            if (isActive) btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
         });
         if (els.adminTabReviews) els.adminTabReviews.classList.toggle("active", tabName === "reviews");
         if (els.adminTabOrders) els.adminTabOrders.classList.toggle("active", tabName === "orders");
@@ -2398,7 +2459,7 @@
                 showToast((data && data.error) || "Erreur réorganisation", "error");
             }
         } catch (_) {
-            showToast("Erreur de connexion VPS", "error");
+            showToast("Connexion impossible, réessaie.", "error");
         }
     }
 
@@ -2667,8 +2728,8 @@
                             <input type="file" id="apf-video-file" accept="video/*" style="display:none;">
                             <span class="admin-upload-status" id="apf-video-status"></span>
                         </div>
-                        <p class="admin-hint" style="margin-top:6px; font-size:0.73rem; color:#9ca3af; line-height:1.4;">
-                            💡 <strong>iPhone & Android :</strong> Privilégie un lien direct vidéo <code>.mp4</code> (ex: Imgur, Discord, Streamable, Cloudinary). Les MP4 (H.264) démarrent instantanément sur tous les smartphones.
+                        <p class="admin-hint" style="margin-top:6px; font-size:0.73rem; line-height:1.4;">
+                            💡 Le plus simple : choisis la vidéo depuis ton téléphone, elle est envoyée automatiquement.
                         </p>
                         <div id="apf-video-preview" style="margin-top:8px;"></div>
                     </div>
@@ -2797,7 +2858,7 @@
                 showToast((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            showToast("Impossible de contacter le serveur VPS.", "error");
+            showToast("Connexion impossible, réessaie.", "error");
         }
     }
 
@@ -2823,7 +2884,7 @@
                 showToast((data && data.error) || `Erreur suppression (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            showToast("Impossible de contacter le serveur VPS.", "error");
+            showToast("Connexion impossible, réessaie.", "error");
         } finally {
             _deletingProductId = null; // libérer le verrou
         }
@@ -2853,7 +2914,6 @@
                             <span class="admin-product-name">${sanitize(cat.emoji || "")} ${sanitize(cat.name || key)}</span>
                             <span class="admin-product-price">${count} produit${count !== 1 ? "s" : ""}</span>
                         </div>
-                        <span class="admin-cat-key">clé: ${sanitize(key)}</span>
                         <div class="admin-review-actions">
                             <button class="admin-btn-edit" data-ckey="${sanitize(key)}" type="button">✏️ Modifier</button>
                             <button class="admin-btn-reject" data-ckey="${sanitize(key)}" type="button">🗑 Supprimer</button>
@@ -2901,6 +2961,15 @@
         }
     }
 
+    function uniqueCategoryKey(name) {
+        const base = name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 30) || "categorie";
+        const existing = (state.config && state.config.categories) || {};
+        let candidate = base;
+        let suffix = 2;
+        while (existing[candidate]) candidate = `${base}_${suffix++}`;
+        return candidate;
+    }
+
     function showAdminCategoryForm(key, cat) {
         const isEdit = !!key;
         const formHtml = `
@@ -2908,10 +2977,7 @@
                 <button class="admin-form-back-btn" id="admin-cat-form-back" type="button">← Retour</button>
                 <h3 class="admin-form-title">${isEdit ? "✏️ Modifier la catégorie" : "➕ Nouvelle catégorie"}</h3>
                 <form id="admin-cat-form" autocomplete="off">
-                    ${isEdit
-                ? `<input type="hidden" id="acf-key" value="${sanitize(key)}">`
-                : `<label class="admin-label">Clé (slug) *<span class="admin-hint">Minuscules, pas d'espaces (ex: hash)</span><input class="admin-input" id="acf-key" type="text" maxlength="30" required></label>`
-            }
+                    <input type="hidden" id="acf-key" value="${isEdit ? sanitize(key) : ""}">
                     <label class="admin-label">Nom *<input class="admin-input" id="acf-name" type="text" maxlength="50" value="${sanitize(cat ? cat.name : "")}" required></label>
                     <label class="admin-label">Emoji<input class="admin-input" id="acf-emoji" type="text" maxlength="8" value="${sanitize(cat ? (cat.emoji || "📦") : "📦")}"></label>
                     <label class="admin-label">Description<input class="admin-input" id="acf-desc" type="text" maxlength="200" value="${sanitize(cat ? (cat.description || "") : "")}"></label>
@@ -2922,8 +2988,8 @@
         document.getElementById("admin-cat-form-back").addEventListener("click", loadAdminCategories);
         document.getElementById("admin-cat-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const catKey = document.getElementById("acf-key").value.trim().toLowerCase().replace(/\s+/g, "_");
             const catName = document.getElementById("acf-name").value.trim();
+            const catKey = isEdit ? document.getElementById("acf-key").value : uniqueCategoryKey(catName);
             if (!catKey || !catName) return;
             await adminSaveCategory({
                 key: catKey,
@@ -2956,7 +3022,7 @@
                 showToast((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            showToast("Impossible de contacter le serveur VPS.", "error");
+            showToast("Connexion impossible, réessaie.", "error");
         }
     }
 
@@ -2982,7 +3048,7 @@
                 showToast((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            showToast("Impossible de contacter le serveur VPS.", "error");
+            showToast("Connexion impossible, réessaie.", "error");
         }
     }
 
@@ -3051,39 +3117,14 @@
                 </div>
 
                 <div class="admin-settings-card">
-                    <div class="admin-settings-card-title">🌐 URL du Serveur VPS (API)</div>
-                    <p class="admin-hint">Indiquez l'URL de votre serveur VPS (ex: http://185.185.83.209:4001 ou votre lien HTTPS / Ngrok si hébergé sur Vercel).</p>
-                    <form id="admin-form-api-url" autocomplete="off">
-                        <label class="admin-label">URL API Server
-                            <input class="admin-input" id="as-api-url" type="text" value="${sanitize(getStoredWriteApiBase() || (adminCfg && adminCfg.api_base) || LOCAL_API_BASE)}" placeholder="http://185.185.83.209:4001">
-                        </label>
-                        <button class="admin-form-submit" type="submit">💾 Enregistrer l'URL API</button>
-                    </form>
-                </div>
-
-                <div class="admin-settings-card">
-                    <div class="admin-settings-card-title">☁️ Hébergement Vidéo Cloudinary (Optionnel)</div>
-                    <p class="admin-hint">Permet la conversion automatique de n'importe quelle vidéo iPhone (.mov / 4K) en MP4 fluide compatible iPhone & Android. Créez un compte gratuit sur cloudinary.com pour obtenir ces identifiants.</p>
-                    <form id="admin-form-cloudinary" autocomplete="off">
-                        <label class="admin-label">Cloud Name
-                            <input class="admin-input" id="as-cloud-name" type="text" value="${sanitize(getCloudinaryConfig().name)}" placeholder="ex: moncompte">
-                        </label>
-                        <label class="admin-label">Upload Preset (Unsigned)
-                            <input class="admin-input" id="as-upload-preset" type="text" value="${sanitize(getCloudinaryConfig().preset)}" placeholder="ex: greenhouse_preset">
-                        </label>
-                        <button class="admin-form-submit" type="submit">💾 Enregistrer Cloudinary</button>
-                    </form>
-                </div>
-
-                <div class="admin-settings-card">
-                    <div class="admin-settings-card-title">🛡️ Administrateurs Autorisés (Whitelist)</div>
-                    <p class="admin-hint">Seuls les utilisateurs listés ici ont accès à ce panneau de gestion.</p>
+                    <div class="admin-settings-card-title">🛡️ Accès à la gestion</div>
+                    <p class="admin-hint">Seules les personnes listées ici peuvent ouvrir ce panneau.</p>
                     <div class="admin-whitelist-chips">
                         ${wlChips || '<span class="admin-hint">Aucun admin supplémentaire</span>'}
                     </div>
                     <form id="admin-form-whitelist" style="margin-top:10px;" autocomplete="off">
                         <div style="display:flex;gap:8px;">
-                            <input class="admin-input" id="as-new-admin" type="text" placeholder="Username Telegram">
+                            <input class="admin-input" id="as-new-admin" type="text" placeholder="@pseudo Telegram">
                             <button class="admin-add-btn" style="margin-bottom:0;width:auto;white-space:nowrap;padding:0 16px;" type="submit">+ Ajouter</button>
                         </div>
                     </form>
@@ -3091,28 +3132,6 @@
             `;
 
             els.adminSettingsContent.innerHTML = html;
-
-            const cloudForm = document.getElementById("admin-form-cloudinary");
-            if (cloudForm) {
-                cloudForm.addEventListener("submit", async (e) => {
-                    e.preventDefault();
-                    const cName = document.getElementById("as-cloud-name").value.trim();
-                    const cPreset = document.getElementById("as-upload-preset").value.trim();
-                    localStorage.setItem("cloudinary_cloud_name", cName);
-                    localStorage.setItem("cloudinary_upload_preset", cPreset);
-                    showToast("Paramètres Cloudinary enregistrés ! ☁️");
-                    await adminSaveContact({ cloudinary_cloud_name: cName, cloudinary_upload_preset: cPreset });
-                });
-            }
-
-            document.getElementById("admin-form-api-url").addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const newUrl = document.getElementById("as-api-url").value.trim();
-                if (!newUrl) return;
-                setStoredWriteApiBase(newUrl);
-                showToast("URL API enregistrée ! 🌐");
-                await adminSaveContact({ api_base: newUrl });
-            });
 
             document.getElementById("admin-form-settings").addEventListener("submit", async (e) => {
                 e.preventDefault();
@@ -3177,7 +3196,7 @@
                 showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
             }
         } catch (_) {
-            showToast("Erreur de connexion VPS.", "error");
+            showToast("Connexion impossible, réessaie.", "error");
         }
     }
 
@@ -3196,7 +3215,7 @@
                 showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
             }
         } catch (_) {
-            showToast("Erreur de connexion VPS.", "error");
+            showToast("Connexion impossible, réessaie.", "error");
         }
     }
 
@@ -3216,7 +3235,7 @@
                 showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
             }
         } catch (_) {
-            showToast("Erreur de connexion VPS.", "error");
+            showToast("Connexion impossible, réessaie.", "error");
         }
     }
 
