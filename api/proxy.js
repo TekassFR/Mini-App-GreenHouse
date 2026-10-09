@@ -119,18 +119,26 @@ async function buildConfig(client) {
     return { restaurant, admin, categories, products };
 }
 
-function fixMime(image, video) {
-    if (image) {
-        if (image.startsWith('data:application/octet-stream')) image = image.replace('data:application/octet-stream', 'data:image/jpeg');
-        image = image.replace(/^https?:\/\/[^\/]*(?:ngrok|cloudflare|trycloudflare)[^\/]*\/uploads\//i, '/uploads/');
-    }
-    if (video) {
-        if (video.startsWith('data:application/octet-stream') || video.startsWith('data:video/quicktime')) {
-            video = video.replace('data:application/octet-stream', 'data:video/mp4').replace('data:video/quicktime', 'data:video/mp4');
-        }
-        video = video.replace(/^https?:\/\/[^\/]*(?:ngrok|cloudflare|trycloudflare)[^\/]*\/uploads\//i, '/uploads/');
-    }
-    return { image: image || '', video: video || '' };
+const UPLOAD_PATH_RE = /^\/uploads\/[A-Za-z0-9_.-]+\.(?:png|jpe?g|gif|webp|heic|heif|mp4|mov|avi|webm|m4v|mkv|3gp|mp3|m4a|aac|wav|ogg)$/i;
+
+// '' ou /uploads/<fichier> ; null pour tout le reste (data: URL stockée dans Neon, lien externe)
+function uploadedMediaPath(value) {
+    const v = String(value || '').trim().replace(/^https?:\/\/[^\/]*(?:ngrok|cloudflare|trycloudflare)[^\/]*\/uploads\//i, '/uploads/');
+    return !v || UPLOAD_PATH_RE.test(v) ? v : null;
+}
+
+// Fichier envoyé au VPS ou lien https ; jamais une data: URL
+function mediaLinkOk(value) {
+    const v = String(value || '').trim();
+    return !v || v.startsWith('/uploads/') || /^https?:\/\//i.test(v);
+}
+
+function contactMediaOk(contact) {
+    if (!mediaLinkOk(contact.welcome_photo)) return false;
+    if (!('music_playlist' in contact)) return true;
+    let tracks;
+    try { tracks = JSON.parse(contact.music_playlist || '[]'); } catch (_) { return false; }
+    return Array.isArray(tracks) && tracks.every(t => t && typeof t === 'object' && String(t.url || '').trim() && mediaLinkOk(t.url));
 }
 
 let cachedTunnelBase = '';
@@ -280,7 +288,9 @@ module.exports = async function handler(req, res) {
             if (!cat_key || !name) return json(res, { error: 'Catégorie ou nom manquant' }, 400);
             const price = parseFloat(p.price) || 0;
             const cp = JSON.stringify(typeof p.customPrices === 'object' && p.customPrices ? p.customPrices : {});
-            const { image, video } = fixMime(String(p.image || '').trim(), String(p.video || '').trim());
+            const image = uploadedMediaPath(p.image);
+            const video = uploadedMediaPath(p.video);
+            if (image === null || video === null) return json(res, { error: 'Photo ou vidéo refusée : envoie le fichier avec le bouton « Choisir… » (les liens ne sont pas acceptés).' }, 400);
             const desc = String(p.description || '').trim().slice(0, 500);
             const emoji = String(p.emoji || '📦').trim().slice(0, 10);
             const is_new = Boolean(p.isNew);
@@ -394,6 +404,7 @@ module.exports = async function handler(req, res) {
             const payload = await readBody(req);
             if (!await isAdmin(client, payload.init_data)) return json(res, { error: 'Forbidden' }, 403);
             const contact = payload.contact || {};
+            if (!contactMediaOk(contact)) return json(res, { error: 'Photo ou son refusé : envoie le fichier avec le bouton « Choisir… » ou colle un lien https.' }, 400);
             for (const [k, v] of Object.entries(contact)) {
                 await client.query(`INSERT INTO admin_settings (key,value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value`, [String(k).slice(0,60), String(v).slice(0, k === 'music_playlist' ? 8000 : 500)]);
             }
