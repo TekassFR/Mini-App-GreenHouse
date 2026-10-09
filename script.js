@@ -128,28 +128,6 @@
     // URL de repli locale (vide par défaut, la configuration Neon admin_settings.api_base prévaut)
     const LOCAL_API_BASE = "";
 
-    // Cloudinary : hébergement permanent des vidéos, converties en MP4 H.264 (lisible iPhone + Android)
-    const CLOUDINARY_CLOUD_NAME = "";      // ex: "dxxxxxx"
-    const CLOUDINARY_UPLOAD_PRESET = "";   // preset "Unsigned"
-    const CLOUDINARY_VIDEO_TRANSFORM = "f_mp4,vc_h264,q_auto";
-
-    function getCloudinaryConfig() {
-        const adminCfg = (state.config && state.config.admin) || {};
-        let name = adminCfg.cloudinary_cloud_name || localStorage.getItem("cloudinary_cloud_name") || CLOUDINARY_CLOUD_NAME || "";
-        let preset = adminCfg.cloudinary_upload_preset || localStorage.getItem("cloudinary_upload_preset") || CLOUDINARY_UPLOAD_PRESET || "";
-        return { name: String(name).trim(), preset: String(preset).trim() };
-    }
-
-    // Transforme une URL vidéo Cloudinary en MP4 H.264 universel
-    function toUniversalVideoUrl(url) {
-        const s = String(url || "");
-        if (!/res\.cloudinary\.com\/.+\/video\/upload\//.test(s)) return s;
-        if (s.includes(`/upload/${CLOUDINARY_VIDEO_TRANSFORM}/`)) return s;
-        return s
-            .replace("/video/upload/", `/video/upload/${CLOUDINARY_VIDEO_TRANSFORM}/`)
-            .replace(/\.(mov|qt|m4v|webm|avi|mkv|3gp|hevc)(\?.*)?$/i, ".mp4");
-    }
-
     function normalizeApiBase(base) {
         let raw = String(base || "").trim();
         if (!raw) return "";
@@ -1047,7 +1025,7 @@
             if (v.dataset.videoSrc) attachVideoSource(v, v.dataset.videoSrc);
         });
         els.productGrid.querySelectorAll(".card-product-img").forEach((img) => {
-            if (img.dataset.imgSrc && img.dataset.imgSrc.includes("ngrok")) attachImageSource(img, img.dataset.imgSrc);
+            if (img.dataset.imgSrc) attachImageSource(img, img.dataset.imgSrc);
         });
         els.productGrid.querySelectorAll(".product-card").forEach((card) => {
             card.addEventListener("click", () => {
@@ -1360,7 +1338,7 @@
 
     function getPlayableVideo(video) {
         if (!video) return "";
-        const v = String(toUniversalVideoUrl(String(video).trim()) || "").replace(/[<>"'`]/g, "");
+        const v = String(video).trim().replace(/[<>"'`]/g, "");
         if (!v) return "";
         if (v.includes("youtube.com") || v.includes("youtu.be")) return "";
         if (v.includes("imgur.com") && !v.includes("i.imgur.com")) {
@@ -1667,10 +1645,10 @@
         });
 
         els.detailMediaTrack.querySelectorAll(".slide-image").forEach((img) => {
-            if (img.dataset.imgSrc && img.dataset.imgSrc.includes("ngrok")) attachImageSource(img, img.dataset.imgSrc);
+            if (img.dataset.imgSrc) attachImageSource(img, img.dataset.imgSrc);
         });
         els.detailThumbs.querySelectorAll(".detail-thumb-img").forEach((img) => {
-            if (img.dataset.imgSrc && img.dataset.imgSrc.includes("ngrok")) attachImageSource(img, img.dataset.imgSrc);
+            if (img.dataset.imgSrc) attachImageSource(img, img.dataset.imgSrc);
         });
 
         // Bouton plein écran sur chaque slide vidéo
@@ -2510,59 +2488,39 @@
         }
     }
 
-    async function uploadToFreeimageHost(file) {
-        try {
-            const formData = new FormData();
-            formData.append("action", "upload");
-            formData.append("source", file, file.name || "image.png");
-            formData.append("key", "6d207e02198a847aa98d0a2a901485a5");
-            formData.append("format", "json");
-            const resp = await fetch("https://freeimage.host/api/1/upload", {
-                method: "POST",
-                body: formData
-            });
-            if (resp && resp.ok) {
-                const json = await resp.json();
-                if (json && json.image && json.image.url) {
-                    return String(json.image.url);
-                }
-            }
-        } catch (e) {
-            console.warn("freeimage upload failed:", e);
-        }
-        return null;
+    // Le quick tunnel Cloudflare coupe les envois au-delà de 100 Mo : on refuse avant d'envoyer
+    const MAX_UPLOAD_MB = 95;
+    const SESSION_EXPIRED_MSG = "Session expirée : ferme et rouvre la mini-app, puis réessaie.";
+    // Le serveur n'accepte l'initData Telegram que pendant 1 h après l'ouverture de la mini-app
+    const ADMIN_SESSION_MS = 58 * 60 * 1000;
+    const PAGE_OPENED_AT = Date.now();
+    const UPLOAD_EXT_BY_MIME = {
+        "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif", "image/heic": "heic", "image/heif": "heif",
+        "video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm", "video/3gpp": "3gp",
+        "audio/mpeg": "mp3", "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/aac": "aac", "audio/wav": "wav", "audio/ogg": "ogg"
+    };
+
+    function adminSessionExpired() {
+        return Date.now() - PAGE_OPENED_AT > ADMIN_SESSION_MS;
     }
 
-    async function uploadToCloudinary(file) {
-        const { name, preset } = getCloudinaryConfig();
-        if (!name || !preset) return null;
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", preset);
-            const resp = await fetch(`https://api.cloudinary.com/v1_1/${name}/auto/upload`, {
-                method: "POST",
-                body: formData
-            });
-            const json = await resp.json().catch(() => null);
-            if (!resp.ok || !json || !json.secure_url) {
-                console.warn("cloudinary upload failed:", json && json.error);
-                return null;
-            }
-            return json.resource_type === "video" ? toUniversalVideoUrl(json.secure_url) : json.secure_url;
-        } catch (e) {
-            console.warn("cloudinary upload failed:", e);
-            return null;
-        }
+    // Les fichiers partent uniquement vers le VPS par le tunnel : Vercel refuse les gros envois (404/413)
+    function getUploadApiBase() {
+        const configured = state.config && state.config.admin ? normalizeApiBase(state.config.admin.api_base) : "";
+        return [configured, getStoredWriteApiBase()].find((b) => b && !b.includes("ngrok")) || "";
+    }
+
+    function uploadExtension(file) {
+        const m = /\.([a-z0-9]{2,5})$/i.exec(file.name || "");
+        return m ? m[1].toLowerCase() : (UPLOAD_EXT_BY_MIME[file.type] || "bin");
     }
 
     function uploadFileViaXhr(url, formData, onProgress, timeoutMs) {
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("POST", url, true);
-            xhr.timeout = timeoutMs || 180000;
-            xhr.setRequestHeader("ngrok-skip-browser-warning", "69420");
-            xhr.setRequestHeader("X-Telegram-Init-Data", (tg && tg.initData) || "");
+            xhr.timeout = timeoutMs;
+            xhr.setRequestHeader("X-Telegram-Init-Data", getAdminInitData());
 
             if (xhr.upload && typeof onProgress === "function") {
                 xhr.upload.onprogress = function(e) {
@@ -2576,65 +2534,54 @@
             }
 
             xhr.onload = function() {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    try {
-                        const data = JSON.parse(xhr.responseText);
-                        resolve(data);
-                    } catch (err) {
-                        reject(new Error("Réponse serveur invalide"));
-                    }
+                let data = null;
+                try { data = JSON.parse(xhr.responseText); } catch (_) {}
+                if (xhr.status >= 200 && xhr.status < 300 && data && data.success && data.url) {
+                    resolve(String(data.url));
+                } else if (xhr.status === 403) {
+                    reject(new Error(SESSION_EXPIRED_MSG));
+                } else if (xhr.status === 413) {
+                    reject(new Error(`Fichier trop lourd (${MAX_UPLOAD_MB} Mo max).`));
                 } else {
-                    let errMsg = `HTTP ${xhr.status}`;
-                    try {
-                        const errData = JSON.parse(xhr.responseText);
-                        if (errData && errData.error) errMsg = errData.error;
-                    } catch (_) {}
-                    reject(new Error(errMsg));
+                    reject(new Error((data && data.error) || `Le serveur a refusé le fichier (erreur ${xhr.status}).`));
                 }
             };
-
             xhr.ontimeout = function() {
-                reject(new Error("Délai d'envoi dépassé (timeout 3 min)"));
+                reject(new Error("Envoi trop long : la connexion est trop lente. Réessaie en Wi-Fi."));
             };
-
             xhr.onerror = function() {
-                reject(new Error("Erreur de connexion avec le serveur"));
+                reject(new Error("Connexion au serveur perdue pendant l'envoi. Réessaie dans un instant."));
             };
 
             xhr.send(formData);
         });
     }
 
+    // Envoie le fichier au VPS et renvoie son chemin /uploads/… ; sinon lève une erreur au message lisible
     async function uploadMediaFile(file, onProgress) {
-        const ext = (file.name || "").split(".").pop().toLowerCase() || "bin";
-        const filename = `up_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-        const isVideo = (file.type && file.type.startsWith("video/")) || /\.(mov|mp4|m4v|webm|3gp|hevc)$/i.test(file.name || "");
-        const timeoutMs = isVideo ? 180000 : 60000;
-
-        // 0. Cloudinary si explicitement configuré par l'admin
-        if (isVideo) {
-            const cloudVideo = await uploadToCloudinary(file);
-            if (cloudVideo) return cloudVideo;
+        if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+            throw new Error(`Fichier trop lourd : ${Math.ceil(file.size / (1024 * 1024))} Mo (${MAX_UPLOAD_MB} Mo max). Raccourcis la vidéo ou filme en 1080p.`);
         }
+        if (adminSessionExpired()) throw new Error(SESSION_EXPIRED_MSG);
+        const base = getUploadApiBase();
+        if (!base) throw new Error("Serveur introuvable : ferme et rouvre la mini-app.");
 
-        // 1. Upload direct vers le serveur VPS (/admin/upload) avec suivi précis de progression
-        const bases = getWriteApiBases();
-        for (const base of bases) {
-            try {
-                const targetUrl = `${base}/admin/upload`;
-                const formData = new FormData();
-                formData.append("file", file, filename);
+        const formData = new FormData();
+        formData.append("file", file, `up_${Date.now()}.${uploadExtension(file)}`);
+        // 90 s de conversion côté serveur + l'envoi lui-même à 150 Ko/s au pire
+        const timeoutMs = 90000 + Math.round(file.size / 150);
+        return uploadFileViaXhr(`${base}/admin/upload`, formData, onProgress, timeoutMs);
+    }
 
-                const data = await uploadFileViaXhr(targetUrl, formData, onProgress, timeoutMs);
-                if (data && data.success && data.url) {
-                    return data.url;
-                }
-            } catch (e) {
-                console.warn(`Échec envoi vers ${base}:`, e);
-            }
-        }
-
-        return null;
+    // Bloque le champ fichier et le bouton d'enregistrement du formulaire tant qu'un envoi est en cours
+    function setUploadBusy(fileInputEl, busy) {
+        fileInputEl.disabled = busy;
+        if (!busy) fileInputEl.value = "";
+        const form = fileInputEl.closest("form");
+        if (!form) return;
+        const pending = Math.max(0, (Number(form.dataset.pendingUploads) || 0) + (busy ? 1 : -1));
+        form.dataset.pendingUploads = String(pending);
+        form.querySelectorAll('button[type="submit"]').forEach((btn) => { btn.disabled = pending > 0; });
     }
 
     async function handleAdminFileUpload(fileInputEl, targetUrlInputId, statusElId) {
@@ -2642,72 +2589,31 @@
         if (!file) return;
 
         const statusEl = document.getElementById(statusElId);
-        if (statusEl) statusEl.textContent = "⏳ Préparation du fichier...";
-
-        if (file.size > 150 * 1024 * 1024) {
-            if (statusEl) statusEl.textContent = "❌ Fichier trop lourd (max 150 Mo)";
-            showToast("Le fichier dépasse 150 Mo", "error");
-            return;
-        }
-
-        const isVideoTarget = targetUrlInputId === "apf-video";
-        const isImageTarget = targetUrlInputId === "apf-img";
-        const isImageFile = file.type && file.type.startsWith("image/");
-        const isVideoFile = file.type && file.type.startsWith("video/");
-        const isVideo = isVideoTarget || isVideoFile;
-
+        const setStatus = (text) => { if (statusEl) statusEl.textContent = text; };
+        const isVideo = targetUrlInputId === "apf-video" || (file.type && file.type.startsWith("video/"));
+        const kind = isVideo ? "vidéo" : "photo";
         const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-        if (statusEl) {
-            statusEl.textContent = `⏳ Envoi ${isVideo ? 'vidéo' : 'photo'} : 0% (0.0/${sizeMb} Mo)...`;
-        }
 
-        const progressCb = (percent, loadedMb, totalMb) => {
-            if (!statusEl) return;
-            if (percent < 99) {
-                statusEl.textContent = `⏳ Envoi ${isVideo ? 'vidéo' : 'photo'} : ${percent}% (${loadedMb}/${totalMb} Mo)...`;
-            } else {
-                statusEl.textContent = isVideo
-                    ? "⚙️ Traitement & optimisation de la vidéo sur le serveur..."
-                    : "⚙️ Enregistrement du fichier sur le serveur...";
-            }
-        };
-
-        const uploadedUrl = await uploadMediaFile(file, progressCb);
-        const targetInput = document.getElementById(targetUrlInputId);
-
-        if (uploadedUrl) {
+        setUploadBusy(fileInputEl, true);
+        setStatus(`⏳ Envoi ${kind} : 0% (0.0/${sizeMb} Mo)...`);
+        try {
+            const uploadedUrl = await uploadMediaFile(file, (percent, loadedMb, totalMb) => {
+                if (percent < 99) setStatus(`⏳ Envoi ${kind} : ${percent}% (${loadedMb}/${totalMb} Mo)...`);
+                else setStatus(isVideo ? "⚙️ Conversion de la vidéo sur le serveur..." : "⚙️ Enregistrement du fichier sur le serveur...");
+            });
+            const targetInput = document.getElementById(targetUrlInputId);
             if (targetInput) {
                 targetInput.value = uploadedUrl;
                 targetInput.dispatchEvent(new Event("input"));
             }
-            if (statusEl) statusEl.textContent = isVideo ? "✅ Vidéo prête & en ligne !" : "✅ Photo uploadée !";
-            showToast(isVideo ? "Vidéo hébergée en ligne ! 🎬" : "Photo hébergée en ligne ! 🚀");
-            return;
+            setStatus(isVideo ? "✅ Vidéo envoyée, pense à enregistrer" : "✅ Photo envoyée, pense à enregistrer");
+            showToast(isVideo ? "Vidéo envoyée ! 🎬" : "Photo envoyée ! 🚀");
+        } catch (err) {
+            setStatus(`❌ ${err.message}`);
+            showToast(err.message, "error");
+        } finally {
+            setUploadBusy(fileInputEl, false);
         }
-
-        if (isVideo) {
-            if (statusEl) statusEl.textContent = "❌ Échec envoi vidéo — vérifie ta connexion ou colle un lien direct MP4";
-            showToast("Échec de l'upload vidéo. Vérifie que le bot tourne bien.", "error", 6000);
-            return;
-        }
-
-        // Fallback local (base64 data URL) uniquement pour photos si serveur inaccessible
-        try {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                if (targetInput) {
-                    targetInput.value = e.target.result;
-                    targetInput.dispatchEvent(new Event("input"));
-                }
-                if (statusEl) statusEl.textContent = "✅ Photo prête (locale)";
-                showToast("Photo chargée localement ! 🚀");
-            };
-            reader.readAsDataURL(file);
-            return;
-        } catch (_) {}
-
-        if (statusEl) statusEl.textContent = "❌ Upload impossible — colle un lien direct URL";
-        showToast("Upload impossible. Vérifie la connexion du serveur.", "error");
     }
 
     function parseCustomPricesInput(rawStr) {
@@ -2760,7 +2666,7 @@
                     
                     <div class="admin-field">
                         <span class="admin-field-label">Photo</span>
-                        <input class="admin-input" id="apf-img" type="text" placeholder="Lien https://" value="${sanitize(product ? (product.image || "") : "")}">
+                        <input class="admin-input" id="apf-img" type="text" placeholder="Choisis une photo ci-dessous" value="${sanitize(product ? (product.image || "") : "")}">
                         <div class="admin-upload-box">
                             <label class="admin-upload-btn" for="apf-img-file">Choisir une photo…</label>
                             <input type="file" id="apf-img-file" accept="image/*" style="display:none;">
@@ -2770,7 +2676,7 @@
 
                     <div class="admin-field">
                         <span class="admin-field-label">Vidéo (optionnel)</span>
-                        <input class="admin-input" id="apf-video" type="text" placeholder="Lien direct .mp4" value="${sanitize(product ? (product.video || "") : "")}">
+                        <input class="admin-input" id="apf-video" type="text" placeholder="Choisis une vidéo ci-dessous (95 Mo max)" value="${sanitize(product ? (product.video || "") : "")}">
                         <div class="admin-upload-box">
                             <label class="admin-upload-btn" for="apf-video-file">Choisir une vidéo…</label>
                             <input type="file" id="apf-video-file" accept="video/*" style="display:none;">
@@ -2915,7 +2821,7 @@
                 renderProducts();
                 await loadAdminProducts();
             } else {
-                showToast((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`, "error");
+                showToast(resp.status === 403 ? SESSION_EXPIRED_MSG : (data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
             showToast("Connexion impossible, réessaie.", "error");
@@ -3314,24 +3220,27 @@
                 if (!file) return;
                 const statusEl = document.getElementById("as-music-status");
                 statusEl.textContent = "Envoi : 0 %";
-                const url = await uploadMediaFile(file, (percent) => {
-                    statusEl.textContent = percent < 99 ? `Envoi : ${percent} %` : "Enregistrement…";
-                });
-                if (!url) {
-                    statusEl.textContent = "Échec de l'envoi";
-                    showToast("Upload impossible. Vérifie que le bot tourne bien.", "error");
-                    return;
+                setUploadBusy(this, true);
+                try {
+                    const url = await uploadMediaFile(file, (percent) => {
+                        statusEl.textContent = percent < 99 ? `Envoi : ${percent} %` : "Enregistrement…";
+                    });
+                    document.getElementById("as-music-url").value = url;
+                    const titleEl = document.getElementById("as-music-title");
+                    if (!titleEl.value.trim()) titleEl.value = file.name.replace(/\.[^.]+$/, "");
+                    statusEl.textContent = "Son prêt";
+                } catch (err) {
+                    statusEl.textContent = err.message;
+                    showToast(err.message, "error");
+                } finally {
+                    setUploadBusy(this, false);
                 }
-                document.getElementById("as-music-url").value = url;
-                const titleEl = document.getElementById("as-music-title");
-                if (!titleEl.value.trim()) titleEl.value = file.name.replace(/\.[^.]+$/, "");
-                statusEl.textContent = "Son prêt";
             });
 
             document.getElementById("admin-form-music").addEventListener("submit", async (e) => {
                 e.preventDefault();
                 const url = document.getElementById("as-music-url").value.trim();
-                if (!/^https?:\/\//i.test(url)) {
+                if (!/^(https?:\/\/|\/uploads\/)/i.test(url)) {
                     showToast("Ajoute un son (fichier ou lien https).", "error");
                     return;
                 }
@@ -3445,7 +3354,7 @@
                 showToast(successMsg);
                 return true;
             }
-            showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
+            showToast(resp.status === 403 ? SESSION_EXPIRED_MSG : (data && data.error) || "Erreur lors de la sauvegarde.", "error");
         } catch (_) {
             showToast("Connexion impossible, réessaie.", "error");
         }
