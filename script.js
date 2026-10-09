@@ -125,8 +125,8 @@
         storageScope: "guest"
     };
 
-    // URL du bot VPS (HTTPS ngrok pour compatibilité Vercel sans mixed content)
-    const LOCAL_API_BASE = "https://wieldable-blah-fineness.ngrok-free.dev";
+    // URL de repli locale (vide par défaut, la configuration Neon admin_settings.api_base prévaut)
+    const LOCAL_API_BASE = "";
 
     // Cloudinary : hébergement permanent des vidéos, converties en MP4 H.264 (lisible iPhone + Android)
     const CLOUDINARY_CLOUD_NAME = "";      // ex: "dxxxxxx"
@@ -174,21 +174,15 @@
     }
 
     function getWriteApiBases() {
-        const filterHttpIfHttps = (base) => {
-            if (!base) return "";
-            return base;
-        };
-
-        const storedBase = filterHttpIfHttps(getStoredWriteApiBase());
-        const configuredBase = filterHttpIfHttps(state && state.config && state.config.admin && state.config.admin.api_base
+        const configuredBase = state && state.config && state.config.admin && state.config.admin.api_base
             ? normalizeApiBase(state.config.admin.api_base)
-            : "");
-        const fallbackBase = filterHttpIfHttps(normalizeApiBase(LOCAL_API_BASE));
-        const originBase = filterHttpIfHttps(window.location && /^https?:/i.test(String(window.location.origin || ""))
+            : "";
+        const storedBase = getStoredWriteApiBase();
+        const originBase = window.location && /^https?:/i.test(String(window.location.origin || ""))
             ? normalizeApiBase(window.location.origin)
-            : "");
+            : "";
 
-        return Array.from(new Set([storedBase, configuredBase, fallbackBase, originBase, ""].filter(b => typeof b === "string" && b !== "")));
+        return Array.from(new Set([configuredBase, storedBase, originBase].filter(b => typeof b === "string" && b !== "" && !b.includes("ngrok"))));
     }
 
     async function readJsonIfAny(resp) {
@@ -1020,11 +1014,11 @@
 
         let mediaHtml = "";
         if (rawImg && !rawImg.startsWith("data:video/")) {
-            mediaHtml = `<img class="card-product-img" data-img-src="${sanitize(rawImg)}" src="${sanitize(rawImg)}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;\\'>📦</div>';">`;
+            mediaHtml = `<img class="card-product-img" data-img-src="${sanitize(rawImg)}" src="${sanitize(rawImg)}" alt="${name}" loading="lazy" referrerpolicy="no-referrer">`;
         } else if (playableVid) {
             mediaHtml = `<video class="card-preview-video" data-video-src="${sanitize(playableVid)}" muted playsinline webkit-playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
         } else {
-            mediaHtml = `<div style="width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;">📦</div>`;
+            mediaHtml = `<div class="media-fallback-icon" style="width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;">📦</div>`;
         }
 
         return `
@@ -1379,7 +1373,7 @@
         return v;
     }
 
-    const ngrokBlobCache = new Map();
+    const mediaBlobCache = new Map();
 
     async function attachVideoSource(videoEl, rawUrl) {
         if (!videoEl || !rawUrl) return;
@@ -1410,106 +1404,104 @@
             }
         };
 
-        if (url.startsWith("/uploads/") || url.includes("ngrok") || url.includes("cloudflare") || url.includes("trycloudflare")) {
-            const apiBase = (state && state.config && state.config.admin && state.config.admin.api_base) || LOCAL_API_BASE;
-            const directFallbackUrl = url.startsWith("/uploads/") ? `${apiBase}${url}` : url;
-            if (ngrokBlobCache.has(url)) {
-                applySrc(ngrokBlobCache.get(url));
-                return;
-            }
-            if (ngrokBlobCache.has(directFallbackUrl)) {
-                applySrc(ngrokBlobCache.get(directFallbackUrl));
-                return;
-            }
-            if (url.includes("ngrok")) {
-                try {
-                    const resp = await fetch(url, {
-                        headers: { "ngrok-skip-browser-warning": "true" }
-                    });
-                    if (resp.ok) {
-                        const blob = await resp.blob();
-                        const blobUrl = URL.createObjectURL(blob);
-                        ngrokBlobCache.set(url, blobUrl);
-                        applySrc(blobUrl);
-                        return;
-                    }
-                } catch (err) {
-                    console.warn("Erreur chargement video ngrok:", err);
-                }
-            }
+        if (url.startsWith("data:") || url.startsWith("blob:")) {
             applySrc(url);
-            videoEl.addEventListener("error", async () => {
-                try {
-                    const resp = await fetch(ngrokDirectUrl, {
-                        headers: { "ngrok-skip-browser-warning": "true" }
-                    });
-                    if (resp.ok) {
-                        const blob = await resp.blob();
-                        const blobUrl = URL.createObjectURL(blob);
-                        ngrokBlobCache.set(url, blobUrl);
-                        ngrokBlobCache.set(ngrokDirectUrl, blobUrl);
-                        applySrc(blobUrl);
-                    }
-                } catch (eFallback) {
-                    console.warn("Fallback video ngrok echoue:", eFallback);
-                }
-            }, { once: true });
             return;
         }
-        applySrc(url);
+
+        const apiBase = (state && state.config && state.config.admin && state.config.admin.api_base) || getStoredWriteApiBase() || "";
+        const cleanBase = apiBase.replace(/\/+$/, "");
+
+        const candidates = [];
+        if (url.startsWith("/uploads/")) {
+            if (cleanBase && !cleanBase.includes("ngrok")) {
+                candidates.push(`${cleanBase}${url}`);
+            }
+            candidates.push(url);
+        } else if (/^https?:\/\//i.test(url)) {
+            candidates.push(url);
+            const m = url.match(/\/uploads\/[^\/?#]+/i);
+            if (m) {
+                if (cleanBase && !cleanBase.includes("ngrok")) candidates.push(`${cleanBase}${m[0]}`);
+                candidates.push(m[0]);
+            }
+        } else {
+            candidates.push(url);
+        }
+
+        const uniqueCandidates = Array.from(new Set(candidates.filter(Boolean)));
+        let idx = 0;
+
+        const tryNextVideo = () => {
+            if (idx >= uniqueCandidates.length) return;
+            const current = uniqueCandidates[idx++];
+            videoEl.onerror = tryNextVideo;
+            applySrc(current);
+        };
+
+        tryNextVideo();
     }
 
     async function attachImageSource(imgEl, rawUrl) {
         if (!imgEl || !rawUrl) return;
-        const url = String(rawUrl).trim();
-        if (!url) return;
-        if (url.startsWith("/uploads/") || url.includes("ngrok") || url.includes("cloudflare") || url.includes("trycloudflare")) {
-            const apiBase = (state && state.config && state.config.admin && state.config.admin.api_base) || LOCAL_API_BASE;
-            const directFallbackUrl = url.startsWith("/uploads/") ? `${apiBase}${url}` : url;
-            if (ngrokBlobCache.has(url)) {
-                imgEl.src = ngrokBlobCache.get(url);
-                return;
-            }
-            if (ngrokBlobCache.has(directFallbackUrl)) {
-                imgEl.src = ngrokBlobCache.get(directFallbackUrl);
-                return;
-            }
-            if (url.includes("ngrok")) {
-                try {
-                    const resp = await fetch(url, {
-                        headers: { "ngrok-skip-browser-warning": "true" }
-                    });
-                    if (resp.ok) {
-                        const blob = await resp.blob();
-                        const blobUrl = URL.createObjectURL(blob);
-                        ngrokBlobCache.set(url, blobUrl);
-                        imgEl.src = blobUrl;
-                        return;
-                    }
-                } catch (err) {
-                    console.warn("Erreur chargement image ngrok:", err);
-                }
-            }
-            imgEl.src = url;
-            imgEl.addEventListener("error", async () => {
-                try {
-                    const resp = await fetch(ngrokDirectUrl, {
-                        headers: { "ngrok-skip-browser-warning": "true" }
-                    });
-                    if (resp.ok) {
-                        const blob = await resp.blob();
-                        const blobUrl = URL.createObjectURL(blob);
-                        ngrokBlobCache.set(url, blobUrl);
-                        ngrokBlobCache.set(ngrokDirectUrl, blobUrl);
-                        imgEl.src = blobUrl;
-                    }
-                } catch (eFallback) {
-                    console.warn("Fallback image ngrok echoue:", eFallback);
-                }
-            }, { once: true });
+        const cleanUrl = cleanMediaUrl(rawUrl, "image");
+        if (!cleanUrl) return;
+
+        if (cleanUrl.startsWith("data:") || cleanUrl.startsWith("blob:")) {
+            imgEl.src = cleanUrl;
             return;
         }
-        imgEl.src = url;
+
+        const apiBase = (state && state.config && state.config.admin && state.config.admin.api_base) || getStoredWriteApiBase() || "";
+        const cleanBase = apiBase.replace(/\/+$/, "");
+
+        const candidates = [];
+        if (cleanUrl.startsWith("/uploads/")) {
+            if (cleanBase && !cleanBase.includes("ngrok")) {
+                candidates.push(`${cleanBase}${cleanUrl}`);
+            }
+            candidates.push(cleanUrl);
+        } else if (/^https?:\/\//i.test(cleanUrl)) {
+            candidates.push(cleanUrl);
+            const m = cleanUrl.match(/\/uploads\/[^\/?#]+/i);
+            if (m) {
+                if (cleanBase && !cleanBase.includes("ngrok")) candidates.push(`${cleanBase}${m[0]}`);
+                candidates.push(m[0]);
+            }
+        } else {
+            candidates.push(cleanUrl);
+        }
+
+        const uniqueCandidates = Array.from(new Set(candidates.filter(Boolean)));
+        let idx = 0;
+
+        const tryNextImage = () => {
+            if (idx >= uniqueCandidates.length) {
+                imgEl.onerror = null;
+                if (imgEl.parentElement && !imgEl.parentElement.querySelector(".media-fallback-icon")) {
+                    imgEl.style.display = "none";
+                    const placeholder = document.createElement("div");
+                    placeholder.className = "media-fallback-icon";
+                    placeholder.style.cssText = "width:100%;height:100%;display:grid;place-items:center;background:rgba(255,255,255,0.05);font-size:2.2rem;";
+                    placeholder.textContent = "📦";
+                    imgEl.parentElement.appendChild(placeholder);
+                }
+                return;
+            }
+            const current = uniqueCandidates[idx++];
+            imgEl.onerror = tryNextImage;
+            imgEl.onload = () => {
+                imgEl.onerror = null;
+                imgEl.style.display = "";
+                if (imgEl.parentElement) {
+                    const oldPlaceholder = imgEl.parentElement.querySelector(".media-fallback-icon");
+                    if (oldPlaceholder) oldPlaceholder.remove();
+                }
+            };
+            imgEl.src = current;
+        };
+
+        tryNextImage();
     }
 
     function getVideoPreviewImage(videoUrl) {
@@ -1823,10 +1815,11 @@
         els.detailName.textContent = sanitize(product.name || "Product");
         els.detailDescription.textContent = sanitize(product.description || "");
         els.detailCategoryChip.textContent = `${sanitize(categoryMeta.emoji || "📦")} ${sanitize(categoryMeta.name || product.category)}`;
-        if (product.image && product.image.includes("ngrok")) {
+        if (product.image) {
             attachImageSource(els.detailBrandImage, product.image);
         } else {
-            els.detailBrandImage.src = sanitize(product.image || "https://picsum.photos/seed/brand-red/260/260");
+            els.detailBrandImage.src = "";
+            els.detailBrandImage.style.display = "none";
         }
 
         renderDetailQuantities(product);
