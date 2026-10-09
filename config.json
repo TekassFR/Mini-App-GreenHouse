@@ -3,29 +3,19 @@
     "description": "Mini-App Telegram pour commandes en ligne",
     "delivery_fee": 2.5,
     "min_order": 15.0,
-    "name": "GreenHouse 68",
-    "currency": "€"
+    "currency": "€",
+    "name": "GreenHouse 68"
   },
   "admin": {
     "api_base": "https://wieldable-blah-fineness.ngrok-free.dev",
-    "telegram_username": "GreenHouse682",
     "channel_link": "https://t.me/+Hi2aQ4aYPn85ZTQ0",
-    "whitelist": [
-      "GreenHouse682",
-      "tekasspaslatete",
-      "wonka544"
-    ]
+    "telegram_username": "GreenHouse682"
   },
   "categories": {
     "pizza": {
       "name": "Hash",
       "emoji": "🍫",
       "description": "Nos produits en Hash"
-    },
-    "tuj": {
-      "name": "Gh",
-      "emoji": "📦",
-      "description": "Gg"
     }
   },
   "products": {
@@ -65,7 +55,6 @@
           "10": 110
         }
       }
-    ],
-    "tuj": []
+    ]
   }
 }

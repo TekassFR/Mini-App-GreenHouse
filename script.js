@@ -628,13 +628,24 @@
     }
 
     function isAdmin() {
-        const user = getTelegramUser();
-        if (!user || !user.username) return false;
-        const whitelist = (state.config && state.config.admin && Array.isArray(state.config.admin.whitelist))
-            ? state.config.admin.whitelist
-            : [];
-        const normalizedList = whitelist.map((u) => String(u).replace(/^@/, "").toLowerCase());
-        return normalizedList.includes(user.username.replace(/^@/, "").toLowerCase());
+        return state.adminVerified === true;
+    }
+
+    async function fetchAdminConfig() {
+        const initData = getAdminInitData();
+        if (!initData || !getTelegramUser()) return null;
+        try {
+            const resp = await fetchWriteApi("/admin/config", { headers: { "X-Telegram-Init-Data": initData } });
+            const data = await readJsonIfAny(resp);
+            return resp.ok && data && data.config ? data.config : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    async function refreshAdminAccess() {
+        state.adminVerified = Boolean(await fetchAdminConfig());
+        if (els.profileAdminCard) els.profileAdminCard.style.display = state.adminVerified ? "block" : "none";
     }
 
     function getTelegramUser() {
@@ -839,7 +850,7 @@
             const resp = await fetchWriteApi("/save-review", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(review)
+                body: JSON.stringify(Object.assign({}, review, { init_data: getAdminInitData() }))
             });
             return resp.ok;
         } catch (_) {
@@ -962,7 +973,7 @@
                 const label = sanitize(meta.name || catId);
                 const emoji = sanitize(meta.emoji || "🌿");
                 const active = state.category === catId ? "active" : "";
-                return `<button class="category-tab-btn ${active}" data-category="${catId}" role="tab" aria-selected="${state.category === catId ? "true" : "false"}">
+                return `<button class="category-tab-btn ${active}" data-category="${sanitize(catId)}" role="tab" aria-selected="${state.category === catId ? "true" : "false"}">
                     <span class="tab-emoji">${emoji}</span>
                     <span class="tab-text">${label}</span>
                 </button>`;
@@ -1355,7 +1366,7 @@
 
     function getPlayableVideo(video) {
         if (!video) return "";
-        const v = toUniversalVideoUrl(String(video).trim());
+        const v = String(toUniversalVideoUrl(String(video).trim()) || "").replace(/[<>"'`]/g, "");
         if (!v) return "";
         if (v.includes("youtube.com") || v.includes("youtu.be")) return "";
         if (v.includes("imgur.com") && !v.includes("i.imgur.com")) {
@@ -2280,7 +2291,7 @@
         try {
             let orders = [];
             try {
-                const resp = await fetchWriteApi("/admin/orders?init_data=" + encodeURIComponent(getAdminInitData()));
+                const resp = await fetchWriteApi("/admin/orders", { headers: { "X-Telegram-Init-Data": getAdminInitData() } });
                 if (resp && resp.ok) {
                     const data = await resp.json();
                     if (data && Array.isArray(data.orders)) {
@@ -2334,7 +2345,7 @@
             await fetchWriteApi("/save-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(order)
+                body: JSON.stringify(Object.assign({}, order, { init_data: getAdminInitData() }))
             });
         } catch (_) { }
     }
@@ -2369,8 +2380,8 @@
                     return `
                     <div class="admin-product-card">
                         <div class="admin-reorder-btns">
-                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="up" type="button" aria-label="Monter" ${isFirst ? "disabled" : ""}>▲</button>
-                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="down" type="button" aria-label="Descendre" ${isLast ? "disabled" : ""}>▼</button>
+                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${sanitize(catKey)}" data-dir="up" type="button" aria-label="Monter" ${isFirst ? "disabled" : ""}>▲</button>
+                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${sanitize(catKey)}" data-dir="down" type="button" aria-label="Descendre" ${isLast ? "disabled" : ""}>▼</button>
                         </div>
                         <button class="admin-btn-edit" data-pid="${p.id}" type="button">
                             ${thumb}
@@ -3063,6 +3074,9 @@
                 cfg = state.config;
             }
             if (!cfg) throw new Error("config indisponible");
+            const verifiedAdminConfig = await fetchAdminConfig();
+            if (!verifiedAdminConfig) throw new Error("accès admin refusé");
+            cfg.admin = Object.assign({}, cfg.admin, { whitelist: (verifiedAdminConfig.admin && verifiedAdminConfig.admin.whitelist) || [] });
 
             const rest = cfg.restaurant || {};
             const adminCfg = cfg.admin || {};
@@ -3563,6 +3577,7 @@
             loadLocal();
             await syncReviewsFromLocalApi();
             renderUser();
+            refreshAdminAccess();
             renderCategories();
             renderProducts();
             renderCart();
