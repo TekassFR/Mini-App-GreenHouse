@@ -56,7 +56,7 @@ async function readBody(req) {
     });
 }
 
-function telegramUserFromInitData(initData) {
+function telegramUserFromInitData(initData, maxAge = 86400) {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     if (!initData || !botToken) return null;
     const fields = new Map(new URLSearchParams(String(initData)));
@@ -66,17 +66,26 @@ function telegramUserFromInitData(initData) {
     const secret = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
     const expected = crypto.createHmac('sha256', secret).update(check).digest('hex');
     if (received.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(received), Buffer.from(expected))) return null;
-    if (Date.now() / 1000 - Number(fields.get('auth_date') || 0) > 86400) return null;
+    if (Date.now() / 1000 - Number(fields.get('auth_date') || 0) > maxAge) return null;
     try { return JSON.parse(fields.get('user') || '{}'); } catch (_) { return null; }
 }
 
+let whitelistUserIdReady = false;
+
 async function isAdmin(client, initData) {
-    const user = telegramUserFromInitData(initData);
-    if (!user || !user.username) return false;
-    const u = String(user.username).replace(/^@/, '').toLowerCase().trim();
+    const user = telegramUserFromInitData(initData, 3600);
+    const uid = user ? Number(user.id) : 0;
+    if (!uid) return false;
+    if (!whitelistUserIdReady) {
+        await client.query('ALTER TABLE admin_whitelist ADD COLUMN IF NOT EXISTS user_id BIGINT');
+        whitelistUserIdReady = true;
+    }
+    const byId = await client.query('SELECT 1 FROM admin_whitelist WHERE user_id=$1', [uid]);
+    if (byId.rows.length) return true;
+    const u = String(user.username || '').replace(/^@/, '').toLowerCase().trim();
     if (!u) return false;
-    const r = await client.query('SELECT 1 FROM admin_whitelist WHERE username=$1', [u]);
-    return r.rows.length > 0;
+    const bound = await client.query('UPDATE admin_whitelist SET user_id=$1 WHERE username=$2 AND user_id IS NULL RETURNING 1', [uid, u]);
+    return bound.rows.length > 0;
 }
 
 async function buildConfig(client) {
@@ -177,51 +186,54 @@ module.exports = async function handler(req, res) {
         // ── GET /config ──────────────────────────────────────────────────
         if (route === '/config' && req.method === 'GET') {
             const cfg = await buildConfig(client);
+            delete cfg.admin.whitelist;
             return json(res, cfg);
         }
 
         // ── GET /admin/config ─────────────────────────────────────────────
         if (route === '/admin/config' && req.method === 'GET') {
-            const initData = new URLSearchParams(req.url.split('?')[1] || '').get('init_data');
-            if (!await isAdmin(client, initData)) return json(res, { error: 'Forbidden' }, 403);
+            if (!await isAdmin(client, req.headers['x-telegram-init-data'])) return json(res, { error: 'Forbidden' }, 403);
             const cfg = await buildConfig(client);
             return json(res, { success: true, config: cfg });
         }
 
         // ── GET /reviews ──────────────────────────────────────────────────
         if (route === '/reviews' && req.method === 'GET') {
-            const rows = await client.query("SELECT * FROM reviews WHERE status='approved' ORDER BY timestamp DESC LIMIT 200");
+            const rows = await client.query("SELECT author, stars, message, timestamp FROM reviews WHERE status='approved' ORDER BY timestamp DESC LIMIT 200");
             return json(res, { success: true, reviews: rows.rows, count: rows.rows.length });
         }
 
         // ── POST /save-review ─────────────────────────────────────────────
         if (route === '/save-review' && req.method === 'POST') {
             const p = await readBody(req);
+            const user = telegramUserFromInitData(p.init_data);
+            if (!user) return json(res, { error: 'Forbidden' }, 403);
             const author = String(p.author || '').trim().slice(0, 64);
             const message = String(p.message || '').trim().slice(0, 1000);
             if (!author || !message) return json(res, { error: 'Payload invalide' }, 400);
             const stars = Math.max(1, Math.min(5, parseInt(p.stars) || 5));
             const ts = parseInt(p.timestamp) || Date.now();
             await client.query("INSERT INTO reviews (author, stars, message, timestamp, telegram_user_id, telegram_username, status) VALUES ($1,$2,$3,$4,$5,$6,'pending')",
-                [author, stars, message, ts, p.telegramUserId || null, String(p.telegramUsername || '').slice(0, 64) || null]);
+                [author, stars, message, ts, user.id || null, String(user.username || '').slice(0, 64) || null]);
             return json(res, { success: true, status: 'pending' });
         }
 
         // ── POST /save-order ──────────────────────────────────────────────
         if (route === '/save-order' && req.method === 'POST') {
             const p = await readBody(req);
+            const user = telegramUserFromInitData(p.init_data);
+            if (!user) return json(res, { error: 'Forbidden' }, 403);
             const type = String(p.type || '').slice(0, 20);
             const total = parseFloat(p.total) || 0;
             if (!type || total <= 0) return json(res, { error: 'Invalid order' }, 400);
             await client.query("INSERT INTO orders (type, total, summary, timestamp, telegram_user_id, telegram_username) VALUES ($1,$2,$3,$4,$5,$6)",
-                [type, total, String(p.summary || '').slice(0, 500), parseInt(p.timestamp) || Date.now(), p.telegramUserId || null, String(p.telegramUsername || '').slice(0, 64) || null]);
+                [type, total, String(p.summary || '').slice(0, 500), parseInt(p.timestamp) || Date.now(), user.id || null, String(user.username || '').slice(0, 64) || null]);
             return json(res, { success: true });
         }
 
         // ── GET /admin/orders ─────────────────────────────────────────────
         if (route === '/admin/orders' && req.method === 'GET') {
-            const initData = new URLSearchParams(req.url.split('?')[1] || '').get('init_data');
-            if (!await isAdmin(client, initData)) return json(res, { error: 'Forbidden' }, 403);
+            if (!await isAdmin(client, req.headers['x-telegram-init-data'])) return json(res, { error: 'Forbidden' }, 403);
             const rows = await client.query('SELECT * FROM orders ORDER BY timestamp DESC LIMIT 200');
             return json(res, { success: true, orders: rows.rows });
         }
@@ -334,11 +346,12 @@ module.exports = async function handler(req, res) {
         if (route === '/admin/whitelist/save' && req.method === 'POST') {
             const payload = await readBody(req);
             if (!await isAdmin(client, payload.init_data)) return json(res, { error: 'Forbidden' }, 403);
-            const whitelist = Array.isArray(payload.whitelist) ? payload.whitelist : [];
-            await client.query('DELETE FROM admin_whitelist');
-            for (const u of whitelist) {
-                const uname = String(u).replace(/^@/, '').toLowerCase().trim();
-                if (uname) await client.query('INSERT INTO admin_whitelist (username) VALUES ($1) ON CONFLICT DO NOTHING', [uname]);
+            const whitelist = (Array.isArray(payload.whitelist) ? payload.whitelist : [])
+                .map(u => String(u).replace(/^@/, '').toLowerCase().trim())
+                .filter(Boolean);
+            await client.query('DELETE FROM admin_whitelist WHERE NOT (username = ANY($1::text[]))', [whitelist]);
+            for (const uname of whitelist) {
+                await client.query('INSERT INTO admin_whitelist (username) VALUES ($1) ON CONFLICT DO NOTHING', [uname]);
             }
             const cfg = await buildConfig(client);
             return json(res, { success: true, config: cfg });
@@ -358,8 +371,7 @@ module.exports = async function handler(req, res) {
 
         // ── GET /admin/reviews/pending ────────────────────────────────────
         if (route === '/admin/reviews/pending' && req.method === 'GET') {
-            const initData = new URLSearchParams(req.url.split('?')[1] || '').get('init_data');
-            if (!await isAdmin(client, initData)) return json(res, { error: 'Forbidden' }, 403);
+            if (!await isAdmin(client, req.headers['x-telegram-init-data'])) return json(res, { error: 'Forbidden' }, 403);
             const rows = await client.query("SELECT * FROM reviews WHERE status='pending' ORDER BY timestamp ASC");
             return json(res, { success: true, reviews: rows.rows, count: rows.rows.length });
         }
