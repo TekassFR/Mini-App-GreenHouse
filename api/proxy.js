@@ -120,11 +120,40 @@ async function buildConfig(client) {
 }
 
 function fixMime(image, video) {
-    if (image && image.startsWith('data:application/octet-stream')) image = image.replace('data:application/octet-stream', 'data:image/jpeg');
-    if (video && (video.startsWith('data:application/octet-stream') || video.startsWith('data:video/quicktime'))) {
-        video = video.replace('data:application/octet-stream', 'data:video/mp4').replace('data:video/quicktime', 'data:video/mp4');
+    if (image) {
+        if (image.startsWith('data:application/octet-stream')) image = image.replace('data:application/octet-stream', 'data:image/jpeg');
+        image = image.replace(/^https?:\/\/[^\/]*(?:ngrok|cloudflare|trycloudflare)[^\/]*\/uploads\//i, '/uploads/');
+    }
+    if (video) {
+        if (video.startsWith('data:application/octet-stream') || video.startsWith('data:video/quicktime')) {
+            video = video.replace('data:application/octet-stream', 'data:video/mp4').replace('data:video/quicktime', 'data:video/mp4');
+        }
+        video = video.replace(/^https?:\/\/[^\/]*(?:ngrok|cloudflare|trycloudflare)[^\/]*\/uploads\//i, '/uploads/');
     }
     return { image: image || '', video: video || '' };
+}
+
+let cachedTunnelBase = '';
+let cachedTunnelBaseTime = 0;
+async function getActiveTunnelBase() {
+    const now = Date.now();
+    if (cachedTunnelBase && (now - cachedTunnelBaseTime < 45000)) {
+        return cachedTunnelBase;
+    }
+    try {
+        const c = await pool.connect();
+        try {
+            const r = await c.query("SELECT value FROM admin_settings WHERE key='api_base'");
+            if (r.rows.length && r.rows[0].value && r.rows[0].value.startsWith('http')) {
+                cachedTunnelBase = r.rows[0].value.trim().replace(/\/+$/, '');
+                cachedTunnelBaseTime = now;
+                return cachedTunnelBase;
+            }
+        } finally {
+            c.release();
+        }
+    } catch (_) {}
+    return cachedTunnelBase || '';
 }
 
 module.exports = async function handler(req, res) {
@@ -141,24 +170,9 @@ module.exports = async function handler(req, res) {
     // ── Proxy /uploads/:filename directly from VPS (supports HTTP Range / 206 for iOS Safari) ──
     if (route.startsWith('/uploads/') && (req.method === 'GET' || req.method === 'HEAD')) {
         const filename = route.replace('/uploads/', '');
-        let tunnelBase = '';
-        try {
-            const c = await pool.connect();
-            try {
-                const r = await c.query("SELECT value FROM admin_settings WHERE key='api_base'");
-                if (r.rows.length && r.rows[0].value && r.rows[0].value.startsWith('http')) {
-                    tunnelBase = r.rows[0].value.trim().replace(/\/+$/, '');
-                }
-            } finally {
-                c.release();
-            }
-        } catch (_) {}
-
-        if (!tunnelBase && process.env.NGROK_URL) {
-            tunnelBase = process.env.NGROK_URL.trim().replace(/\/+$/, '');
-        }
+        const tunnelBase = await getActiveTunnelBase();
         if (!tunnelBase) {
-            tunnelBase = 'https://wieldable-blah-fineness.ngrok-free.dev';
+            return json(res, { error: 'Aucun tunnel actif disponible' }, 502);
         }
         const vpsUrl = `${tunnelBase}/uploads/${filename}`;
         const https = require('https');
