@@ -7,45 +7,6 @@
         tg.expand();
     }
 
-    const introTitle = document.querySelector(".intro-card h1");
-    if (introTitle) {
-        const letters = [...introTitle.textContent.trim()].map((ch, i) => {
-            const span = document.createElement("span");
-            span.textContent = ch === " " ? " " : ch;
-            span.style.setProperty("--i", i);
-            return span;
-        });
-        introTitle.replaceChildren(...letters);
-        introTitle.classList.add("split");
-    }
-
-    function applyBrandColor() {
-        const meta = document.querySelector('meta[name="brand-color"]');
-        const hex = meta ? meta.content.trim() : "";
-        if (!/^#[0-9a-f]{6}$/i.test(hex)) return;
-        const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-        const [r, g, b] = rgb.map((v) => v / 255);
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        const l = (max + min) / 2;
-        const d = max - min;
-        const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
-        let h = 0;
-        if (d !== 0) {
-            if (max === r) h = ((g - b) / d) % 6;
-            else if (max === g) h = (b - r) / d + 2;
-            else h = (r - g) / d + 4;
-        }
-        h = Math.round(h * 60 + 360) % 360;
-        const root = document.documentElement.style;
-        root.setProperty("--accent", hex);
-        root.setProperty("--accent-rgb", rgb.join(", "));
-        root.setProperty("--accent-2", `hsl(${h}, ${Math.round(s * 100)}%, ${Math.round(Math.max(l - 0.22, 0.15) * 100)}%)`);
-        root.setProperty("--accent-ink", `hsl(${h}, 40%, 9%)`);
-    }
-
-    applyBrandColor();
-
     function getHashParam(name) {
         const raw = String(window.location.hash || "").replace(/^#/, "");
         if (!raw) return "";
@@ -126,7 +87,7 @@
     };
 
     // URL du bot VPS (HTTPS ngrok pour compatibilité Vercel sans mixed content)
-    const LOCAL_API_BASE = "https://wieldable-blah-fineness.ngrok-free.dev";
+    const LOCAL_API_BASE = "https://unspoiled-payphone-excretion.ngrok-free.dev";
 
     // Cloudinary : hébergement permanent des vidéos, converties en MP4 H.264 (lisible iPhone + Android)
     const CLOUDINARY_CLOUD_NAME = "";      // ex: "dxxxxxx"
@@ -159,7 +120,7 @@
 
     function getStoredWriteApiBase() {
         try {
-            return normalizeApiBase(localStorage.getItem("gh_write_api_base") || "");
+            return normalizeApiBase(localStorage.getItem("french54_write_api_base") || "");
         } catch (_) {
             return "";
         }
@@ -168,8 +129,8 @@
     function setStoredWriteApiBase(base) {
         try {
             const normalized = normalizeApiBase(base);
-            if (!normalized) localStorage.removeItem("gh_write_api_base");
-            else localStorage.setItem("gh_write_api_base", normalized);
+            if (!normalized) localStorage.removeItem("french54_write_api_base");
+            else localStorage.setItem("french54_write_api_base", normalized);
         } catch (_) { }
     }
 
@@ -188,7 +149,7 @@
             ? normalizeApiBase(window.location.origin)
             : "");
 
-        return Array.from(new Set([storedBase, configuredBase, fallbackBase, originBase, ""].filter(b => typeof b === "string" && b !== "")));
+        return Array.from(new Set([fallbackBase, configuredBase, storedBase, originBase, ""].filter(b => typeof b === "string" && b !== "")));
     }
 
     async function readJsonIfAny(resp) {
@@ -245,15 +206,6 @@
         intro: document.getElementById("intro-screen"),
         introSub: document.getElementById("intro-sub"),
         brandSubtitle: document.getElementById("brand-subtitle"),
-        tickerTexts: document.querySelectorAll(".ticker-text"),
-        musicPlayer: document.getElementById("music-player"),
-        musicToggle: document.getElementById("mp-toggle"),
-        musicTitle: document.getElementById("mp-title"),
-        musicPlay: document.getElementById("mp-play"),
-        musicPrev: document.getElementById("mp-prev"),
-        musicNext: document.getElementById("mp-next"),
-        musicMute: document.getElementById("mp-mute"),
-        musicVolume: document.getElementById("mp-volume"),
         userChip: document.getElementById("user-chip"),
         categoryTabs: document.getElementById("category-tabs"),
         productGrid: document.getElementById("product-grid"),
@@ -368,10 +320,10 @@
 
     function getPrimaryTelegramUsername() {
         if (!state.config || !state.config.admin || !state.config.admin.telegram_username) {
-            return "GreenHouse682"; // Valeur par défaut si la configuration n'est pas disponible
+            return "LaFrenchOfficiel54"; // Valeur par défaut si la configuration n'est pas disponible
         }
         const parts = state.config.admin.telegram_username.split(/[\s,]+/);
-        return parts[0] || "GreenHouse682";
+        return parts[0] || "LaFrenchOfficiel54";
     }
 
     let detailSlides = [];
@@ -406,7 +358,7 @@
             pickup: "Sur place",
             deliveryAddress: "Adresse de livraison",
             pickupTime: "Heure d'arrivee",
-            deliveryPlaceholder: "Ex: 10 rue de la République, 68000 Colmar",
+            deliveryPlaceholder: "Ex: 10 rue de Paris, 54000 Nancy",
             total: "Total",
             clear: "Vider",
             checkout: "Commander",
@@ -486,7 +438,7 @@
             pickup: "Pickup",
             deliveryAddress: "Delivery address",
             pickupTime: "Pickup time",
-            deliveryPlaceholder: "Ex: 10 Rue de la République, 68000 Colmar",
+            deliveryPlaceholder: "Ex: 10 Rue de Paris, 54000 Nancy",
             total: "Total",
             clear: "Clear",
             checkout: "Order",
@@ -566,7 +518,7 @@
             pickup: "Abholung",
             deliveryAddress: "Lieferadresse",
             pickupTime: "Abholzeit",
-            deliveryPlaceholder: "Bsp: 10 Rue de la République, 68000 Colmar",
+            deliveryPlaceholder: "Bsp: 10 Rue de Paris, 54000 Nancy",
             total: "Gesamt",
             clear: "Leeren",
             checkout: "Bestellen",
@@ -628,24 +580,13 @@
     }
 
     function isAdmin() {
-        return state.adminVerified === true;
-    }
-
-    async function fetchAdminConfig() {
-        const initData = getAdminInitData();
-        if (!initData || !getTelegramUser()) return null;
-        try {
-            const resp = await fetchWriteApi("/admin/config", { headers: { "X-Telegram-Init-Data": initData } });
-            const data = await readJsonIfAny(resp);
-            return resp.ok && data && data.config ? data.config : null;
-        } catch (_) {
-            return null;
-        }
-    }
-
-    async function refreshAdminAccess() {
-        state.adminVerified = Boolean(await fetchAdminConfig());
-        if (els.profileAdminCard) els.profileAdminCard.style.display = state.adminVerified ? "block" : "none";
+        const user = getTelegramUser();
+        if (!user || !user.username) return false;
+        const whitelist = (state.config && state.config.admin && Array.isArray(state.config.admin.whitelist))
+            ? state.config.admin.whitelist
+            : [];
+        const normalizedList = whitelist.map((u) => String(u).replace(/^@/, "").toLowerCase());
+        return normalizedList.includes(user.username.replace(/^@/, "").toLowerCase());
     }
 
     function getTelegramUser() {
@@ -751,20 +692,6 @@
         localStorage.setItem(storageKey("orders"), JSON.stringify(state.orders));
         localStorage.setItem(storageKey("reviews"), JSON.stringify(state.reviews));
         localStorage.setItem(storageKey("language"), state.language);
-        updateCartBadge();
-    }
-
-    function paintStarPicker() {
-        const value = parseInt(els.reviewStars.value, 10) || 5;
-        document.querySelectorAll("#star-picker .star-btn").forEach((btn) => {
-            btn.classList.toggle("on", Number(btn.dataset.star) <= value);
-        });
-    }
-
-    function updateCartBadge() {
-        const badge = document.getElementById("cart-badge");
-        badge.hidden = !state.cart.length;
-        badge.textContent = state.cart.length;
     }
 
     function loadLocal() {
@@ -794,7 +721,6 @@
             state.reviews = [];
             state.language = "fr";
         }
-        updateCartBadge();
     }
 
     function normalizeReviewEntry(review) {
@@ -850,7 +776,7 @@
             const resp = await fetchWriteApi("/save-review", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(Object.assign({}, review, { init_data: getAdminInitData() }))
+                body: JSON.stringify(review)
             });
             return resp.ok;
         } catch (_) {
@@ -905,7 +831,7 @@
                 const resp = await fetchWithTimeout(`./config.json?t=${Date.now()}`, { cache: "no-store" }, 3000);
                 if (resp.ok) cfg = await resp.json();
             } catch (_) {}
-            if (!cfg) throw new Error("Impossible de charger la boutique, réessaie dans un instant.");
+            if (!cfg) throw new Error("Impossible de charger la configuration (VPS et API Vercel inaccessibles)");
         }
 
         state.config = cfg;
@@ -948,7 +874,7 @@
         els.profileMemberFull.textContent = t("memberSincePhrase", { month: monthData.monthLong, year });
         els.profileMemberShort.textContent = `${monthData.monthShort}. ${String(year).slice(-2)}`;
 
-        const adminUserRaw = state.config && state.config.admin ? state.config.admin.telegram_username : "GreenHouse682";
+        const adminUserRaw = state.config && state.config.admin ? state.config.admin.telegram_username : "LaFrenchOfficiel54";
         const formattedAdmins = adminUserRaw.split(/[\s,]+/).map((u) => `@${u}`).join(" / ");
         els.infoContactUsername.textContent = `Telegram: ${formattedAdmins}`;
 
@@ -973,7 +899,7 @@
                 const label = sanitize(meta.name || catId);
                 const emoji = sanitize(meta.emoji || "🌿");
                 const active = state.category === catId ? "active" : "";
-                return `<button class="category-tab-btn ${active}" data-category="${sanitize(catId)}" role="tab" aria-selected="${state.category === catId ? "true" : "false"}">
+                return `<button class="category-tab-btn ${active}" data-category="${catId}" role="tab" aria-selected="${state.category === catId ? "true" : "false"}">
                     <span class="tab-emoji">${emoji}</span>
                     <span class="tab-text">${label}</span>
                 </button>`;
@@ -1031,12 +957,14 @@
             <article class="product-card" data-product-id="${product.id}">
                 <div class="product-media">
                     ${mediaHtml}
+                    <span class="status-dot" aria-hidden="true"></span>
                     ${badge}
                     ${videoBadge}
+                    <div class="product-media-tools" aria-hidden="true">🧊🚀⚡️</div>
                 </div>
                 <div class="product-body">
                     <h3 class="product-title">${name}</h3>
-                    <p class="product-desc">${shortDesc}</p>
+                    <p class="product-desc">⌂ ${shortDesc}</p>
                     <span class="price-chip">${t("fromPrice", { price: formatEUR(start) })}</span>
                 </div>
             </article>
@@ -1053,7 +981,7 @@
             if (v.dataset.videoSrc) attachVideoSource(v, v.dataset.videoSrc);
         });
         els.productGrid.querySelectorAll(".card-product-img").forEach((img) => {
-            if (img.dataset.imgSrc && img.dataset.imgSrc.includes("ngrok")) attachImageSource(img, img.dataset.imgSrc);
+            if (img.dataset.imgSrc) attachImageSource(img, img.dataset.imgSrc);
         });
         els.productGrid.querySelectorAll(".product-card").forEach((card) => {
             card.addEventListener("click", () => {
@@ -1070,16 +998,9 @@
             page.classList.toggle("active", show);
         });
 
-        els.tabs.forEach((tab, index) => {
-            const isActive = tab.dataset.page === pageName;
-            tab.classList.toggle("active", isActive);
-            if (isActive) document.getElementById("bottom-nav").style.setProperty("--nav-index", index);
+        els.tabs.forEach((tab) => {
+            tab.classList.toggle("active", tab.dataset.page === pageName);
         });
-
-        const previousPage = document.body.dataset.page;
-        if (previousPage && previousPage !== pageName && tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-        document.body.dataset.page = pageName;
-        window.scrollTo(0, 0);
 
         if (pageName === "cart") renderCart();
         if (pageName === "history") renderHistory();
@@ -1170,7 +1091,7 @@
 
     function renderHistory() {
         if (!state.orders.length) {
-            els.historyList.innerHTML = `<div class="card panel empty-state" data-emoji="🧾">${t("noOrder")}</div>`;
+            els.historyList.innerHTML = `<div class="card panel">${t("noOrder")}</div>`;
             return;
         }
 
@@ -1181,13 +1102,11 @@
                 const date = new Date(order.timestamp).toLocaleString(getLocaleCode());
                 const orderTypeText = order.type === "pickup" ? t("pickup") : t("delivery");
                 return `
-                    <article class="card panel order-card">
-                        <div class="order-card-head">
-                            <h3>${t("orderWord")} #${order.id}</h3>
-                            <span class="order-card-total">${formatEUR(order.total)}</span>
-                        </div>
-                        <p class="muted">${date} · ${orderTypeText}</p>
-                        <p class="order-card-summary">${sanitize(order.summary)}</p>
+                    <article class="card panel">
+                        <h3>${t("orderWord")} #${order.id}</h3>
+                        <p class="muted">${date} - ${orderTypeText}</p>
+                        <p><strong>${t("total")}:</strong> ${formatEUR(order.total)}</p>
+                        <p class="muted">${sanitize(order.summary)}</p>
                     </article>
                 `;
             })
@@ -1198,7 +1117,7 @@
 
     function renderReviews() {
         if (!state.reviews.length) {
-            els.reviewList.innerHTML = `<div class="card panel empty-state" data-emoji="💬">${t("noReview")}</div>`;
+            els.reviewList.innerHTML = `<div class="card panel">${t("noReview")}</div>`;
             els.reviewRating.textContent = "4.9 / 5";
             els.reviewCount.textContent = t("basedOn", { count: 0 });
             return;
@@ -1213,10 +1132,7 @@
             .reverse()
             .map((r) => `
                 <article class="card panel review-item">
-                    <div class="review-item-head">
-                        <h4>${sanitize(r.author)}</h4>
-                        <span class="review-item-stars">${"★".repeat(r.stars)}<span class="off">${"★".repeat(5 - r.stars)}</span></span>
-                    </div>
+                    <h4>${sanitize(r.author)} - ${"★".repeat(r.stars)}${"☆".repeat(5 - r.stars)}</h4>
                     <p>${sanitize(r.message)}</p>
                 </article>
             `)
@@ -1284,11 +1200,7 @@
         document.documentElement.lang = state.language;
 
         if (els.introSub) els.introSub.textContent = t("introSub");
-        const shopCfg = state.config || {};
-        if (els.brandSubtitle) els.brandSubtitle.textContent = (shopCfg.restaurant && shopCfg.restaurant.slogan) || t("brandSubtitle");
-        if (!els.tickerDefault && els.tickerTexts[0]) els.tickerDefault = els.tickerTexts[0].textContent;
-        const tickerText = shopCfg.admin && shopCfg.admin.ticker_text ? `${shopCfg.admin.ticker_text} ✦` : els.tickerDefault;
-        els.tickerTexts.forEach((span) => { span.textContent = tickerText; });
+        if (els.brandSubtitle) els.brandSubtitle.textContent = t("brandSubtitle");
 
         if (els.cartTitle) els.cartTitle.textContent = t("cartTitle");
         if (els.cartDesc) els.cartDesc.textContent = t("cartDesc");
@@ -1366,7 +1278,7 @@
 
     function getPlayableVideo(video) {
         if (!video) return "";
-        const v = String(toUniversalVideoUrl(String(video).trim()) || "").replace(/[<>"'`]/g, "");
+        const v = toUniversalVideoUrl(String(video).trim());
         if (!v) return "";
         if (v.includes("youtube.com") || v.includes("youtu.be")) return "";
         if (v.includes("imgur.com") && !v.includes("i.imgur.com")) {
@@ -1410,26 +1322,58 @@
             }
         };
 
-        if (url.includes("ngrok-free.dev") || url.includes("ngrok.app") || url.includes("ngrok.io")) {
+        if (url.startsWith("/uploads/") || url.includes("ngrok-free.dev") || url.includes("ngrok.app") || url.includes("ngrok.io")) {
+            const ngrokDirectUrl = url.startsWith("/uploads/") ? `${LOCAL_API_BASE}${url}` : url;
             if (ngrokBlobCache.has(url)) {
                 applySrc(ngrokBlobCache.get(url));
                 return;
             }
-            try {
-                const resp = await fetch(url, {
-                    headers: { "ngrok-skip-browser-warning": "true" }
-                });
-                if (resp.ok) {
-                    const blob = await resp.blob();
-                    const blobUrl = URL.createObjectURL(blob);
-                    ngrokBlobCache.set(url, blobUrl);
-                    applySrc(blobUrl);
-                    return;
-                }
-            } catch (err) {
-                console.warn("Erreur chargement video ngrok:", err);
+            if (ngrokBlobCache.has(ngrokDirectUrl)) {
+                applySrc(ngrokBlobCache.get(ngrokDirectUrl));
+                return;
             }
+
+            // Si c'est un lien ngrok direct, charger via blob pour contourner la page d'avertissement
+            if (url.includes("ngrok")) {
+                try {
+                    const resp = await fetch(url, {
+                        headers: { "ngrok-skip-browser-warning": "true" }
+                    });
+                    if (resp.ok) {
+                        const blob = await resp.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        ngrokBlobCache.set(url, blobUrl);
+                        applySrc(blobUrl);
+                        return;
+                    }
+                } catch (err) {
+                    console.warn("Erreur chargement video ngrok:", err);
+                }
+            }
+
+            // Sinon appliquer la source /uploads/...
+            applySrc(url);
+
+            // Si /uploads/... échoue (ex: Vercel proxy en erreur), basculer automatiquement sur ngrok direct avec le header
+            videoEl.addEventListener("error", async () => {
+                try {
+                    const resp = await fetch(ngrokDirectUrl, {
+                        headers: { "ngrok-skip-browser-warning": "true" }
+                    });
+                    if (resp.ok) {
+                        const blob = await resp.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        ngrokBlobCache.set(url, blobUrl);
+                        ngrokBlobCache.set(ngrokDirectUrl, blobUrl);
+                        applySrc(blobUrl);
+                    }
+                } catch (eFallback) {
+                    console.warn("Fallback video ngrok echoue:", eFallback);
+                }
+            }, { once: true });
+            return;
         }
+
         applySrc(url);
     }
 
@@ -1437,26 +1381,56 @@
         if (!imgEl || !rawUrl) return;
         const url = String(rawUrl).trim();
         if (!url) return;
-        if (url.includes("ngrok-free.dev") || url.includes("ngrok.app") || url.includes("ngrok.io")) {
+
+        if (url.startsWith("/uploads/") || url.includes("ngrok-free.dev") || url.includes("ngrok.app") || url.includes("ngrok.io")) {
+            const ngrokDirectUrl = url.startsWith("/uploads/") ? `${LOCAL_API_BASE}${url}` : url;
             if (ngrokBlobCache.has(url)) {
                 imgEl.src = ngrokBlobCache.get(url);
                 return;
             }
-            try {
-                const resp = await fetch(url, {
-                    headers: { "ngrok-skip-browser-warning": "true" }
-                });
-                if (resp.ok) {
-                    const blob = await resp.blob();
-                    const blobUrl = URL.createObjectURL(blob);
-                    ngrokBlobCache.set(url, blobUrl);
-                    imgEl.src = blobUrl;
-                    return;
-                }
-            } catch (err) {
-                console.warn("Erreur chargement image ngrok:", err);
+            if (ngrokBlobCache.has(ngrokDirectUrl)) {
+                imgEl.src = ngrokBlobCache.get(ngrokDirectUrl);
+                return;
             }
+
+            if (url.includes("ngrok")) {
+                try {
+                    const resp = await fetch(url, {
+                        headers: { "ngrok-skip-browser-warning": "true" }
+                    });
+                    if (resp.ok) {
+                        const blob = await resp.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        ngrokBlobCache.set(url, blobUrl);
+                        imgEl.src = blobUrl;
+                        return;
+                    }
+                } catch (err) {
+                    console.warn("Erreur chargement image ngrok:", err);
+                }
+            }
+
+            imgEl.src = url;
+
+            imgEl.addEventListener("error", async () => {
+                try {
+                    const resp = await fetch(ngrokDirectUrl, {
+                        headers: { "ngrok-skip-browser-warning": "true" }
+                    });
+                    if (resp.ok) {
+                        const blob = await resp.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        ngrokBlobCache.set(url, blobUrl);
+                        ngrokBlobCache.set(ngrokDirectUrl, blobUrl);
+                        imgEl.src = blobUrl;
+                    }
+                } catch (eFallback) {
+                    console.warn("Fallback image ngrok echoue:", eFallback);
+                }
+            }, { once: true });
+            return;
         }
+
         imgEl.src = url;
     }
 
@@ -1596,6 +1570,7 @@
         // Configurer les vidéos de slide : poster, bouton play, et chargement immédiat
         els.detailMediaTrack.querySelectorAll(".slide-item-video").forEach((article) => {
             const video = article.querySelector("video");
+            const playBtn = article.querySelector(".video-play-btn");
             if (!video) return;
 
             video.addEventListener("play", () => article.classList.add("playing"));
@@ -1614,6 +1589,7 @@
             };
 
             article.addEventListener("click", togglePlay);
+            if (playBtn) playBtn.addEventListener("click", togglePlay);
 
             if (video.dataset.videoSrc) attachVideoSource(video, video.dataset.videoSrc);
         });
@@ -1623,10 +1599,10 @@
         });
 
         els.detailMediaTrack.querySelectorAll(".slide-image").forEach((img) => {
-            if (img.dataset.imgSrc && img.dataset.imgSrc.includes("ngrok")) attachImageSource(img, img.dataset.imgSrc);
+            if (img.dataset.imgSrc) attachImageSource(img, img.dataset.imgSrc);
         });
         els.detailThumbs.querySelectorAll(".detail-thumb-img").forEach((img) => {
-            if (img.dataset.imgSrc && img.dataset.imgSrc.includes("ngrok")) attachImageSource(img, img.dataset.imgSrc);
+            if (img.dataset.imgSrc) attachImageSource(img, img.dataset.imgSrc);
         });
 
         // Bouton plein écran sur chaque slide vidéo
@@ -1805,7 +1781,7 @@
         toast.id = "gh-toast";
         toast.className = "gh-toast";
         toast.innerHTML = `
-            <span class="toast-icon">✓</span>
+            <span class="toast-icon">✨</span>
             <span class="toast-message">${message}</span>
         `;
         document.body.appendChild(toast);
@@ -2021,15 +1997,6 @@
             void addReview(author, stars, message);
             els.reviewForm.reset();
             els.reviewStars.value = "5";
-            paintStarPicker();
-        });
-
-        document.getElementById("star-picker").addEventListener("click", (e) => {
-            const btn = e.target.closest(".star-btn");
-            if (!btn) return;
-            els.reviewStars.value = btn.dataset.star;
-            paintStarPicker();
-            if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
         });
 
         els.detailCloseBtn.addEventListener("click", closeProductDetail);
@@ -2134,9 +2101,7 @@
 
     function switchAdminTab(tabName) {
         els.adminTabBtns.forEach((btn) => {
-            const isActive = btn.dataset.adminTab === tabName;
-            btn.classList.toggle("active", isActive);
-            if (isActive) btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+            btn.classList.toggle("active", btn.dataset.adminTab === tabName);
         });
         if (els.adminTabReviews) els.adminTabReviews.classList.toggle("active", tabName === "reviews");
         if (els.adminTabOrders) els.adminTabOrders.classList.toggle("active", tabName === "orders");
@@ -2151,8 +2116,13 @@
         if (tabName === "settings") loadAdminSettings();
     }
 
-    function getAdminInitData() {
-        return (tg && tg.initData) || "";
+    function getAdminUsername() {
+        const user = getTelegramUser();
+        if (user && user.username) return user.username;
+        if (state && state.config && state.config.admin && Array.isArray(state.config.admin.whitelist) && state.config.admin.whitelist.length) {
+            return state.config.admin.whitelist[0];
+        }
+        return (state && state.config && state.config.admin && state.config.admin.telegram_username) || "";
     }
 
     async function loadAdminReviews() {
@@ -2170,7 +2140,7 @@
 
             let html = "";
             if (pending.length > 0) {
-                html += `<h4 class="admin-section-title">En attente · ${pending.length}</h4>`;
+                html += `<h4 style="color:var(--accent);margin:8px 0;">⏳ Avis en attente (${pending.length})</h4>`;
                 html += pending.map((r) => {
                     const rawStars = Math.max(1, Math.min(5, r.stars || 5));
                     const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
@@ -2185,32 +2155,32 @@
                             <p class="admin-review-msg">${sanitize(r.message || "")}</p>
                             <div class="admin-review-meta">${date}${handle}</div>
                             <div class="admin-review-actions">
-                                <button class="admin-btn-approve" data-ts="${r.timestamp}" type="button">Publier</button>
-                                <button class="admin-btn-reject" data-ts="${r.timestamp}" type="button">Refuser</button>
+                                <button class="admin-btn-approve" data-ts="${r.timestamp}" type="button">✓ Approuver</button>
+                                <button class="admin-btn-reject" data-ts="${r.timestamp}" type="button">✗ Refuser</button>
                             </div>
                         </div>
                     `;
                 }).join("");
             } else {
-                html += `<div class="admin-empty">Aucun avis en attente</div>`;
+                html += `<div class="admin-empty" style="padding:16px;margin-bottom:12px;">Aucun avis en attente ✓</div>`;
             }
 
             if (approved.length > 0) {
-                html += `<h4 class="admin-section-title">Publiés · ${approved.length}</h4>`;
+                html += `<h4 style="color:var(--text);margin:16px 0 8px;">✅ Avis publiés sur le site (${approved.length})</h4>`;
                 html += approved.slice().reverse().map((r) => {
                     const rawStars = Math.max(1, Math.min(5, r.stars || 5));
                     const stars = "★".repeat(rawStars) + "☆".repeat(5 - rawStars);
                     const date = new Date(r.timestamp || Date.now()).toLocaleString("fr-FR");
                     const handle = r.telegramUsername ? ` · @${sanitize(r.telegramUsername)}` : "";
                     return `
-                        <div class="admin-review-card">
+                        <div class="admin-review-card" style="border-color:rgba(255,255,255,0.08);">
                             <div class="admin-review-header">
                                 <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
                                 <span class="admin-review-stars">${stars}</span>
                             </div>
                             <p class="admin-review-msg">${sanitize(r.message || "")}</p>
                             <div class="admin-review-meta">${date}${handle}</div>
-                            <button class="admin-btn-delete-approved" data-ts="${r.timestamp}" type="button">Retirer de la boutique</button>
+                            <button class="admin-btn-delete-approved" data-ts="${r.timestamp}" type="button">🗑 Supprimer de la boutique</button>
                         </div>
                     `;
                 }).join("");
@@ -2237,7 +2207,7 @@
             const resp = await fetchWriteApi("/admin/reviews/approve", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), timestamp })
+                body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
             });
             if (resp.ok) {
                 showToast("Avis approuvé et publié ! ⭐");
@@ -2255,7 +2225,7 @@
             const resp = await fetchWriteApi("/admin/reviews/reject", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), timestamp })
+                body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
             });
             if (resp.ok) {
                 showToast("Avis refusé");
@@ -2272,7 +2242,7 @@
             const resp = await fetchWriteApi("/admin/reviews/delete-approved", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), timestamp })
+                body: JSON.stringify({ tg_username: getAdminUsername(), timestamp })
             }, true);
             if (resp.ok) {
                 showToast("Avis supprimé ! 🗑️");
@@ -2291,7 +2261,7 @@
         try {
             let orders = [];
             try {
-                const resp = await fetchWriteApi("/admin/orders", { headers: { "X-Telegram-Init-Data": getAdminInitData() } });
+                const resp = await fetchWriteApi("/admin/orders?tg_username=" + encodeURIComponent(getAdminUsername()));
                 if (resp && resp.ok) {
                     const data = await resp.json();
                     if (data && Array.isArray(data.orders)) {
@@ -2316,7 +2286,7 @@
             }
 
             const sortedOrders = [...orders].reverse();
-            els.adminOrdersAll.innerHTML = `<button class="admin-refresh-btn" id="admin-orders-refresh-btn" type="button">Actualiser</button>` +
+            els.adminOrdersAll.innerHTML = `<button class="admin-refresh-btn" id="admin-orders-refresh-btn" type="button">↻ Actualiser</button>` +
                 sortedOrders.map((o) => {
                     const date = new Date(o.timestamp || Date.now()).toLocaleString("fr-FR");
                     const typeLabel = o.type === "pickup" ? "Sur place" : "Livraison";
@@ -2329,7 +2299,8 @@
                             </div>
                             <span class="admin-order-type">${typeLabel}</span>
                             <p class="admin-order-summary">${sanitize(o.summary || "")}</p>
-                            <span class="admin-order-user">${user} · ${date}</span>
+                            <span class="admin-order-user">👤 ${user}</span>
+                            <span class="admin-order-date">📅 ${date}</span>
                         </div>
                     `;
                 }).join("");
@@ -2345,7 +2316,7 @@
             await fetchWriteApi("/save-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(Object.assign({}, order, { init_data: getAdminInitData() }))
+                body: JSON.stringify(order)
             });
         } catch (_) { }
     }
@@ -2363,36 +2334,41 @@
             const categories = cfg.categories || {};
             const products = cfg.products || {};
             const catNames = {};
-            for (const [key, cat] of Object.entries(categories)) catNames[key] = cat.name;
+            for (const [key, cat] of Object.entries(categories)) catNames[key] = `${cat.emoji || ""} ${cat.name}`;
 
-            let html = `<div class="admin-group"><button class="admin-add-btn" id="admin-add-product-btn" type="button">Ajouter un produit…</button></div>`;
+            let html = `<button class="admin-add-btn" id="admin-add-product-btn" type="button">+ Ajouter un produit</button>`;
 
             let totalProds = 0;
             for (const [catKey, prods] of Object.entries(products)) {
                 if (!Array.isArray(prods) || !prods.length) continue;
                 totalProds += prods.length;
-                html += `<h4 class="admin-section-title">${sanitize(catNames[catKey] || catKey)} · ${prods.length}</h4><div class="admin-group">`;
+                html += `<h4 style="color:var(--accent);margin:14px 0 6px;">${sanitize(catNames[catKey] || catKey)} (${prods.length})</h4>`;
                 html += prods.map((p, idx) => {
                     const isFirst = idx === 0;
                     const isLast = idx === prods.length - 1;
-                    const thumb = p.image ? `<img class="admin-product-thumb" src="${sanitize(p.image)}" alt="">` : `<span class="admin-product-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${sanitize(p.emoji || "📦")}</span>`;
-                    const details = [`${(p.price || 0).toFixed(2)} €`, p.isPromo ? "Promo" : "", p.isNew ? "Nouveau" : ""].filter(Boolean).join(" · ");
+                    const thumb = p.image ? `<img class="admin-product-thumb" src="${sanitize(p.image)}" alt="">` : `<div class="admin-product-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${sanitize(p.emoji || "📦")}</div>`;
                     return `
                     <div class="admin-product-card">
-                        <div class="admin-reorder-btns">
-                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${sanitize(catKey)}" data-dir="up" type="button" aria-label="Monter" ${isFirst ? "disabled" : ""}>▲</button>
-                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${sanitize(catKey)}" data-dir="down" type="button" aria-label="Descendre" ${isLast ? "disabled" : ""}>▼</button>
-                        </div>
-                        <button class="admin-btn-edit" data-pid="${p.id}" type="button">
+                        <div class="admin-product-row">
+                            <div class="admin-reorder-btns">
+                                <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="up" type="button" ${isFirst ? "disabled" : ""}>▲</button>
+                                <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${catKey}" data-dir="down" type="button" ${isLast ? "disabled" : ""}>▼</button>
+                            </div>
                             ${thumb}
-                            <span class="admin-row-text">
-                                <span class="admin-product-name">${sanitize(p.name || "")}</span>
-                                <span class="admin-product-cat">${details}</span>
-                            </span>
-                            <span class="admin-chevron" aria-hidden="true"></span>
-                        </button>
+                            <div style="flex:1;min-width:0;">
+                                <div class="admin-product-header" style="margin-bottom:2px;">
+                                    <span class="admin-product-name">${sanitize(p.name || "")}</span>
+                                    <span class="admin-product-price">${(p.price || 0).toFixed(2)} €</span>
+                                </div>
+                                <span class="admin-product-cat">${sanitize(catNames[catKey] || catKey)}</span>
+                            </div>
+                        </div>
+                        <div class="admin-review-actions" style="margin-top:6px;">
+                            <button class="admin-btn-edit" data-pid="${p.id}" type="button">✏️ Modifier</button>
+                            <button class="admin-btn-reject" data-pid="${p.id}" type="button">🗑 Supprimer</button>
+                        </div>
                     </div>`;
-                }).join("") + `</div>`;
+                }).join("");
             }
 
             if (!totalProds) {
@@ -2419,6 +2395,29 @@
                     const product = allProductsList.find((p) => String(p.id).trim() === pid);
                     if (product) showAdminProductForm(product, cfg);
                 }, { once: true });
+            });
+
+            els.adminProductsContent.querySelectorAll(".admin-btn-reject[data-pid]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const pid = String(btn.dataset.pid || "").trim();
+                    if (!pid) return;
+                    const prodObj = allProductsList.find((p) => String(p.id).trim() === pid);
+                    const prodName = prodObj ? prodObj.name : "ce produit";
+                    const prodEmoji = prodObj ? (prodObj.emoji || "🗑️") : "🗑️";
+
+                    showConfirmModal({
+                        title: "Supprimer le produit ?",
+                        emoji: prodEmoji,
+                        message: `Es-tu sûr de vouloir supprimer définitivement <strong>« ${sanitize(prodName)} »</strong> ? Cette action est irréversible.`,
+                        confirmText: "Oui, supprimer",
+                        cancelText: "Annuler",
+                        isDanger: true,
+                        onConfirm: async () => {
+                            btn.disabled = true;
+                            await adminDeleteProduct(pid);
+                        }
+                    });
+                });
             });
 
             els.adminProductsContent.querySelectorAll(".admin-btn-reorder").forEach((btn) => {
@@ -2449,7 +2448,7 @@
             const resp = await fetchWriteApi("/admin/products/reorder", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), category, product_id: productId, direction })
+                body: JSON.stringify({ tg_username: getAdminUsername(), category, product_id: productId, direction })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
@@ -2461,7 +2460,7 @@
                 showToast((data && data.error) || "Erreur réorganisation", "error");
             }
         } catch (_) {
-            showToast("Connexion impossible, réessaie.", "error");
+            showToast("Erreur de connexion VPS", "error");
         }
     }
 
@@ -2517,7 +2516,6 @@
             xhr.open("POST", url, true);
             xhr.timeout = timeoutMs || 180000;
             xhr.setRequestHeader("ngrok-skip-browser-warning", "69420");
-            xhr.setRequestHeader("X-Telegram-Init-Data", (tg && tg.initData) || "");
 
             if (xhr.upload && typeof onProgress === "function") {
                 xhr.upload.onprogress = function(e) {
@@ -2704,8 +2702,8 @@
         const customPricesStr = product && product.customPrices ? formatCustomPricesForEdit(product.customPrices) : "";
         const formHtml = `
             <div class="admin-form-wrap">
-                <button class="admin-form-back-btn" id="admin-product-form-back" type="button">‹ Produits</button>
-                <h3 class="admin-form-title">${isEdit ? "Modifier le produit" : "Nouveau produit"}</h3>
+                <button class="admin-form-back-btn" id="admin-product-form-back" type="button">← Retour</button>
+                <h3 class="admin-form-title">${isEdit ? "✏️ Modifier le produit" : "➕ Nouveau produit"}</h3>
                 <form id="admin-product-form" autocomplete="off">
                     <label class="admin-label">Nom *<input class="admin-input" id="apf-name" type="text" maxlength="100" value="${sanitize(product ? product.name : "")}" required></label>
                     <label class="admin-label">Description<textarea class="admin-input admin-textarea" id="apf-desc" maxlength="500">${sanitize(product ? (product.description || "") : "")}</textarea></label>
@@ -2713,24 +2711,27 @@
                     <label class="admin-label">Prix de base (€) *<input class="admin-input" id="apf-price" type="number" step="0.01" min="0" value="${product ? (product.price || 0) : ""}" required></label>
                     <label class="admin-label">Prix par quantité<span class="admin-hint">Ex: 10: 80 (Quantité: Prix, une par ligne)</span><textarea class="admin-input admin-textarea" id="apf-custom" rows="4" placeholder="10: 80&#10;20: 150&#10;50: 350">${customPricesStr}</textarea></label>
                     
-                    <div class="admin-field">
-                        <span class="admin-field-label">Photo</span>
-                        <input class="admin-input" id="apf-img" type="text" placeholder="Lien https://" value="${sanitize(product ? (product.image || "") : "")}">
+                    <div style="margin-bottom:12px;">
+                        <label class="admin-label">Image (Lien URL ou Fichier appareil)</label>
+                        <input class="admin-input" id="apf-img" type="text" placeholder="https://..." value="${sanitize(product ? (product.image || "") : "")}">
                         <div class="admin-upload-box">
-                            <label class="admin-upload-btn" for="apf-img-file">Choisir une photo…</label>
+                            <label class="admin-upload-btn" for="apf-img-file">📷 Choisir une photo depuis l'appareil</label>
                             <input type="file" id="apf-img-file" accept="image/*" style="display:none;">
                             <span class="admin-upload-status" id="apf-img-status"></span>
                         </div>
                     </div>
 
-                    <div class="admin-field">
-                        <span class="admin-field-label">Vidéo (optionnel)</span>
-                        <input class="admin-input" id="apf-video" type="text" placeholder="Lien direct .mp4" value="${sanitize(product ? (product.video || "") : "")}">
+                    <div style="margin-bottom:12px;">
+                        <label class="admin-label">Vidéo (Lien direct .mp4 ou Fichier appareil, optionnel)</label>
+                        <input class="admin-input" id="apf-video" type="text" placeholder="https://... (ex: lien direct .mp4)" value="${sanitize(product ? (product.video || "") : "")}">
                         <div class="admin-upload-box">
-                            <label class="admin-upload-btn" for="apf-video-file">Choisir une vidéo…</label>
+                            <label class="admin-upload-btn" for="apf-video-file">📹 Choisir une vidéo depuis l'appareil</label>
                             <input type="file" id="apf-video-file" accept="video/*" style="display:none;">
                             <span class="admin-upload-status" id="apf-video-status"></span>
                         </div>
+                        <p class="admin-hint" style="margin-top:6px; font-size:0.73rem; color:#9ca3af; line-height:1.4;">
+                            💡 <strong>iPhone & Android :</strong> Privilégie un lien direct vidéo <code>.mp4</code> (ex: Imgur, Discord, Streamable, Cloudinary). Les MP4 (H.264) démarrent instantanément sur tous les smartphones.
+                        </p>
                         <div id="apf-video-preview" style="margin-top:8px;"></div>
                     </div>
 
@@ -2740,6 +2741,7 @@
                             <input type="checkbox" id="apf-new" ${product && product.isNew ? "checked" : ""}>
                             <div class="toggle-card-body">
                                 <div class="toggle-card-info">
+                                    <span class="toggle-badge-icon">✨</span>
                                     <div class="toggle-text-block">
                                         <span class="toggle-title">Nouveau</span>
                                         <span class="toggle-desc">Badge « Nouveau »</span>
@@ -2752,6 +2754,7 @@
                             <input type="checkbox" id="apf-promo" ${product && product.isPromo ? "checked" : ""}>
                             <div class="toggle-card-body">
                                 <div class="toggle-card-info">
+                                    <span class="toggle-badge-icon">🔥</span>
                                     <div class="toggle-text-block">
                                         <span class="toggle-title">Promo</span>
                                         <span class="toggle-desc">Badge « En promo »</span>
@@ -2762,30 +2765,11 @@
                         </label>
                     </div>
                     ${isEdit ? `<input type="hidden" id="apf-id" value="${product.id}">` : ""}
-                    <button class="admin-form-submit" type="submit">${isEdit ? "Enregistrer" : "Ajouter le produit"}</button>
+                    <button class="admin-form-submit" type="submit">${isEdit ? "💾 Sauvegarder" : "➕ Ajouter"}</button>
                 </form>
-                ${isEdit ? `<button class="admin-form-delete" id="apf-delete" type="button">Supprimer le produit</button>` : ""}
             </div>`;
         if (els.adminProductsContent) els.adminProductsContent.innerHTML = formHtml;
         document.getElementById("admin-product-form-back").addEventListener("click", loadAdminProducts);
-
-        const deleteBtn = document.getElementById("apf-delete");
-        if (deleteBtn) {
-            deleteBtn.addEventListener("click", () => {
-                showConfirmModal({
-                    title: "Supprimer le produit ?",
-                    emoji: product.emoji || "🗑️",
-                    message: `Es-tu sûr de vouloir supprimer définitivement <strong>« ${sanitize(product.name || "")} »</strong> ? Cette action est irréversible.`,
-                    confirmText: "Oui, supprimer",
-                    cancelText: "Annuler",
-                    isDanger: true,
-                    onConfirm: async () => {
-                        deleteBtn.disabled = true;
-                        await adminDeleteProduct(String(product.id));
-                    }
-                });
-            });
-        }
 
         const imgFileInput = document.getElementById("apf-img-file");
         if (imgFileInput) {
@@ -2810,8 +2794,10 @@
                 return;
             }
             previewEl.innerHTML = `
-                <div style="margin:4px 0 10px;">
-                    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:6px;">Aperçu</div>
+                <div style="padding:10px; border-radius:12px; background:rgba(0,0,0,0.5); border:1px solid rgba(139,92,246,0.3); margin-top:6px;">
+                    <div style="font-size:0.75rem; color:#10b981; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                        <span>▶ Aperçu direct (lisible iPhone & Android) :</span>
+                    </div>
                     <video id="apf-preview-video-el" controls playsinline webkit-playsinline style="width:100%; max-height:180px; border-radius:8px; background:#000; display:block;" onerror="this.parentElement.innerHTML='<div style=\\'color:#f87171;font-size:0.75rem;padding:6px;\\'>⚠️ Impossible de charger cette vidéo. Vérifie l\\'URL ou utilise un lien MP4 direct.</div>';"></video>
                 </div>
             `;
@@ -2860,7 +2846,7 @@
             const resp = await fetchWriteApi("/admin/products/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), product: productData })
+                body: JSON.stringify({ tg_username: getAdminUsername(), product: productData })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
@@ -2873,7 +2859,7 @@
                 showToast((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            showToast("Connexion impossible, réessaie.", "error");
+            showToast("Impossible de contacter le serveur VPS.", "error");
         }
     }
 
@@ -2886,7 +2872,7 @@
             const resp = await fetchWriteApi("/admin/products/delete", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), product_id: pidStr })
+                body: JSON.stringify({ tg_username: getAdminUsername(), product_id: pidStr })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && data && data.success === true) {
@@ -2899,7 +2885,7 @@
                 showToast((data && data.error) || `Erreur suppression (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            showToast("Connexion impossible, réessaie.", "error");
+            showToast("Impossible de contacter le serveur VPS.", "error");
         } finally {
             _deletingProductId = null; // libérer le verrou
         }
@@ -2916,22 +2902,26 @@
             if (!cfg) throw new Error("config indisponible");
             const categories = cfg.categories || {};
             const products = cfg.products || {};
-            let html = `<div class="admin-group"><button class="admin-add-btn" id="admin-add-cat-btn" type="button">Ajouter une catégorie…</button></div>`;
+            let html = `<button class="admin-add-btn" id="admin-add-cat-btn" type="button">+ Ajouter une catégorie</button>`;
             const catEntries = Object.entries(categories);
             if (!catEntries.length) {
                 html += `<div class="admin-empty">Aucune catégorie.</div>`;
             } else {
-                html += `<h4 class="admin-section-title">Catégories · ${catEntries.length}</h4><div class="admin-group">` + catEntries.map(([key, cat]) => {
+                html += catEntries.map(([key, cat]) => {
                     const count = (products[key] || []).length;
                     return `
                     <div class="admin-product-card">
-                        <button class="admin-btn-edit" data-ckey="${sanitize(key)}" type="button">
-                            <span class="admin-row-text"><span class="admin-product-name">${sanitize(cat.emoji || "")} ${sanitize(cat.name || key)}</span></span>
-                            <span class="admin-row-value">${count} produit${count !== 1 ? "s" : ""}</span>
-                            <span class="admin-chevron" aria-hidden="true"></span>
-                        </button>
+                        <div class="admin-product-header">
+                            <span class="admin-product-name">${sanitize(cat.emoji || "")} ${sanitize(cat.name || key)}</span>
+                            <span class="admin-product-price">${count} produit${count !== 1 ? "s" : ""}</span>
+                        </div>
+                        <span class="admin-cat-key">clé: ${sanitize(key)}</span>
+                        <div class="admin-review-actions">
+                            <button class="admin-btn-edit" data-ckey="${sanitize(key)}" type="button">✏️ Modifier</button>
+                            <button class="admin-btn-reject" data-ckey="${sanitize(key)}" type="button">🗑 Supprimer</button>
+                        </div>
                     </div>`;
-                }).join("") + `</div>`;
+                }).join("");
             }
             els.adminCategoriesContent.innerHTML = html;
             const addBtn = document.getElementById("admin-add-cat-btn");
@@ -2943,63 +2933,59 @@
                     if (cat) showAdminCategoryForm(key, cat);
                 });
             });
+        els.adminCategoriesContent.querySelectorAll(".admin-btn-reject[data-ckey]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const key = btn.dataset.ckey;
+                    const catObj = categories[key];
+                    const catName = catObj ? (catObj.name || key) : key;
+                    const catEmoji = catObj ? (catObj.emoji || "📁") : "📁";
+                    const count = (products[key] || []).length;
+                    const msg = count > 0
+                        ? `Supprimer définitivement la catégorie <strong>« ${sanitize(catName)} »</strong> et ses <strong>${count} produit(s)</strong> associés ?`
+                        : `Supprimer définitivement la catégorie <strong>« ${sanitize(catName)} »</strong> ?`;
+
+                    showConfirmModal({
+                        title: "Supprimer la catégorie ?",
+                        emoji: catEmoji,
+                        message: msg,
+                        confirmText: "Oui, supprimer",
+                        cancelText: "Annuler",
+                        isDanger: true,
+                        onConfirm: async () => {
+                            btn.disabled = true;
+                            await adminDeleteCategory(key);
+                        }
+                    });
+                });
+            });
         } catch (_) {
             els.adminCategoriesContent.innerHTML = `<div class="admin-empty">Impossible de charger les catégories.<br>Réessaie dans quelques secondes.</div>`;
         }
-    }
-
-    function uniqueCategoryKey(name) {
-        const base = name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 30) || "categorie";
-        const existing = (state.config && state.config.categories) || {};
-        let candidate = base;
-        let suffix = 2;
-        while (existing[candidate]) candidate = `${base}_${suffix++}`;
-        return candidate;
     }
 
     function showAdminCategoryForm(key, cat) {
         const isEdit = !!key;
         const formHtml = `
             <div class="admin-form-wrap">
-                <button class="admin-form-back-btn" id="admin-cat-form-back" type="button">‹ Catégories</button>
-                <h3 class="admin-form-title">${isEdit ? "Modifier la catégorie" : "Nouvelle catégorie"}</h3>
+                <button class="admin-form-back-btn" id="admin-cat-form-back" type="button">← Retour</button>
+                <h3 class="admin-form-title">${isEdit ? "✏️ Modifier la catégorie" : "➕ Nouvelle catégorie"}</h3>
                 <form id="admin-cat-form" autocomplete="off">
-                    <input type="hidden" id="acf-key" value="${isEdit ? sanitize(key) : ""}">
+                    ${isEdit
+                ? `<input type="hidden" id="acf-key" value="${sanitize(key)}">`
+                : `<label class="admin-label">Clé (slug) *<span class="admin-hint">Minuscules, pas d'espaces (ex: hash)</span><input class="admin-input" id="acf-key" type="text" maxlength="30" required></label>`
+            }
                     <label class="admin-label">Nom *<input class="admin-input" id="acf-name" type="text" maxlength="50" value="${sanitize(cat ? cat.name : "")}" required></label>
                     <label class="admin-label">Emoji<input class="admin-input" id="acf-emoji" type="text" maxlength="8" value="${sanitize(cat ? (cat.emoji || "📦") : "📦")}"></label>
                     <label class="admin-label">Description<input class="admin-input" id="acf-desc" type="text" maxlength="200" value="${sanitize(cat ? (cat.description || "") : "")}"></label>
-                    <button class="admin-form-submit" type="submit">${isEdit ? "Enregistrer" : "Ajouter la catégorie"}</button>
+                    <button class="admin-form-submit" type="submit">${isEdit ? "💾 Sauvegarder" : "➕ Ajouter"}</button>
                 </form>
-                ${isEdit ? `<button class="admin-form-delete" id="acf-delete" type="button">Supprimer la catégorie</button>` : ""}
             </div>`;
         if (els.adminCategoriesContent) els.adminCategoriesContent.innerHTML = formHtml;
         document.getElementById("admin-cat-form-back").addEventListener("click", loadAdminCategories);
-
-        const deleteBtn = document.getElementById("acf-delete");
-        if (deleteBtn) {
-            deleteBtn.addEventListener("click", () => {
-                const count = ((state.config && state.config.products && state.config.products[key]) || []).length;
-                const catName = sanitize(cat.name || key);
-                showConfirmModal({
-                    title: "Supprimer la catégorie ?",
-                    emoji: cat.emoji || "📁",
-                    message: count > 0
-                        ? `Supprimer définitivement la catégorie <strong>« ${catName} »</strong> et ses <strong>${count} produit(s)</strong> associés ?`
-                        : `Supprimer définitivement la catégorie <strong>« ${catName} »</strong> ?`,
-                    confirmText: "Oui, supprimer",
-                    cancelText: "Annuler",
-                    isDanger: true,
-                    onConfirm: async () => {
-                        deleteBtn.disabled = true;
-                        await adminDeleteCategory(key);
-                    }
-                });
-            });
-        }
         document.getElementById("admin-cat-form").addEventListener("submit", async (e) => {
             e.preventDefault();
+            const catKey = document.getElementById("acf-key").value.trim().toLowerCase().replace(/\s+/g, "_");
             const catName = document.getElementById("acf-name").value.trim();
-            const catKey = isEdit ? document.getElementById("acf-key").value : uniqueCategoryKey(catName);
             if (!catKey || !catName) return;
             await adminSaveCategory({
                 key: catKey,
@@ -3016,7 +3002,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    init_data: getAdminInitData(),
+                    tg_username: getAdminUsername(),
                     ...catData,
                     category: { ...catData }
                 })
@@ -3032,7 +3018,7 @@
                 showToast((data && data.error) || `Erreur lors de la sauvegarde (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            showToast("Connexion impossible, réessaie.", "error");
+            showToast("Impossible de contacter le serveur VPS.", "error");
         }
     }
 
@@ -3042,7 +3028,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    init_data: getAdminInitData(),
+                    tg_username: getAdminUsername(),
                     key: key,
                     cat_key: key
                 })
@@ -3058,7 +3044,7 @@
                 showToast((data && data.error) || `Erreur lors de la suppression (HTTP ${resp.status}).`, "error");
             }
         } catch (error) {
-            showToast("Connexion impossible, réessaie.", "error");
+            showToast("Impossible de contacter le serveur VPS.", "error");
         }
     }
 
@@ -3074,143 +3060,121 @@
                 cfg = state.config;
             }
             if (!cfg) throw new Error("config indisponible");
-            const verifiedAdminConfig = await fetchAdminConfig();
-            if (!verifiedAdminConfig) throw new Error("accès admin refusé");
-            cfg.admin = Object.assign({}, cfg.admin, { whitelist: (verifiedAdminConfig.admin && verifiedAdminConfig.admin.whitelist) || [] });
 
             const rest = cfg.restaurant || {};
             const adminCfg = cfg.admin || {};
             const whitelist = Array.isArray(adminCfg.whitelist) ? adminCfg.whitelist : [];
-            const tgUser = adminCfg.telegram_username || cfg.telegram_username || "";
-            const chLink = adminCfg.channel_link || cfg.channel_link || "";
-            const tickerText = adminCfg.ticker_text || (els.tickerTexts[0] ? els.tickerTexts[0].textContent.replace(/\s+/g, " ").replace(/\s*✦\s*$/, "").trim() : "");
-            const musicTracks = getMusicPlaylist();
-            const musicRows = musicTracks.map((track, i) => `
-                <div class="admin-list-row">
-                    <span class="admin-row-text"><span class="admin-product-name">${sanitize(track.title || `Piste ${i + 1}`)}</span></span>
-                    <span class="admin-reorder-btns">
-                        <button class="admin-btn-reorder" data-music-move="${i}" data-dir="-1" type="button" aria-label="Monter" ${i === 0 ? "disabled" : ""}>▲</button>
-                        <button class="admin-btn-reorder" data-music-move="${i}" data-dir="1" type="button" aria-label="Descendre" ${i === musicTracks.length - 1 ? "disabled" : ""}>▼</button>
-                    </span>
-                    <button class="admin-row-remove" data-music-remove="${i}" type="button">Retirer</button>
-                </div>
-            `).join("");
-            const welcomePhoto = adminCfg.welcome_photo || "";
-            const welcomeMessage = adminCfg.welcome_message
-                || `*🕵🏻 Bienvenue chez ${String(rest.name || "").toUpperCase()} !*\n\nSi vous souhaitez faire une commande ou nous contacter, utilisez les options ci-dessous.`;
+            const tgUser = cfg.telegram_username || "";
+            const chLink = cfg.channel_link || "";
 
             const wlChips = whitelist.map((u) => `
-                <div class="admin-list-row">
-                    <span>@${sanitize(u)}</span>
-                    <button class="admin-chip-remove" data-user="${sanitize(u)}" type="button">Retirer</button>
-                </div>
+                <span class="admin-chip">
+                    @${sanitize(u)}
+                    <button class="admin-chip-remove" data-user="${sanitize(u)}" type="button" title="Retirer">×</button>
+                </span>
             `).join("");
 
             const html = `
-                <h4 class="admin-section-title">Boutique</h4>
                 <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">🏪 Infos de la Boutique</div>
                     <form id="admin-form-settings" autocomplete="off">
-                        <label class="admin-label">Nom
+                        <label class="admin-label">Nom de l'établissement
                             <input class="admin-input" id="as-name" type="text" value="${sanitize(rest.name || '')}" required>
                         </label>
-                        <label class="admin-label">Sous-titre
-                            <input class="admin-input" id="as-slogan" type="text" placeholder="Menu premium 2026">
+                        <label class="admin-label">Slogan / Sous-titre
+                            <input class="admin-input" id="as-slogan" type="text" value="${sanitize(rest.slogan || '')}">
                         </label>
-                        <label class="admin-label">Devise
-                            <input class="admin-input" id="as-currency" type="text" value="${sanitize(rest.currency || 'EUR')}">
-                        </label>
-                        <label class="admin-label">Commande min. (€)
-                            <input class="admin-input" id="as-minorder" type="number" step="0.01" value="${rest.minOrder || 0}">
-                        </label>
-                        <label class="admin-label">Livraison (€)
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <label class="admin-label">Devise
+                                <input class="admin-input" id="as-currency" type="text" value="${sanitize(rest.currency || 'EUR')}">
+                            </label>
+                            <label class="admin-label">Commande min (€)
+                                <input class="admin-input" id="as-minorder" type="number" step="0.01" value="${rest.minOrder || 0}">
+                            </label>
+                        </div>
+                        <label class="admin-label">Frais de livraison (€)
                             <input class="admin-input" id="as-deliveryfee" type="number" step="0.01" value="${rest.deliveryFee || 0}">
                         </label>
-                        <button class="admin-form-submit" type="submit">Enregistrer</button>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer les infos</button>
                     </form>
                 </div>
 
-                <h4 class="admin-section-title">Telegram</h4>
                 <div class="admin-settings-card">
+                    <div class="admin-settings-card-title">✈️ Telegram & Contacts</div>
                     <form id="admin-form-contact" autocomplete="off">
-                        <label class="admin-label">Pseudo (sans @)
+                        <label class="admin-label">Username Telegram (Sans @)
                             <input class="admin-input" id="as-tg-username" type="text" value="${sanitize(tgUser)}">
                         </label>
-                        <label class="admin-label">Lien du canal
+                        <label class="admin-label">Lien du Canal Telegram
                             <input class="admin-input" id="as-channel-link" type="text" value="${sanitize(chLink)}">
                         </label>
-                        <button class="admin-form-submit" type="submit">Enregistrer</button>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer les contacts</button>
                     </form>
                 </div>
 
-                <h4 class="admin-section-title">Banderole défilante</h4>
                 <div class="admin-settings-card">
-                    <form id="admin-form-ticker" autocomplete="off">
-                        <label class="admin-label">
-                            <textarea class="admin-input admin-textarea" id="as-ticker-text" rows="3" maxlength="300" aria-label="Texte de la banderole"></textarea>
+                    <div class="admin-settings-card-title">🌐 URL du Serveur VPS (API)</div>
+                    <p class="admin-hint">Indiquez l'URL de votre serveur VPS (ex: http://185.185.83.209:4001 ou votre lien HTTPS / Ngrok si hébergé sur Vercel).</p>
+                    <form id="admin-form-api-url" autocomplete="off">
+                        <label class="admin-label">URL API Server
+                            <input class="admin-input" id="as-api-url" type="text" value="${sanitize(getStoredWriteApiBase() || (adminCfg && adminCfg.api_base) || LOCAL_API_BASE)}" placeholder="http://185.185.83.209:4001">
                         </label>
-                        <button class="admin-form-submit" type="submit">Enregistrer</button>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer l'URL API</button>
                     </form>
                 </div>
-                <p class="admin-hint admin-footnote">Emojis acceptés. Sépare les infos avec ✦. Vide = texte par défaut.</p>
 
-                <h4 class="admin-section-title">Accueil du bot (/start)</h4>
                 <div class="admin-settings-card">
-                    <form id="admin-form-welcome" autocomplete="off">
-                        <div class="admin-field">
-                            <span class="admin-field-label">Photo</span>
-                            <input class="admin-input" id="as-welcome-photo" type="text" placeholder="Lien https:// (vide = photo actuelle)">
-                            <div class="admin-upload-box">
-                                <label class="admin-upload-btn" for="as-welcome-photo-file">Choisir une photo…</label>
-                                <input type="file" id="as-welcome-photo-file" accept="image/*" style="display:none;">
-                                <span class="admin-upload-status" id="as-welcome-photo-status"></span>
-                            </div>
-                        </div>
-                        <label class="admin-label">Message
-                            <textarea class="admin-input admin-textarea" id="as-welcome-message" rows="5" maxlength="500"></textarea>
+                    <div class="admin-settings-card-title">☁️ Hébergement Vidéo Cloudinary (Optionnel)</div>
+                    <p class="admin-hint">Permet la conversion automatique de n'importe quelle vidéo iPhone (.mov / 4K) en MP4 fluide compatible iPhone & Android. Créez un compte gratuit sur cloudinary.com pour obtenir ces identifiants.</p>
+                    <form id="admin-form-cloudinary" autocomplete="off">
+                        <label class="admin-label">Cloud Name
+                            <input class="admin-input" id="as-cloud-name" type="text" value="${sanitize(getCloudinaryConfig().name)}" placeholder="ex: moncompte">
                         </label>
-                        <button class="admin-form-submit" type="submit">Enregistrer</button>
+                        <label class="admin-label">Upload Preset (Unsigned)
+                            <input class="admin-input" id="as-upload-preset" type="text" value="${sanitize(getCloudinaryConfig().preset)}" placeholder="ex: french54_preset">
+                        </label>
+                        <button class="admin-form-submit" type="submit">💾 Enregistrer Cloudinary</button>
                     </form>
                 </div>
-                <p class="admin-hint admin-footnote">*texte* = gras. Vide = message par défaut.</p>
 
-                <h4 class="admin-section-title">Musique</h4>
                 <div class="admin-settings-card">
-                    ${musicRows}
-                    <form id="admin-form-music" autocomplete="off">
-                        <div class="admin-field">
-                            <input class="admin-input" id="as-music-title" type="text" maxlength="80" placeholder="Titre du son">
-                            <input class="admin-input" id="as-music-url" type="text" placeholder="Lien .mp3">
-                            <div class="admin-upload-box">
-                                <label class="admin-upload-btn" for="as-music-file">Choisir un son…</label>
-                                <input type="file" id="as-music-file" accept="audio/*" style="display:none;">
-                                <span class="admin-upload-status" id="as-music-status"></span>
-                            </div>
+                    <div class="admin-settings-card-title">🛡️ Administrateurs Autorisés (Whitelist)</div>
+                    <p class="admin-hint">Seuls les utilisateurs listés ici ont accès à ce panneau de gestion.</p>
+                    <div class="admin-whitelist-chips">
+                        ${wlChips || '<span class="admin-hint">Aucun admin supplémentaire</span>'}
+                    </div>
+                    <form id="admin-form-whitelist" style="margin-top:10px;" autocomplete="off">
+                        <div style="display:flex;gap:8px;">
+                            <input class="admin-input" id="as-new-admin" type="text" placeholder="Username Telegram">
+                            <button class="admin-add-btn" style="margin-bottom:0;width:auto;white-space:nowrap;padding:0 16px;" type="submit">+ Ajouter</button>
                         </div>
-                        <button class="admin-form-submit" type="submit">Ajouter à la playlist</button>
                     </form>
                 </div>
-                <p class="admin-hint admin-footnote">Démarre après l'écran d'accueil, en boucle. Si le téléphone bloque le son automatique, la musique se lance au premier toucher.</p>
-
-                <h4 class="admin-section-title">Accès à la gestion</h4>
-                <div class="admin-settings-card">
-                    ${wlChips}
-                    <form id="admin-form-whitelist" class="admin-inline-form" autocomplete="off">
-                        <input class="admin-input" id="as-new-admin" type="text" placeholder="@pseudo Telegram">
-                        <button class="admin-inline-btn" type="submit">Ajouter</button>
-                    </form>
-                </div>
-                <p class="admin-hint admin-footnote">Seules ces personnes peuvent ouvrir la gestion.</p>
-
-                <h4 class="admin-section-title">Bot</h4>
-                <button class="admin-form-delete" id="as-restart-bot" type="button">Redémarrer le bot</button>
-                <p class="admin-hint admin-footnote">Si le bot ne répond plus. Il revient tout seul en 10 secondes environ.</p>
             `;
 
             els.adminSettingsContent.innerHTML = html;
-            document.getElementById("as-slogan").value = rest.slogan || "";
-            document.getElementById("as-ticker-text").value = tickerText;
-            document.getElementById("as-welcome-photo").value = welcomePhoto;
-            document.getElementById("as-welcome-message").value = welcomeMessage;
+
+            const cloudForm = document.getElementById("admin-form-cloudinary");
+            if (cloudForm) {
+                cloudForm.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const cName = document.getElementById("as-cloud-name").value.trim();
+                    const cPreset = document.getElementById("as-upload-preset").value.trim();
+                    localStorage.setItem("cloudinary_cloud_name", cName);
+                    localStorage.setItem("cloudinary_upload_preset", cPreset);
+                    showToast("Paramètres Cloudinary enregistrés ! ☁️");
+                    await adminSaveContact({ cloudinary_cloud_name: cName, cloudinary_upload_preset: cPreset });
+                });
+            }
+
+            document.getElementById("admin-form-api-url").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const newUrl = document.getElementById("as-api-url").value.trim();
+                if (!newUrl) return;
+                setStoredWriteApiBase(newUrl);
+                showToast("URL API enregistrée ! 🌐");
+                await adminSaveContact({ api_base: newUrl });
+            });
 
             document.getElementById("admin-form-settings").addEventListener("submit", async (e) => {
                 e.preventDefault();
@@ -3222,13 +3186,6 @@
                     deliveryFee: parseFloat(document.getElementById("as-deliveryfee").value) || 0,
                 };
                 await adminSaveSettings(settingsData);
-                applyTranslations();
-            });
-
-            document.getElementById("admin-form-ticker").addEventListener("submit", async (e) => {
-                e.preventDefault();
-                await adminSaveContact({ ticker_text: document.getElementById("as-ticker-text").value.trim() }, "Banderole mise à jour ! 📣");
-                applyTranslations();
             });
 
             document.getElementById("admin-form-contact").addEventListener("submit", async (e) => {
@@ -3238,89 +3195,6 @@
                     channel_link: document.getElementById("as-channel-link").value.trim(),
                 };
                 await adminSaveContact(contactData);
-            });
-
-            document.getElementById("as-welcome-photo-file").addEventListener("change", function () {
-                handleAdminFileUpload(this, "as-welcome-photo", "as-welcome-photo-status");
-            });
-
-            document.getElementById("admin-form-welcome").addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const photo = document.getElementById("as-welcome-photo").value.trim();
-                if (photo.startsWith("data:")) {
-                    showToast("Photo non envoyée au serveur, réessaie ou colle un lien https.", "error");
-                    return;
-                }
-                await adminSaveContact({
-                    welcome_photo: photo,
-                    welcome_message: document.getElementById("as-welcome-message").value.trim(),
-                }, "Accueil du bot mis à jour ! 👋");
-            });
-
-            const saveMusicPlaylist = async (tracks, successMsg) => {
-                if (await adminSaveContact({ music_playlist: JSON.stringify(tracks) }, successMsg)) {
-                    syncMusicPlaylist();
-                    await loadAdminSettings();
-                }
-            };
-
-            document.getElementById("as-music-file").addEventListener("change", async function () {
-                const file = this.files && this.files[0];
-                if (!file) return;
-                const statusEl = document.getElementById("as-music-status");
-                statusEl.textContent = "Envoi : 0 %";
-                const url = await uploadMediaFile(file, (percent) => {
-                    statusEl.textContent = percent < 99 ? `Envoi : ${percent} %` : "Enregistrement…";
-                });
-                if (!url) {
-                    statusEl.textContent = "Échec de l'envoi";
-                    showToast("Upload impossible. Vérifie que le bot tourne bien.", "error");
-                    return;
-                }
-                document.getElementById("as-music-url").value = url;
-                const titleEl = document.getElementById("as-music-title");
-                if (!titleEl.value.trim()) titleEl.value = file.name.replace(/\.[^.]+$/, "");
-                statusEl.textContent = "Son prêt";
-            });
-
-            document.getElementById("admin-form-music").addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const url = document.getElementById("as-music-url").value.trim();
-                if (!/^https?:\/\//i.test(url)) {
-                    showToast("Ajoute un son (fichier ou lien https).", "error");
-                    return;
-                }
-                const title = document.getElementById("as-music-title").value.trim() || `Piste ${musicTracks.length + 1}`;
-                await saveMusicPlaylist([...musicTracks, { title, url }], "Son ajouté à la playlist 🎵");
-            });
-
-            els.adminSettingsContent.querySelectorAll("[data-music-remove]").forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    const index = Number(btn.dataset.musicRemove);
-                    saveMusicPlaylist(musicTracks.filter((_, i) => i !== index), "Son retiré");
-                });
-            });
-
-            els.adminSettingsContent.querySelectorAll("[data-music-move]").forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    const from = Number(btn.dataset.musicMove);
-                    const to = from + Number(btn.dataset.dir);
-                    const tracks = [...musicTracks];
-                    [tracks[from], tracks[to]] = [tracks[to], tracks[from]];
-                    saveMusicPlaylist(tracks, "Ordre mis à jour");
-                });
-            });
-
-            document.getElementById("as-restart-bot").addEventListener("click", () => {
-                showConfirmModal({
-                    title: "Redémarrer le bot ?",
-                    emoji: "🔄",
-                    message: "Le bot sera coupé quelques secondes puis repartira tout seul.",
-                    confirmText: "Oui, redémarrer",
-                    cancelText: "Annuler",
-                    isDanger: false,
-                    onConfirm: adminRestartBot
-                });
             });
 
             document.getElementById("admin-form-whitelist").addEventListener("submit", async (e) => {
@@ -3354,7 +3228,7 @@
             const resp = await fetchWriteApi("/admin/settings/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), settings })
+                body: JSON.stringify({ tg_username: getAdminUsername(), settings })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
@@ -3365,46 +3239,27 @@
                 showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
             }
         } catch (_) {
-            showToast("Connexion impossible, réessaie.", "error");
+            showToast("Erreur de connexion VPS.", "error");
         }
     }
 
-    async function adminRestartBot() {
-        try {
-            const resp = await fetchWriteApi("/admin/restart", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: (tg && tg.initData) || "" })
-            });
-            const data = await readJsonIfAny(resp);
-            if (resp.ok && data && data.success) {
-                showToast("Redémarrage en cours, retour dans 10 secondes environ 🔄");
-            } else {
-                showToast((data && data.error) || "Redémarrage impossible.", "error");
-            }
-        } catch (_) {
-            showToast("Connexion impossible, réessaie.", "error");
-        }
-    }
-
-    async function adminSaveContact(contact, successMsg = "Contacts mis à jour ! 📱") {
+    async function adminSaveContact(contact) {
         try {
             const resp = await fetchWriteApi("/admin/contact/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), contact })
+                body: JSON.stringify({ tg_username: getAdminUsername(), contact })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
                 if (data && data.config) applyUpdatedConfig(data.config);
-                showToast(successMsg);
-                return true;
+                showToast("Contacts mis à jour ! 📱");
+            } else {
+                showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
             }
-            showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
         } catch (_) {
-            showToast("Connexion impossible, réessaie.", "error");
+            showToast("Erreur de connexion VPS.", "error");
         }
-        return false;
     }
 
     async function adminSaveWhitelist(whitelist) {
@@ -3412,7 +3267,7 @@
             const resp = await fetchWriteApi("/admin/whitelist/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init_data: getAdminInitData(), whitelist })
+                body: JSON.stringify({ tg_username: getAdminUsername(), whitelist })
             });
             const data = await readJsonIfAny(resp);
             if (resp.ok && (!data || data.success !== false)) {
@@ -3423,148 +3278,11 @@
                 showToast((data && data.error) || "Erreur lors de la sauvegarde.", "error");
             }
         } catch (_) {
-            showToast("Connexion impossible, réessaie.", "error");
+            showToast("Erreur de connexion VPS.", "error");
         }
     }
 
     // ===== FIN ADMIN PANEL =====
-
-    const music = { audio: new Audio(), tracks: [], index: 0, errors: 0, resumeOnShow: false, autostart: null };
-
-    function getMusicPlaylist() {
-        try {
-            const list = JSON.parse((state.config && state.config.admin && state.config.admin.music_playlist) || "[]");
-            return Array.isArray(list) ? list.filter((t) => t && t.url) : [];
-        } catch (_) {
-            return [];
-        }
-    }
-
-    function renderMusicPlayer() {
-        if (!els.musicPlayer) return;
-        const track = music.tracks[music.index];
-        els.musicPlayer.hidden = !music.tracks.length;
-        els.musicPlayer.classList.toggle("playing", !music.audio.paused);
-        els.musicPlayer.classList.toggle("muted", music.audio.muted);
-        els.musicTitle.textContent = track ? (track.title || `Piste ${music.index + 1}`) : "";
-        els.musicPlay.setAttribute("aria-label", music.audio.paused ? "Lecture" : "Pause");
-    }
-
-    function loadMusicTrack(index) {
-        music.index = (index + music.tracks.length) % music.tracks.length;
-        music.audio.src = cleanMediaUrl(music.tracks[music.index].url, "audio");
-        renderMusicPlayer();
-    }
-
-    function playMusic() {
-        if (!music.tracks.length) return Promise.resolve();
-        if (!music.audio.getAttribute("src")) loadMusicTrack(music.index);
-        return music.audio.play().catch(() => {});
-    }
-
-    function cancelMusicAutostart() {
-        if (music.autostart) document.removeEventListener("pointerup", music.autostart, true);
-        music.autostart = null;
-    }
-
-    function syncMusicPlaylist() {
-        const currentUrl = music.tracks[music.index] ? music.tracks[music.index].url : "";
-        music.tracks = getMusicPlaylist();
-        const kept = music.tracks.findIndex((t) => t.url === currentUrl);
-        if (kept >= 0) {
-            music.index = kept;
-        } else {
-            music.audio.pause();
-            music.audio.removeAttribute("src");
-            music.index = 0;
-        }
-        renderMusicPlayer();
-    }
-
-    function startMusicPlayer() {
-        syncMusicPlaylist();
-        if (!music.tracks.length || localStorage.getItem("gh-music-paused")) return;
-        playMusic().then(() => {
-            if (!music.audio.paused) return;
-            music.autostart = (e) => {
-                if (e.target.closest && e.target.closest("#music-player")) return;
-                cancelMusicAutostart();
-                playMusic();
-            };
-            document.addEventListener("pointerup", music.autostart, true);
-        });
-    }
-
-    function bindMusicPlayer() {
-        if (!els.musicPlayer) return;
-        const savedVolume = parseFloat(localStorage.getItem("gh-music-volume"));
-        music.audio.volume = 0.5;
-        els.musicVolume.hidden = music.audio.volume !== 0.5;
-        music.audio.volume = Number.isFinite(savedVolume) ? savedVolume : 0.6;
-        music.audio.muted = localStorage.getItem("gh-music-muted") === "1";
-        els.musicVolume.value = music.audio.volume;
-
-        ["play", "pause", "volumechange"].forEach((evt) => music.audio.addEventListener(evt, renderMusicPlayer));
-        music.audio.addEventListener("play", () => localStorage.removeItem("gh-music-paused"));
-        music.audio.addEventListener("playing", () => { music.errors = 0; });
-        music.audio.addEventListener("ended", () => {
-            loadMusicTrack(music.index + 1);
-            playMusic();
-        });
-        music.audio.addEventListener("error", () => {
-            if (!music.audio.getAttribute("src") || ++music.errors >= music.tracks.length) return;
-            loadMusicTrack(music.index + 1);
-            playMusic();
-        });
-
-        els.musicToggle.addEventListener("click", () => {
-            els.musicPlayer.classList.toggle("open");
-            if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-        });
-        els.musicPlay.addEventListener("click", () => {
-            cancelMusicAutostart();
-            if (music.audio.paused) {
-                playMusic();
-            } else {
-                music.audio.pause();
-                localStorage.setItem("gh-music-paused", "1");
-            }
-        });
-        els.musicPrev.addEventListener("click", () => {
-            cancelMusicAutostart();
-            if (music.audio.currentTime > 3) music.audio.currentTime = 0;
-            else loadMusicTrack(music.index - 1);
-            playMusic();
-        });
-        els.musicNext.addEventListener("click", () => {
-            cancelMusicAutostart();
-            loadMusicTrack(music.index + 1);
-            playMusic();
-        });
-        els.musicMute.addEventListener("click", () => {
-            music.audio.muted = !music.audio.muted;
-            localStorage.setItem("gh-music-muted", music.audio.muted ? "1" : "0");
-        });
-        els.musicVolume.addEventListener("input", () => {
-            music.audio.volume = Number(els.musicVolume.value);
-            music.audio.muted = false;
-            localStorage.setItem("gh-music-volume", els.musicVolume.value);
-            localStorage.setItem("gh-music-muted", "0");
-        });
-
-        document.addEventListener("visibilitychange", () => {
-            if (document.hidden && !music.audio.paused) {
-                music.resumeOnShow = true;
-                music.audio.pause();
-            } else if (!document.hidden && music.resumeOnShow) {
-                music.resumeOnShow = false;
-                playMusic();
-            }
-        });
-        document.addEventListener("play", (e) => {
-            if (e.target.tagName === "VIDEO" && !e.target.muted) music.audio.pause();
-        }, true);
-    }
 
     async function bootstrap() {
         if (!isTelegramMobileClient()) {
@@ -3577,7 +3295,6 @@
             loadLocal();
             await syncReviewsFromLocalApi();
             renderUser();
-            refreshAdminAccess();
             renderCategories();
             renderProducts();
             renderCart();
@@ -3588,7 +3305,6 @@
             applyTranslations();
             attachNavigation();
             bindActions();
-            bindMusicPlayer();
         } catch (error) {
             document.body.innerHTML = `<div style="padding:20px;color:#fff">Erreur: ${sanitize(error.message)}</div>`;
             return;
@@ -3602,9 +3318,7 @@
             if (els.introSub) els.introSub.textContent = "Ouverture du menu...";
         }, 850);
         setTimeout(() => {
-            document.body.classList.add("app-ready", "app-entering");
-            setTimeout(() => document.body.classList.remove("app-entering"), 900);
-            startMusicPlayer();
+            document.body.classList.add("app-ready");
         }, 1200);
 
         // Auto refresh silencieux quand l'utilisateur réouvre ou revient sur l'application Telegram
@@ -3614,7 +3328,6 @@
                     await loadConfig();
                     renderCategories();
                     renderProducts();
-                    syncMusicPlaylist();
                 } catch (_) {}
             }
         });
