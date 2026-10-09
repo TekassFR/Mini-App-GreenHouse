@@ -1410,14 +1410,15 @@
             }
         };
 
-        if (url.startsWith("/uploads/") || url.includes("ngrok-free.dev") || url.includes("ngrok.app") || url.includes("ngrok.io")) {
-            const ngrokDirectUrl = url.startsWith("/uploads/") ? `${LOCAL_API_BASE}${url}` : url;
+        if (url.startsWith("/uploads/") || url.includes("ngrok") || url.includes("cloudflare") || url.includes("trycloudflare")) {
+            const apiBase = (state && state.config && state.config.admin && state.config.admin.api_base) || LOCAL_API_BASE;
+            const directFallbackUrl = url.startsWith("/uploads/") ? `${apiBase}${url}` : url;
             if (ngrokBlobCache.has(url)) {
                 applySrc(ngrokBlobCache.get(url));
                 return;
             }
-            if (ngrokBlobCache.has(ngrokDirectUrl)) {
-                applySrc(ngrokBlobCache.get(ngrokDirectUrl));
+            if (ngrokBlobCache.has(directFallbackUrl)) {
+                applySrc(ngrokBlobCache.get(directFallbackUrl));
                 return;
             }
             if (url.includes("ngrok")) {
@@ -1462,14 +1463,15 @@
         if (!imgEl || !rawUrl) return;
         const url = String(rawUrl).trim();
         if (!url) return;
-        if (url.startsWith("/uploads/") || url.includes("ngrok-free.dev") || url.includes("ngrok.app") || url.includes("ngrok.io")) {
-            const ngrokDirectUrl = url.startsWith("/uploads/") ? `${LOCAL_API_BASE}${url}` : url;
+        if (url.startsWith("/uploads/") || url.includes("ngrok") || url.includes("cloudflare") || url.includes("trycloudflare")) {
+            const apiBase = (state && state.config && state.config.admin && state.config.admin.api_base) || LOCAL_API_BASE;
+            const directFallbackUrl = url.startsWith("/uploads/") ? `${apiBase}${url}` : url;
             if (ngrokBlobCache.has(url)) {
                 imgEl.src = ngrokBlobCache.get(url);
                 return;
             }
-            if (ngrokBlobCache.has(ngrokDirectUrl)) {
-                imgEl.src = ngrokBlobCache.get(ngrokDirectUrl);
+            if (ngrokBlobCache.has(directFallbackUrl)) {
+                imgEl.src = ngrokBlobCache.get(directFallbackUrl);
                 return;
             }
             if (url.includes("ngrok")) {
@@ -1545,9 +1547,9 @@
         // changer le MIME ne transcode pas le contenu et casse la lecture sur Chrome.
         // iOS Safari lit nativement video/quicktime.
 
-        // Convertir les liens absolus ngrok en /uploads/ (relayés proprement par Vercel sans avertissement)
-        if (/^https?:\/\/[^\/]*ngrok[^\/]*\/uploads\//i.test(s)) {
-            s = s.replace(/^https?:\/\/[^\/]*ngrok[^\/]*\/uploads\//i, "/uploads/");
+        // Convertir les liens absolus ngrok / cloudflare en /uploads/ (relayés proprement par Vercel sans avertissement)
+        if (/^https?:\/\/[^\/]*(ngrok|cloudflare|trycloudflare)[^\/]*\/uploads\//i.test(s)) {
+            s = s.replace(/^https?:\/\/[^\/]*(ngrok|cloudflare|trycloudflare)[^\/]*\/uploads\//i, "/uploads/");
         }
 
         return s;
