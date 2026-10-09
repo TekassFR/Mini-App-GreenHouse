@@ -377,8 +377,10 @@ module.exports = async function handler(req, res) {
             const payload = await readBody(req);
             if (!await isAdmin(client, payload.init_data)) return json(res, { error: 'Forbidden' }, 403);
             const settings = payload.settings || {};
-            for (const [k, v] of Object.entries(settings)) {
-                await client.query(`INSERT INTO admin_settings (key,value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value`, [String(k).slice(0,60), String(v).slice(0,500)]);
+            // Même stockage que willy.py : table restaurant, valeurs en JSON (le front lit restaurant.slogan, etc.)
+            for (const k of ['name', 'slogan', 'currency', 'minOrder', 'deliveryFee', 'delivery_fee', 'min_order']) {
+                if (!(k in settings)) continue;
+                await client.query(`INSERT INTO restaurant (key,value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value`, [k, JSON.stringify(settings[k])]);
             }
             const cfg = await buildConfig(client);
             return json(res, { success: true, config: cfg });
@@ -406,7 +408,7 @@ module.exports = async function handler(req, res) {
             const contact = payload.contact || {};
             if (!contactMediaOk(contact)) return json(res, { error: 'Photo ou son refusé : envoie le fichier avec le bouton « Choisir… » ou colle un lien https.' }, 400);
             for (const [k, v] of Object.entries(contact)) {
-                await client.query(`INSERT INTO admin_settings (key,value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value`, [String(k).slice(0,60), String(v).slice(0, k === 'music_playlist' ? 8000 : 500)]);
+                await client.query(`INSERT INTO admin_settings (key,value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value`, [String(k).slice(0,60), String(v).slice(0, k === 'music_playlist' ? 8000 : k === 'welcome_message' ? 1000 : 500)]);
             }
             const cfg = await buildConfig(client);
             return json(res, { success: true, config: cfg });
@@ -441,6 +443,14 @@ module.exports = async function handler(req, res) {
             if (!await isAdmin(client, payload.init_data)) return json(res, { error: 'Forbidden' }, 403);
             await client.query("DELETE FROM reviews WHERE id=$1", [parseInt(payload.review_id)]);
             return json(res, { success: true });
+        }
+
+        // ── POST /admin/restart ───────────────────────────────────────────
+        // Seul le VPS sait redémarrer le bot : on n'arrive ici que s'il est injoignable
+        if (route === '/admin/restart' && req.method === 'POST') {
+            const payload = await readBody(req);
+            if (!await isAdmin(client, payload.init_data)) return json(res, { error: 'Forbidden' }, 403);
+            return json(res, { error: 'Le serveur du bot est injoignable : il redémarre tout seul, réessaie dans une minute.' }, 503);
         }
 
         return json(res, { error: `Route inconnue: ${route}` }, 404);

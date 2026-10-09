@@ -1252,15 +1252,20 @@
         });
     }
 
-    function applyTranslations() {
-        document.documentElement.lang = state.language;
-
-        if (els.introSub) els.introSub.textContent = t("introSub");
+    // Slogan et banderole modifiables dans la gestion : aussi réappliqués à chaque rechargement de la config
+    function applyShopTexts() {
         const shopCfg = state.config || {};
         if (els.brandSubtitle) els.brandSubtitle.textContent = (shopCfg.restaurant && shopCfg.restaurant.slogan) || t("brandSubtitle");
         if (!els.tickerDefault && els.tickerTexts[0]) els.tickerDefault = els.tickerTexts[0].textContent;
         const tickerText = shopCfg.admin && shopCfg.admin.ticker_text ? `${shopCfg.admin.ticker_text} ✦` : els.tickerDefault;
-        els.tickerTexts.forEach((span) => { span.textContent = tickerText; });
+        els.tickerTexts.forEach((span) => { if (span.textContent !== tickerText) span.textContent = tickerText; });
+    }
+
+    function applyTranslations() {
+        document.documentElement.lang = state.language;
+
+        if (els.introSub) els.introSub.textContent = t("introSub");
+        applyShopTexts();
 
         if (els.cartTitle) els.cartTitle.textContent = t("cartTitle");
         if (els.cartDesc) els.cartDesc.textContent = t("cartDesc");
@@ -3062,13 +3067,13 @@
                 <div class="admin-settings-card">
                     <form id="admin-form-settings" autocomplete="off">
                         <label class="admin-label">Nom
-                            <input class="admin-input" id="as-name" type="text" value="${sanitize(rest.name || '')}" required>
+                            <input class="admin-input" id="as-name" type="text" required>
                         </label>
                         <label class="admin-label">Sous-titre
                             <input class="admin-input" id="as-slogan" type="text" placeholder="Menu premium 2026">
                         </label>
                         <label class="admin-label">Devise
-                            <input class="admin-input" id="as-currency" type="text" value="${sanitize(rest.currency || 'EUR')}">
+                            <input class="admin-input" id="as-currency" type="text">
                         </label>
                         <label class="admin-label">Commande min. (€)
                             <input class="admin-input" id="as-minorder" type="number" step="0.01" value="${rest.minOrder || 0}">
@@ -3084,10 +3089,10 @@
                 <div class="admin-settings-card">
                     <form id="admin-form-contact" autocomplete="off">
                         <label class="admin-label">Pseudo (sans @)
-                            <input class="admin-input" id="as-tg-username" type="text" value="${sanitize(tgUser)}">
+                            <input class="admin-input" id="as-tg-username" type="text">
                         </label>
                         <label class="admin-label">Lien du canal
-                            <input class="admin-input" id="as-channel-link" type="text" value="${sanitize(chLink)}">
+                            <input class="admin-input" id="as-channel-link" type="text">
                         </label>
                         <button class="admin-form-submit" type="submit">Enregistrer</button>
                     </form>
@@ -3117,7 +3122,7 @@
                             </div>
                         </div>
                         <label class="admin-label">Message
-                            <textarea class="admin-input admin-textarea" id="as-welcome-message" rows="5" maxlength="500"></textarea>
+                            <textarea class="admin-input admin-textarea" id="as-welcome-message" rows="5" maxlength="1000"></textarea>
                         </label>
                         <button class="admin-form-submit" type="submit">Enregistrer</button>
                     </form>
@@ -3158,6 +3163,11 @@
             `;
 
             els.adminSettingsContent.innerHTML = html;
+            // valeurs posées après coup : sanitize() retirerait & ' " < > (lien de canal, nom avec apostrophe…)
+            document.getElementById("as-name").value = rest.name || "";
+            document.getElementById("as-currency").value = rest.currency || "EUR";
+            document.getElementById("as-tg-username").value = tgUser;
+            document.getElementById("as-channel-link").value = chLink;
             document.getElementById("as-slogan").value = rest.slogan || "";
             document.getElementById("as-ticker-text").value = tickerText;
             document.getElementById("as-welcome-photo").value = welcomePhoto;
@@ -3466,7 +3476,15 @@
             playMusic();
         });
         music.audio.addEventListener("error", () => {
-            if (!music.audio.getAttribute("src") || ++music.errors >= music.tracks.length) return;
+            if (!music.audio.getAttribute("src")) return;
+            if (++music.errors >= music.tracks.length) {
+                // un tour complet sans piste lisible : on s'arrête vraiment (le prochain Lecture recharge la piste)
+                music.errors = 0;
+                music.audio.pause();
+                music.audio.removeAttribute("src");
+                renderMusicPlayer();
+                return;
+            }
             loadMusicTrack(music.index + 1);
             playMusic();
         });
@@ -3568,6 +3586,7 @@
                     await loadConfig();
                     renderCategories();
                     renderProducts();
+                    applyShopTexts();
                     syncMusicPlaylist();
                 } catch (_) {}
             }
@@ -3578,6 +3597,7 @@
                 await loadConfig();
                 renderCategories();
                 renderProducts();
+                applyShopTexts();
             } catch (_) {}
         });
 
@@ -3588,6 +3608,7 @@
                     await loadConfig();
                     renderCategories();
                     renderProducts();
+                    applyShopTexts();
                 } catch (_) {}
             }
         }, 45000);
