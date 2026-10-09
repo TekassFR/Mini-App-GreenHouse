@@ -141,8 +141,26 @@ module.exports = async function handler(req, res) {
     // ── Proxy /uploads/:filename directly from VPS (supports HTTP Range / 206 for iOS Safari) ──
     if (route.startsWith('/uploads/') && (req.method === 'GET' || req.method === 'HEAD')) {
         const filename = route.replace('/uploads/', '');
-        const ngrokBase = process.env.NGROK_URL || 'https://wieldable-blah-fineness.ngrok-free.dev';
-        const vpsUrl = `${ngrokBase}/uploads/${filename}`;
+        let tunnelBase = '';
+        try {
+            const c = await pool.connect();
+            try {
+                const r = await c.query("SELECT value FROM admin_settings WHERE key='api_base'");
+                if (r.rows.length && r.rows[0].value && r.rows[0].value.startsWith('http')) {
+                    tunnelBase = r.rows[0].value.trim().replace(/\/+$/, '');
+                }
+            } finally {
+                c.release();
+            }
+        } catch (_) {}
+
+        if (!tunnelBase && process.env.NGROK_URL) {
+            tunnelBase = process.env.NGROK_URL.trim().replace(/\/+$/, '');
+        }
+        if (!tunnelBase) {
+            tunnelBase = 'https://wieldable-blah-fineness.ngrok-free.dev';
+        }
+        const vpsUrl = `${tunnelBase}/uploads/${filename}`;
         const https = require('https');
         return new Promise((resolve) => {
             const reqHeaders = {
