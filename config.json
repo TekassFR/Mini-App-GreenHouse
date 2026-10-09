@@ -3,13 +3,17 @@
     "description": "Mini-App Telegram pour commandes en ligne",
     "delivery_fee": 2.5,
     "min_order": 15.0,
+    "name": "GreenHouse 68",
+    "slogan": "Menu GreenHouse 68",
     "currency": "€",
-    "name": "GreenHouse 68"
+    "minOrder": 0,
+    "deliveryFee": 0
   },
   "admin": {
-    "api_base": "https://wieldable-blah-fineness.ngrok-free.dev",
     "channel_link": "https://t.me/+Hi2aQ4aYPn85ZTQ0",
-    "telegram_username": "GreenHouse682"
+    "telegram_username": "GreenHouse682",
+    "music_playlist": "[{\"title\":\"Heuss Lenfoiré - Tetik (Clip Officiel)\",\"url\":\"https://wieldable-blah-fineness.ngrok-free.dev/uploads/up_1791508471335_66685d36.mp3\"}]",
+    "api_base": "https://officer-tampa-detroit-flame.trycloudflare.com"
   },
   "categories": {
     "pizza": {
@@ -26,8 +30,8 @@
         "description": "Un static sift au rendez vous pour vous régalez. Odeur et défonce garantie certifier ✅ Gout très terpy et prononcée saveurs légèrement fruitée,citronée\n⭐️⭐️⭐️⭐️⭐️",
         "price": 20.0,
         "emoji": "🥇",
-        "image": "https://wieldable-blah-fineness.ngrok-free.dev/uploads/up_1791445626474_4d4079ea.jpeg",
-        "video": "https://wieldable-blah-fineness.ngrok-free.dev/uploads/up_1791469483374_6eabfa26.mp4",
+        "image": "/uploads/up_1791445626474_4d4079ea.jpeg",
+        "video": "/uploads/up_1791469483374_6eabfa26.mp4",
         "category": "pizza",
         "isNew": true,
         "isPromo": false,
@@ -45,8 +49,8 @@
         "description": "Ancelott Tropi 🍦🌴\nVoici notre gamme dolive du maroc🇲🇦🥇\nSec pétante comme vous les aimez avec un curage d'exception ! ✅ Niveau défonce je vous en parle pas, pour une saveur très gustative en bouche qui sera vous laissez bouche bé 😉\n\n⭐️⭐️⭐️⭐️",
         "price": 60.0,
         "emoji": "📦",
-        "image": "https://wieldable-blah-fineness.ngrok-free.dev/uploads/up_1791469648637_64edd50f.jpeg",
-        "video": "https://wieldable-blah-fineness.ngrok-free.dev/uploads/up_1791469668870_fc1da3c8.mp4",
+        "image": "/uploads/up_1791469648637_64edd50f.jpeg",
+        "video": "/uploads/up_1791469668870_fc1da3c8.mp4",
         "category": "pizza",
         "isNew": true,
         "isPromo": false,

@@ -1,6 +1,6 @@
 {
-  "name": "Ma Mini-App Telegram",
-  "short_name": "MiniApp",
+  "name": "GreenHouse 68",
+  "short_name": "GreenHouse 6",
   "description": "Une Mini-App de démonstration pour Telegram",
   "version": "1.0.0",
   "start_url": "./index.html",
