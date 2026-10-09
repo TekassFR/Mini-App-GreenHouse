@@ -3438,7 +3438,7 @@
 
     function loadMusicTrack(index) {
         music.index = (index + music.tracks.length) % music.tracks.length;
-        music.audio.src = music.tracks[music.index].url;
+        music.audio.src = cleanMediaUrl(music.tracks[music.index].url, "audio");
         renderMusicPlayer();
     }
 
