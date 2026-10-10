@@ -683,8 +683,15 @@
         return Number.isFinite(n) ? n : 0;
     }
 
-    function formatEUR(value) {
-        return `${toPrice(value).toFixed(2)} EUR`;
+    // Devise réglée dans la gestion (Réglages), « € » par défaut. Courte et sans < > " ' & : elle est
+    // insérée telle quelle dans le HTML comme dans le texte (message de commande)
+    function currencyLabel() {
+        const rest = state.config && state.config.restaurant;
+        return sanitize(rest && typeof rest.currency === "string" ? rest.currency : "").slice(0, 8).trim() || "€";
+    }
+
+    function formatPrice(value) {
+        return `${toPrice(value).toFixed(2)} ${currencyLabel()}`;
     }
 
     function allProductsFromConfig(cfg) {
@@ -1038,7 +1045,7 @@
                 <div class="product-body">
                     <h3 class="product-title">${name}</h3>
                     <p class="product-desc">${shortDesc}</p>
-                    <span class="price-chip">${t("fromPrice", { price: formatEUR(start) })}</span>
+                    <span class="price-chip">${t("fromPrice", { price: formatPrice(start) })}</span>
                 </div>
             </article>
         `;
@@ -1099,7 +1106,7 @@
             els.cartEmptyState.style.display = "block";
             els.cartContent.style.display = "none";
             els.cartEmptyState.textContent = t("cartEmpty");
-            els.cartTotal.textContent = formatEUR(0);
+            els.cartTotal.textContent = formatPrice(0);
             renderProfileStats();
             return;
         }
@@ -1115,7 +1122,7 @@
                 <div class="cart-row">
                     <div>
                         <h4>${escapeHtml(item.name)}</h4>
-                        <p class="muted">${formatEUR(item.unitPrice)}${t("unitSuffix")}</p>
+                        <p class="muted">${formatPrice(item.unitPrice)}${t("unitSuffix")}</p>
                     </div>
                     <div class="cart-controls">
                         <button class="qty-btn" data-index="${index}" data-op="minus" type="button">-</button>
@@ -1127,7 +1134,7 @@
         });
 
         els.cartItems.innerHTML = rows.join("");
-        els.cartTotal.textContent = formatEUR(total);
+        els.cartTotal.textContent = formatPrice(total);
 
         els.cartItems.querySelectorAll(".qty-btn").forEach((btn) => {
             btn.addEventListener("click", () => {
@@ -1215,7 +1222,7 @@
                     <article class="card panel order-card">
                         <div class="order-card-head">
                             <h3>${t("orderWord")} #${order.id}</h3>
-                            <span class="order-card-total">${formatEUR(order.total)}</span>
+                            <span class="order-card-total">${formatPrice(order.total)}</span>
                         </div>
                         <p class="muted">${date} · ${orderTypeText}</p>
                         <p class="order-card-summary">${escapeHtml(order.summary)}</p>
@@ -1281,7 +1288,7 @@
     function renderProfileStats() {
         els.profileOrderCount.textContent = String(state.orders.length);
         const spent = state.orders.reduce((sum, order) => sum + toPrice(order.total), 0);
-        els.profileTotalSpent.textContent = formatEUR(spent).replace(".00", "");
+        els.profileTotalSpent.textContent = formatPrice(spent).replace(".00", "");
         renderProfileOrdersPreview();
     }
 
@@ -1299,7 +1306,7 @@
                     month: "2-digit",
                     year: "2-digit"
                 });
-                return `<div class="profile-order-line"><span>#${order.id} - ${date}</span><strong>${formatEUR(order.total)}</strong></div>`;
+                return `<div class="profile-order-line"><span>#${order.id} - ${date}</span><strong>${formatPrice(order.total)}</strong></div>`;
             })
             .join("");
     }
@@ -1987,7 +1994,7 @@
             .map((entry, idx) => `
                 <button class="qty-card ${idx === 0 ? "active" : ""}" data-qty="${entry.qty}" data-price="${entry.price}" type="button">
                     <div class="qty-label">${entry.tier ? `${entry.qty}G` : t("unitLabel")}</div>
-                    <div class="qty-price">${toPrice(entry.price).toFixed(2)}€</div>
+                    <div class="qty-price">${formatPrice(entry.price)}</div>
                 </button>
             `)
             .join("");
@@ -1996,7 +2003,7 @@
         state.selectedQty = first.qty;
         state.selectedWeight = first.tier ? first.qty : null;
         state.selectedPrice = first.price;
-        els.detailSelectedPrice.textContent = formatEUR(state.selectedPrice);
+        els.detailSelectedPrice.textContent = formatPrice(state.selectedPrice);
 
         els.detailQtyGrid.querySelectorAll(".qty-card").forEach((card) => {
             card.addEventListener("click", () => {
@@ -2005,7 +2012,7 @@
                 state.selectedQty = parseFloat(card.dataset.qty);
                 state.selectedWeight = first.tier ? state.selectedQty : null;
                 state.selectedPrice = parseFloat(card.dataset.price);
-                els.detailSelectedPrice.textContent = formatEUR(state.selectedPrice);
+                els.detailSelectedPrice.textContent = formatPrice(state.selectedPrice);
             });
         });
     }
@@ -2050,7 +2057,7 @@
             id: orderId,
             type: state.orderType === "pickup" ? t("pickup") : t("delivery"),
             summary,
-            total: formatEUR(total)
+            total: formatPrice(total)
         }));
         const url = `https://t.me/${username}?text=${text}`;
 
@@ -2416,7 +2423,7 @@
                         <div class="admin-order-card">
                             <div class="admin-order-header">
                                 <span class="admin-order-id">Commande #${o.id}</span>
-                                <span class="admin-order-total">${toPrice(o.total).toFixed(2)} EUR</span>
+                                <span class="admin-order-total">${formatPrice(o.total)}</span>
                             </div>
                             <span class="admin-order-type">${typeLabel}</span>
                             <p class="admin-order-summary">${escapeHtml(o.summary || "")}</p>
@@ -2467,7 +2474,7 @@
                     const isFirst = idx === 0;
                     const isLast = idx === prods.length - 1;
                     const thumb = p.image ? `<img class="admin-product-thumb" src="${sanitize(p.image)}" alt="">` : `<span class="admin-product-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${escapeHtml(p.emoji || "📦")}</span>`;
-                    const details = [`${(p.price || 0).toFixed(2)} €`, p.isPromo ? "Promo" : "", p.isNew ? "Nouveau" : ""].filter(Boolean).join(" · ");
+                    const details = [formatPrice(p.price || 0), p.isPromo ? "Promo" : "", p.isNew ? "Nouveau" : ""].filter(Boolean).join(" · ");
                     return `
                     <div class="admin-product-card">
                         <div class="admin-reorder-btns">
@@ -2729,7 +2736,7 @@
                     <label class="admin-label">Nom *<input class="admin-input" id="apf-name" type="text" maxlength="100" value="${escapeHtml(product ? product.name : "")}" required></label>
                     <label class="admin-label">Description<textarea class="admin-input admin-textarea" id="apf-desc" maxlength="500">${escapeHtml(product ? (product.description || "") : "")}</textarea></label>
                     <label class="admin-label">Catégorie *<select class="admin-input" id="apf-cat">${catOptions}</select></label>
-                    <label class="admin-label">Prix de base (€) *<input class="admin-input" id="apf-price" type="number" step="0.01" min="0" value="${product ? (product.price || 0) : ""}" required></label>
+                    <label class="admin-label">Prix de base (${currencyLabel()}) *<input class="admin-input" id="apf-price" type="number" step="0.01" min="0" value="${product ? (product.price || 0) : ""}" required></label>
                     <label class="admin-label">Prix par quantité<span class="admin-hint">Ex: 10: 80 (Quantité: Prix, une par ligne)</span><textarea class="admin-input admin-textarea" id="apf-custom" rows="4" placeholder="10: 80&#10;20: 150&#10;50: 350">${customPricesStr}</textarea></label>
                     
                     <div class="admin-field">
@@ -3149,12 +3156,12 @@
                             <input class="admin-input" id="as-slogan" type="text" placeholder="Menu premium 2026">
                         </label>
                         <label class="admin-label">Devise
-                            <input class="admin-input" id="as-currency" type="text">
+                            <input class="admin-input" id="as-currency" type="text" maxlength="8" placeholder="€, CHF, $…">
                         </label>
-                        <label class="admin-label">Commande min. (€)
+                        <label class="admin-label">Commande min. (${currencyLabel()})
                             <input class="admin-input" id="as-minorder" type="number" step="0.01" value="${rest.minOrder || 0}">
                         </label>
-                        <label class="admin-label">Livraison (€)
+                        <label class="admin-label">Livraison (${currencyLabel()})
                             <input class="admin-input" id="as-deliveryfee" type="number" step="0.01" value="${rest.deliveryFee || 0}">
                         </label>
                         <button class="admin-form-submit" type="submit">Enregistrer</button>
@@ -3241,7 +3248,7 @@
             els.adminSettingsContent.innerHTML = html;
             // valeurs posées après coup : sanitize() retirerait & ' " < > (lien de canal, nom avec apostrophe…)
             document.getElementById("as-name").value = rest.name || "";
-            document.getElementById("as-currency").value = rest.currency || "EUR";
+            document.getElementById("as-currency").value = rest.currency || "€";
             document.getElementById("as-tg-username").value = tgUser;
             document.getElementById("as-channel-link").value = chLink;
             document.getElementById("as-slogan").value = rest.slogan || "";
