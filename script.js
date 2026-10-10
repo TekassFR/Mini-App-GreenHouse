@@ -598,9 +598,21 @@
         }
     };
 
+    // Liens de médias et pseudos : < > " ' & retirés (pour un texte, voir escapeHtml et plainText)
     function sanitize(input) {
         if (typeof input !== "string") return "";
         return input.replace(/[<>"'&]/g, "").trim();
+    }
+
+    // Texte inséré en HTML : caractères spéciaux échappés, jamais retirés (« L'Original », « Fish & Chips »)
+    function escapeHtml(input) {
+        if (typeof input !== "string") return "";
+        return input.trim().replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    }
+
+    // Texte posé avec textContent ou envoyé tel quel (commande, avis, message Telegram) : rien à échapper
+    function plainText(input) {
+        return typeof input === "string" ? input.trim() : "";
     }
 
     function isAdmin() {
@@ -788,8 +800,8 @@
 
     function normalizeReviewEntry(review) {
         if (!review || typeof review !== "object") return null;
-        const author = sanitize(String(review.author || "")).trim();
-        const message = sanitize(String(review.message || "")).trim();
+        const author = plainText(String(review.author || "")).trim();
+        const message = plainText(String(review.message || "")).trim();
         if (!author || !message) return null;
 
         const rawStars = parseInt(review.stars, 10);
@@ -803,7 +815,7 @@
             message,
             timestamp,
             telegramUserId: Number.isFinite(Number(review.telegramUserId)) ? Number(review.telegramUserId) : null,
-            telegramUsername: review.telegramUsername ? sanitize(String(review.telegramUsername)) : null
+            telegramUsername: review.telegramUsername ? plainText(String(review.telegramUsername)) : null
         };
     }
 
@@ -907,9 +919,9 @@
 
     function renderUser() {
         const user = getTelegramUser();
-        const firstName = sanitize((user && user.first_name) || "Utilisateur");
-        const username = user && user.username ? `@${sanitize(user.username)}` : "-";
-        const greetingName = user && user.username ? `@${sanitize(user.username)}` : firstName;
+        const firstName = plainText((user && user.first_name) || "Utilisateur");
+        const username = user && user.username ? `@${plainText(user.username)}` : "-";
+        const greetingName = user && user.username ? `@${plainText(user.username)}` : firstName;
         const avatarLetter = firstName.charAt(0).toUpperCase() || "U";
         const photoUrl = user && user.photo_url ? sanitize(user.photo_url) : "";
         const createdAt = user && user.id ? new Date((1704067200000 + (user.id % 220) * 86400000)) : new Date(2026, 3, 1);
@@ -959,10 +971,10 @@
         html += state.categories
             .map((catId) => {
                 const meta = getCategoryMeta(catId);
-                const label = sanitize(meta.name || catId);
-                const emoji = sanitize(meta.emoji || "🌿");
+                const label = escapeHtml(meta.name || catId);
+                const emoji = escapeHtml(meta.emoji || "🌿");
                 const active = state.category === catId ? "active" : "";
-                return `<button class="category-tab-btn ${active}" data-category="${sanitize(catId)}" role="tab" aria-selected="${state.category === catId ? "true" : "false"}">
+                return `<button class="category-tab-btn ${active}" data-category="${escapeHtml(catId)}" role="tab" aria-selected="${state.category === catId ? "true" : "false"}">
                     <span class="tab-emoji">${emoji}</span>
                     <span class="tab-text">${label}</span>
                 </button>`;
@@ -993,10 +1005,10 @@
     function productCardTemplate(product) {
         const rawImg = cleanMediaUrl(product.image || "", "image");
         const rawVideo = cleanMediaUrl(product.video || "", "video");
-        const name = sanitize(product.name || "Product");
-        const desc = sanitize(product.description || "");
+        const name = escapeHtml(product.name || "Product");
+        const desc = escapeHtml(product.description || "");
         const categoryMeta = getCategoryMeta(product.category);
-        const categoryName = sanitize(categoryMeta.name || product.category || "Categorie");
+        const categoryName = escapeHtml(categoryMeta.name || product.category || "Categorie");
         const shortDesc = desc || categoryName;
         const start = getStartingPrice(product);
 
@@ -1102,7 +1114,7 @@
             return `
                 <div class="cart-row">
                     <div>
-                        <h4>${sanitize(item.name)}</h4>
+                        <h4>${escapeHtml(item.name)}</h4>
                         <p class="muted">${formatEUR(item.unitPrice)}${t("unitSuffix")}</p>
                     </div>
                     <div class="cart-controls">
@@ -1206,7 +1218,7 @@
                             <span class="order-card-total">${formatEUR(order.total)}</span>
                         </div>
                         <p class="muted">${date} · ${orderTypeText}</p>
-                        <p class="order-card-summary">${sanitize(order.summary)}</p>
+                        <p class="order-card-summary">${escapeHtml(order.summary)}</p>
                     </article>
                 `;
             })
@@ -1233,10 +1245,10 @@
             .map((r) => `
                 <article class="card panel review-item">
                     <div class="review-item-head">
-                        <h4>${sanitize(r.author)}</h4>
+                        <h4>${escapeHtml(r.author)}</h4>
                         <span class="review-item-stars">${"★".repeat(r.stars)}<span class="off">${"★".repeat(5 - r.stars)}</span></span>
                     </div>
-                    <p>${sanitize(r.message)}</p>
+                    <p>${escapeHtml(r.message)}</p>
                 </article>
             `)
             .join("");
@@ -1252,7 +1264,7 @@
             message,
             timestamp: Date.now(),
             telegramUserId: currentUser && Number.isFinite(Number(currentUser.id)) ? Number(currentUser.id) : null,
-            telegramUsername: currentUser && currentUser.username ? sanitize(currentUser.username) : null
+            telegramUsername: currentUser && currentUser.username ? plainText(currentUser.username) : null
         };
 
         state.reviews.push(review);
@@ -1845,9 +1857,9 @@
         detailSlideIndex = 0;
 
         const categoryMeta = getCategoryMeta(product.category);
-        els.detailName.textContent = sanitize(product.name || "Product");
-        els.detailDescription.textContent = sanitize(product.description || "");
-        els.detailCategoryChip.textContent = `${sanitize(categoryMeta.emoji || "📦")} ${sanitize(categoryMeta.name || product.category)}`;
+        els.detailName.textContent = plainText(product.name || "Product");
+        els.detailDescription.textContent = plainText(product.description || "");
+        els.detailCategoryChip.textContent = `${plainText(categoryMeta.emoji || "📦")} ${plainText(categoryMeta.name || product.category)}`;
         if (product.image) {
             attachImageSource(els.detailBrandImage, product.image);
         } else {
@@ -1922,11 +1934,11 @@
             <div class="gh-modal-card ${isDanger ? 'gh-modal-danger' : ''}" role="dialog" aria-modal="true">
                 <div class="gh-modal-glow"></div>
                 <div class="gh-modal-icon-badge">${emoji}</div>
-                <h3 class="gh-modal-title">${sanitize(title)}</h3>
+                <h3 class="gh-modal-title">${escapeHtml(title)}</h3>
                 <div class="gh-modal-message">${message}</div>
                 <div class="gh-modal-actions">
-                    <button type="button" class="gh-modal-btn gh-modal-btn-cancel" id="gh-modal-cancel">${sanitize(cancelText)}</button>
-                    <button type="button" class="gh-modal-btn gh-modal-btn-confirm ${isDanger ? 'danger' : ''}" id="gh-modal-confirm">${sanitize(confirmText)}</button>
+                    <button type="button" class="gh-modal-btn gh-modal-btn-cancel" id="gh-modal-cancel">${escapeHtml(cancelText)}</button>
+                    <button type="button" class="gh-modal-btn gh-modal-btn-confirm ${isDanger ? 'danger' : ''}" id="gh-modal-confirm">${escapeHtml(confirmText)}</button>
                 </div>
             </div>
         `;
@@ -2006,13 +2018,13 @@
 
         const total = state.cart.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
         if (state.orderType === "delivery") {
-            const address = sanitize(els.deliveryAddress.value || "");
+            const address = plainText(els.deliveryAddress.value || "");
             if (address.length < 10) {
                 alert(t("alertAddress"));
                 return;
             }
         } else {
-            const time = sanitize(els.pickupTime.value || "");
+            const time = plainText(els.pickupTime.value || "");
             if (!time) {
                 alert(t("alertPickupTime"));
                 return;
@@ -2020,7 +2032,7 @@
         }
 
         const orderId = state.orders.length + 1;
-        const summary = state.cart.map((i) => `${sanitize(i.name)} x${i.quantity}`).join(", ");
+        const summary = state.cart.map((i) => `${plainText(i.name)} x${i.quantity}`).join(", ");
         const currentUser = getTelegramUser();
         state.orders.push({
             id: orderId,
@@ -2030,7 +2042,7 @@
             items: JSON.parse(JSON.stringify(state.cart)),
             timestamp: Date.now(),
             telegramUserId: currentUser && Number.isFinite(Number(currentUser.id)) ? Number(currentUser.id) : null,
-            telegramUsername: currentUser && currentUser.username ? sanitize(currentUser.username) : null
+            telegramUsername: currentUser && currentUser.username ? plainText(currentUser.username) : null
         });
 
         const username = getPrimaryTelegramUsername();
@@ -2092,9 +2104,9 @@
 
         els.reviewForm.addEventListener("submit", (e) => {
             e.preventDefault();
-            const author = sanitize(els.reviewAuthor.value || "");
+            const author = plainText(els.reviewAuthor.value || "");
             const stars = Math.max(1, Math.min(5, parseInt(els.reviewStars.value, 10) || 5));
-            const message = sanitize(els.reviewMessage.value || "");
+            const message = plainText(els.reviewMessage.value || "");
             if (!author || !message) {
                 alert(t("alertReview"));
                 return;
@@ -2139,7 +2151,7 @@
             }
             addToCart(state.selectedProduct, state.selectedWeight, state.selectedPrice);
             // même libellé que la ligne du panier : « Produit (5G) » pour un palier, « Produit » sans palier
-            showToast(`${sanitize(cartLineName(state.selectedProduct, state.selectedWeight))} ajouté au panier ! 🛒`);
+            showToast(`${escapeHtml(cartLineName(state.selectedProduct, state.selectedWeight))} ajouté au panier ! 🛒`);
             closeProductDetail();
         });
 
@@ -2150,7 +2162,7 @@
         if (els.detailTeleBtn) {
             els.detailTeleBtn.addEventListener("click", () => {
                 const username = getPrimaryTelegramUsername();
-                const productName = state.selectedProduct ? sanitize(state.selectedProduct.name) : "product";
+                const productName = state.selectedProduct ? plainText(state.selectedProduct.name) : "product";
                 const url = `https://t.me/${username}?text=${encodeURIComponent(t("askProduct", { name: productName }))}`;
                 if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
                 else window.open(url, "_blank");
@@ -2257,14 +2269,14 @@
         // timestamp BIGINT : nombre avec willy.py, chaîne avec le secours Vercel (pg)
         const date = new Date(Number(r.timestamp) || Date.now()).toLocaleString("fr-FR");
         const username = r.telegram_username || r.telegramUsername;
-        const handle = username ? ` · @${sanitize(String(username))}` : "";
+        const handle = username ? ` · @${escapeHtml(String(username))}` : "";
         return `
             <div class="admin-review-card">
                 <div class="admin-review-header">
-                    <span class="admin-review-author">${sanitize(r.author || "Anonyme")}</span>
+                    <span class="admin-review-author">${escapeHtml(r.author || "Anonyme")}</span>
                     <span class="admin-review-stars">${stars}</span>
                 </div>
-                <p class="admin-review-msg">${sanitize(r.message || "")}</p>
+                <p class="admin-review-msg">${escapeHtml(r.message || "")}</p>
                 <div class="admin-review-meta">${date}${handle}</div>
                 ${actionsHtml}
             </div>
@@ -2399,7 +2411,7 @@
                 sortedOrders.map((o) => {
                     const date = new Date(o.timestamp || Date.now()).toLocaleString("fr-FR");
                     const typeLabel = o.type === "pickup" ? "Sur place" : "Livraison";
-                    const user = o.telegramUsername || o.telegram_username ? `@${sanitize(o.telegramUsername || o.telegram_username)}` : (o.telegramUserId || o.telegram_user_id ? `ID ${o.telegramUserId || o.telegram_user_id}` : "Anonyme");
+                    const user = o.telegramUsername || o.telegram_username ? `@${escapeHtml(o.telegramUsername || o.telegram_username)}` : (o.telegramUserId || o.telegram_user_id ? `ID ${o.telegramUserId || o.telegram_user_id}` : "Anonyme");
                     return `
                         <div class="admin-order-card">
                             <div class="admin-order-header">
@@ -2407,7 +2419,7 @@
                                 <span class="admin-order-total">${toPrice(o.total).toFixed(2)} EUR</span>
                             </div>
                             <span class="admin-order-type">${typeLabel}</span>
-                            <p class="admin-order-summary">${sanitize(o.summary || "")}</p>
+                            <p class="admin-order-summary">${escapeHtml(o.summary || "")}</p>
                             <span class="admin-order-user">${user} · ${date}</span>
                         </div>
                     `;
@@ -2450,22 +2462,22 @@
             for (const [catKey, prods] of Object.entries(products)) {
                 if (!Array.isArray(prods) || !prods.length) continue;
                 totalProds += prods.length;
-                html += `<h4 class="admin-section-title">${sanitize(catNames[catKey] || catKey)} · ${prods.length}</h4><div class="admin-group">`;
+                html += `<h4 class="admin-section-title">${escapeHtml(catNames[catKey] || catKey)} · ${prods.length}</h4><div class="admin-group">`;
                 html += prods.map((p, idx) => {
                     const isFirst = idx === 0;
                     const isLast = idx === prods.length - 1;
-                    const thumb = p.image ? `<img class="admin-product-thumb" src="${sanitize(p.image)}" alt="">` : `<span class="admin-product-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${sanitize(p.emoji || "📦")}</span>`;
+                    const thumb = p.image ? `<img class="admin-product-thumb" src="${sanitize(p.image)}" alt="">` : `<span class="admin-product-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${escapeHtml(p.emoji || "📦")}</span>`;
                     const details = [`${(p.price || 0).toFixed(2)} €`, p.isPromo ? "Promo" : "", p.isNew ? "Nouveau" : ""].filter(Boolean).join(" · ");
                     return `
                     <div class="admin-product-card">
                         <div class="admin-reorder-btns">
-                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${sanitize(catKey)}" data-dir="up" type="button" aria-label="Monter" ${isFirst ? "disabled" : ""}>▲</button>
-                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${sanitize(catKey)}" data-dir="down" type="button" aria-label="Descendre" ${isLast ? "disabled" : ""}>▼</button>
+                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${escapeHtml(catKey)}" data-dir="up" type="button" aria-label="Monter" ${isFirst ? "disabled" : ""}>▲</button>
+                            <button class="admin-btn-reorder" data-pid="${p.id}" data-cat="${escapeHtml(catKey)}" data-dir="down" type="button" aria-label="Descendre" ${isLast ? "disabled" : ""}>▼</button>
                         </div>
                         <button class="admin-btn-edit" data-pid="${p.id}" type="button">
                             ${thumb}
                             <span class="admin-row-text">
-                                <span class="admin-product-name">${sanitize(p.name || "")}</span>
+                                <span class="admin-product-name">${escapeHtml(p.name || "")}</span>
                                 <span class="admin-product-cat">${details}</span>
                             </span>
                             <span class="admin-chevron" aria-hidden="true"></span>
@@ -2706,7 +2718,7 @@
         const categories = cfg.categories || {};
         const isEdit = !!product;
         const catOptions = Object.entries(categories).map(([key, cat]) =>
-            `<option value="${sanitize(key)}" ${product && product.category === key ? "selected" : ""}>${sanitize(cat.emoji || "")} ${sanitize(cat.name)}</option>`
+            `<option value="${escapeHtml(key)}" ${product && product.category === key ? "selected" : ""}>${escapeHtml(cat.emoji || "")} ${escapeHtml(cat.name)}</option>`
         ).join("");
         const customPricesStr = product && product.customPrices ? formatCustomPricesForEdit(product.customPrices) : "";
         const formHtml = `
@@ -2714,8 +2726,8 @@
                 <button class="admin-form-back-btn" id="admin-product-form-back" type="button">‹ Produits</button>
                 <h3 class="admin-form-title">${isEdit ? "Modifier le produit" : "Nouveau produit"}</h3>
                 <form id="admin-product-form" autocomplete="off">
-                    <label class="admin-label">Nom *<input class="admin-input" id="apf-name" type="text" maxlength="100" value="${sanitize(product ? product.name : "")}" required></label>
-                    <label class="admin-label">Description<textarea class="admin-input admin-textarea" id="apf-desc" maxlength="500">${sanitize(product ? (product.description || "") : "")}</textarea></label>
+                    <label class="admin-label">Nom *<input class="admin-input" id="apf-name" type="text" maxlength="100" value="${escapeHtml(product ? product.name : "")}" required></label>
+                    <label class="admin-label">Description<textarea class="admin-input admin-textarea" id="apf-desc" maxlength="500">${escapeHtml(product ? (product.description || "") : "")}</textarea></label>
                     <label class="admin-label">Catégorie *<select class="admin-input" id="apf-cat">${catOptions}</select></label>
                     <label class="admin-label">Prix de base (€) *<input class="admin-input" id="apf-price" type="number" step="0.01" min="0" value="${product ? (product.price || 0) : ""}" required></label>
                     <label class="admin-label">Prix par quantité<span class="admin-hint">Ex: 10: 80 (Quantité: Prix, une par ligne)</span><textarea class="admin-input admin-textarea" id="apf-custom" rows="4" placeholder="10: 80&#10;20: 150&#10;50: 350">${customPricesStr}</textarea></label>
@@ -2741,7 +2753,7 @@
                         <div id="apf-video-preview" style="margin-top:8px;"></div>
                     </div>
 
-                    <label class="admin-label">Emoji<input class="admin-input" id="apf-emoji" type="text" maxlength="8" value="${sanitize(product ? (product.emoji || "📦") : "📦")}"></label>
+                    <label class="admin-label">Emoji<input class="admin-input" id="apf-emoji" type="text" maxlength="8" value="${escapeHtml(product ? (product.emoji || "📦") : "📦")}"></label>
                     <div class="admin-toggles-grid">
                         <label class="admin-toggle-card toggle-new">
                             <input type="checkbox" id="apf-new" ${product && product.isNew ? "checked" : ""}>
@@ -2782,7 +2794,7 @@
                 showConfirmModal({
                     title: "Supprimer le produit ?",
                     emoji: product.emoji || "🗑️",
-                    message: `Es-tu sûr de vouloir supprimer définitivement <strong>« ${sanitize(product.name || "")} »</strong> ? Cette action est irréversible.`,
+                    message: `Es-tu sûr de vouloir supprimer définitivement <strong>« ${escapeHtml(product.name || "")} »</strong> ? Cette action est irréversible.`,
                     confirmText: "Oui, supprimer",
                     cancelText: "Annuler",
                     isDanger: true,
@@ -2932,8 +2944,8 @@
                     const count = (products[key] || []).length;
                     return `
                     <div class="admin-product-card">
-                        <button class="admin-btn-edit" data-ckey="${sanitize(key)}" type="button">
-                            <span class="admin-row-text"><span class="admin-product-name">${sanitize(cat.emoji || "")} ${sanitize(cat.name || key)}</span></span>
+                        <button class="admin-btn-edit" data-ckey="${escapeHtml(key)}" type="button">
+                            <span class="admin-row-text"><span class="admin-product-name">${escapeHtml(cat.emoji || "")} ${escapeHtml(cat.name || key)}</span></span>
                             <span class="admin-row-value">${count} produit${count !== 1 ? "s" : ""}</span>
                             <span class="admin-chevron" aria-hidden="true"></span>
                         </button>
@@ -2971,10 +2983,10 @@
                 <button class="admin-form-back-btn" id="admin-cat-form-back" type="button">‹ Catégories</button>
                 <h3 class="admin-form-title">${isEdit ? "Modifier la catégorie" : "Nouvelle catégorie"}</h3>
                 <form id="admin-cat-form" autocomplete="off">
-                    <input type="hidden" id="acf-key" value="${isEdit ? sanitize(key) : ""}">
-                    <label class="admin-label">Nom *<input class="admin-input" id="acf-name" type="text" maxlength="50" value="${sanitize(cat ? cat.name : "")}" required></label>
-                    <label class="admin-label">Emoji<input class="admin-input" id="acf-emoji" type="text" maxlength="8" value="${sanitize(cat ? (cat.emoji || "📦") : "📦")}"></label>
-                    <label class="admin-label">Description<input class="admin-input" id="acf-desc" type="text" maxlength="200" value="${sanitize(cat ? (cat.description || "") : "")}"></label>
+                    <input type="hidden" id="acf-key" value="${isEdit ? escapeHtml(key) : ""}">
+                    <label class="admin-label">Nom *<input class="admin-input" id="acf-name" type="text" maxlength="50" value="${escapeHtml(cat ? cat.name : "")}" required></label>
+                    <label class="admin-label">Emoji<input class="admin-input" id="acf-emoji" type="text" maxlength="8" value="${escapeHtml(cat ? (cat.emoji || "📦") : "📦")}"></label>
+                    <label class="admin-label">Description<input class="admin-input" id="acf-desc" type="text" maxlength="200" value="${escapeHtml(cat ? (cat.description || "") : "")}"></label>
                     <button class="admin-form-submit" type="submit">${isEdit ? "Enregistrer" : "Ajouter la catégorie"}</button>
                 </form>
                 ${isEdit ? `<button class="admin-form-delete" id="acf-delete" type="button">Supprimer la catégorie</button>` : ""}
@@ -2986,7 +2998,7 @@
         if (deleteBtn) {
             deleteBtn.addEventListener("click", () => {
                 const count = ((state.config && state.config.products && state.config.products[key]) || []).length;
-                const catName = sanitize(cat.name || key);
+                const catName = escapeHtml(cat.name || key);
                 showConfirmModal({
                     title: "Supprimer la catégorie ?",
                     emoji: cat.emoji || "📁",
@@ -3099,7 +3111,7 @@
             const musicTracks = getMusicPlaylist();
             const musicRows = musicTracks.map((track, i) => `
                 <div class="admin-list-row">
-                    <span class="admin-row-text"><span class="admin-product-name">${sanitize(track.title || `Piste ${i + 1}`)}</span></span>
+                    <span class="admin-row-text"><span class="admin-product-name">${escapeHtml(track.title || `Piste ${i + 1}`)}</span></span>
                     <span class="admin-reorder-btns">
                         <button class="admin-btn-reorder" data-music-move="${i}" data-dir="-1" type="button" aria-label="Monter" ${i === 0 ? "disabled" : ""}>▲</button>
                         <button class="admin-btn-reorder" data-music-move="${i}" data-dir="1" type="button" aria-label="Descendre" ${i === musicTracks.length - 1 ? "disabled" : ""}>▼</button>
@@ -3118,10 +3130,10 @@
                 return `
                 <div class="admin-list-row">
                     <span class="admin-row-text">
-                        <span class="admin-product-name">@${sanitize(u)}</span>
+                        <span class="admin-product-name">@${escapeHtml(u)}</span>
                         ${status ? `<span class="admin-hint">${status}</span>` : ""}
                     </span>
-                    <button class="admin-chip-remove" data-user="${sanitize(u)}" type="button">Retirer</button>
+                    <button class="admin-chip-remove" data-user="${escapeHtml(u)}" type="button">Retirer</button>
                 </div>
             `;
             }).join("");
@@ -3626,7 +3638,7 @@
             bindActions();
             bindMusicPlayer();
         } catch (error) {
-            document.body.innerHTML = `<div style="padding:20px;color:#fff">Erreur: ${sanitize(error.message)}</div>`;
+            document.body.innerHTML = `<div style="padding:20px;color:#fff">Erreur: ${escapeHtml(error.message)}</div>`;
             return;
         }
 
