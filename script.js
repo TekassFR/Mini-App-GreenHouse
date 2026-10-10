@@ -1306,6 +1306,8 @@
         if (!els.tickerDefault && els.tickerTexts[0]) els.tickerDefault = els.tickerTexts[0].textContent;
         const tickerText = shopCfg.admin && shopCfg.admin.ticker_text ? `${shopCfg.admin.ticker_text} ✦` : els.tickerDefault;
         els.tickerTexts.forEach((span) => { if (span.textContent !== tickerText) span.textContent = tickerText; });
+        // Sans lien de canal réglé, pas de bouton « Canal » (il ouvrirait la page de la boutique)
+        if (els.channelBtn) els.channelBtn.style.display = shopCfg.admin && shopCfg.admin.channel_link ? "" : "none";
     }
 
     function applyTranslations() {
@@ -2083,6 +2085,7 @@
 
         els.channelBtn.addEventListener("click", () => {
             const link = state.config && state.config.admin ? state.config.admin.channel_link : "https://t.me/+my0XrYsNth80OGE0";
+            if (!link) return;
             if (tg && tg.openLink) tg.openLink(link);
             else window.open(link, "_blank");
         });
