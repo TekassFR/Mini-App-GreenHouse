@@ -1590,7 +1590,7 @@
         // changer le MIME ne transcode pas le contenu et casse la lecture sur Chrome.
         // iOS Safari lit nativement video/quicktime.
 
-        // Convertir les liens absolus ngrok / cloudflare en /uploads/ (relayés proprement par Vercel sans avertissement)
+        // Convertir les liens absolus ngrok / cloudflare en /uploads/ (servis par le PC, à la même adresse que le site)
         if (/^https?:\/\/[^\/]*(ngrok|cloudflare|trycloudflare)[^\/]*\/uploads\//i.test(s)) {
             s = s.replace(/^https?:\/\/[^\/]*(ngrok|cloudflare|trycloudflare)[^\/]*\/uploads\//i, "/uploads/");
         }
