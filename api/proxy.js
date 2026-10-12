@@ -164,29 +164,6 @@ function contactMediaOk(contact) {
     return Array.isArray(tracks) && tracks.every(t => t && typeof t === 'object' && String(t.url || '').trim() && mediaLinkOk(t.url));
 }
 
-let cachedTunnelBase = '';
-let cachedTunnelBaseTime = 0;
-async function getActiveTunnelBase() {
-    const now = Date.now();
-    if (cachedTunnelBase && (now - cachedTunnelBaseTime < 45000)) {
-        return cachedTunnelBase;
-    }
-    try {
-        const c = await pool.connect();
-        try {
-            const r = await c.query("SELECT value FROM admin_settings WHERE key='api_base'");
-            if (r.rows.length && r.rows[0].value && r.rows[0].value.startsWith('http')) {
-                cachedTunnelBase = r.rows[0].value.trim().replace(/\/+$/, '');
-                cachedTunnelBaseTime = now;
-                return cachedTunnelBase;
-            }
-        } finally {
-            c.release();
-        }
-    } catch (_) {}
-    return cachedTunnelBase || '';
-}
-
 module.exports = async function handler(req, res) {
     if (req.method === 'OPTIONS') { res.writeHead(204, CORS); res.end(); return; }
     Object.entries(CORS).forEach(([k, v]) => res.setHeader(k, v));
@@ -198,49 +175,9 @@ module.exports = async function handler(req, res) {
     const rawUrl = req.headers['x-matched-path'] || req.headers['x-invoke-path'] || req.url || '/';
     const route = rawUrl.replace(/^\/api\/proxy/, '').replace(/\?.*$/, '') || '/';
 
-    // ── Proxy /uploads/:filename directly from VPS (supports HTTP Range / 206 for iOS Safari) ──
-    if (route.startsWith('/uploads/') && (req.method === 'GET' || req.method === 'HEAD')) {
-        const filename = route.replace('/uploads/', '');
-        const tunnelBase = await getActiveTunnelBase();
-        if (!tunnelBase) {
-            return json(res, { error: 'Aucun tunnel actif disponible' }, 502);
-        }
-        const vpsUrl = `${tunnelBase}/uploads/${filename}`;
-        const https = require('https');
-        return new Promise((resolve) => {
-            const reqHeaders = {
-                'ngrok-skip-browser-warning': 'true',
-                'User-Agent': 'Vercel-Media-Proxy/1.0'
-            };
-            if (req.headers.range) {
-                reqHeaders['range'] = req.headers.range;
-            }
-
-            https.get(vpsUrl, { headers: reqHeaders }, (upstream) => {
-                const resHeaders = {
-                    ...CORS,
-                    'Content-Type': upstream.headers['content-type'] || 'application/octet-stream',
-                    'Accept-Ranges': 'bytes'
-                };
-                if (upstream.headers['content-range']) {
-                    resHeaders['Content-Range'] = upstream.headers['content-range'];
-                }
-                if (upstream.headers['content-length']) {
-                    resHeaders['Content-Length'] = upstream.headers['content-length'];
-                }
-                if (upstream.statusCode === 200) {
-                    resHeaders['Cache-Control'] = 'public, max-age=86400, stale-while-revalidate=604800';
-                }
-
-                res.writeHead(upstream.statusCode, resHeaders);
-                upstream.pipe(res);
-                upstream.on('end', resolve);
-            }).on('error', (err) => {
-                json(res, { error: 'Upload proxy failed: ' + err.message }, 502);
-                resolve();
-            });
-        });
-    }
+    // Les photos et vidéos ne passent jamais par ici : relayées par une fonction Vercel, chaque lecture
+    // comptait dans le quota « Fast Origin Transfer » et a fait suspendre le compte (octobre 2026).
+    // Elles sont servies par le PC (willy.py) à la même adresse que le site.
 
     let client;
     try {
