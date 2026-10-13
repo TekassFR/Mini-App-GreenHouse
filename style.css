@@ -66,6 +66,17 @@ body {
     }
 }
 
+/* Image de fond choisie dans la gestion (--shop-bg-image posé par script.js) : même dégradé sombre
+   par-dessus, image en cover et centrée, sans répétition */
+body.has-custom-bg {
+    background-image:
+        linear-gradient(180deg, rgba(13, 15, 12, 0.8), rgba(13, 15, 12, 0.93) 55%),
+        var(--shop-bg-image);
+    background-size: auto, cover;
+    background-position: center, center;
+    background-repeat: no-repeat;
+}
+
 .intro-screen {
     position: fixed;
     inset: 0;
@@ -220,10 +231,23 @@ body.app-ready .intro-screen {
     pointer-events: none;
 }
 
+.app-animated-bg-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.85;
+}
+
 .app-shell {
     max-width: 1080px;
     margin: 0 auto;
     padding: 14px;
+    position: relative;
+    z-index: 1;
 }
 
 /* --- BANDEAU DÉFILANT COMPACT EN HAUT (STYLE BANDE.PNG) --- */
@@ -523,6 +547,36 @@ body[data-page]:not([data-page="home"]) .app-header {
     color: #1f0e02;
 }
 
+/* Produit épuisé (inStock: false) : badge, média grisé, bouton Ajouter désactivé */
+.badge.sold-out {
+    background: #2a2d33;
+    color: #f3f4f6;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Même badge à côté du nom d'une ligne du panier */
+.cart-row .badge.sold-out {
+    position: static;
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: middle;
+    transform: none;
+}
+
+.product-card.is-sold-out .product-media img,
+.product-card.is-sold-out .product-media video {
+    filter: grayscale(1);
+    opacity: 0.55;
+}
+
+.detail-add-main:disabled {
+    background: #2a2d33;
+    color: #9ca3af;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .badge.new,
 .badge.promo {
     animation: badgeWiggle 4.5s ease-in-out infinite;
@@ -577,6 +631,11 @@ body[data-page]:not([data-page="home"]) .app-header {
         opacity: 1;
         filter: none;
         transform: none;
+    }
+
+    body .intro-logo[class*="anim-"] {
+        animation: none;
+        filter: none;
     }
 
     body.app-ready .intro-card {
@@ -1964,22 +2023,3029 @@ body.detail-open .bottom-nav {
     letter-spacing: 0.02em;
 }
 
+/* ==========================================================================
+   PANEL DE GESTION — même D.A. que la boutique
+   Les --gst-* dérivent des variables :root en tête de fichier. --accent, --accent-rgb, --accent-2
+   et --accent-ink sont reposées par applyBrandColor (script.js) : le panel suit la couleur de thème.
+   Mêmes idiomes que la boutique : cartes --card bordées --line, bouton principal .btn.primary,
+   onglets segmentés actifs en --text sur --bg, choix actif en --accent (comme .qty-card.active).
+   ========================================================================== */
+
+:root {
+    --gst-bg: var(--bg);
+    --gst-bg-bar: var(--bg-soft);
+    --gst-bg-card: var(--card);
+    --gst-bg-card-subtle: var(--card-2);
+    --gst-bg-input: var(--bg-soft);
+    --gst-border: var(--line);
+    --gst-border-strong: var(--line-strong);
+    --gst-accent: var(--accent);
+    --gst-accent-2: var(--accent-2);
+    --gst-accent-ink: var(--accent-ink);
+    /* Accent utilisé comme couleur de texte (sans color-mix : l'accent tel quel) */
+    --gst-accent-text: var(--accent);
+    --gst-accent-soft: rgba(var(--accent-rgb), 0.14);
+    --gst-accent-line: rgba(var(--accent-rgb), 0.4);
+    --gst-glow: rgba(var(--accent-rgb), 0.3);
+    /* Anciens noms du thème violet, gardés pour les feuilles qui s'en servent encore : ils suivent l'accent */
+    --gst-purple: var(--accent);
+    --gst-purple-hover: var(--accent-2);
+    --gst-purple-neon: var(--accent);
+    --gst-text: var(--text);
+    --gst-text-muted: var(--muted);
+    /* Plus discret que --muted mais toujours ≥ 4.5:1 sur --card-2 */
+    --gst-text-subtle: #8f8d80;
+    /* Couleurs d'état, tirées vers les tons chauds de la boutique (l'or est celui des étoiles d'avis) */
+    --gst-danger: var(--danger);
+    --gst-danger-rgb: 255, 106, 77;
+    --gst-success: #98d67f;
+    --gst-success-rgb: 152, 214, 127;
+    --gst-warning: #f2c14e;
+    --gst-warning-rgb: 242, 193, 78;
+    --gst-info: #9cc3e6;
+    --gst-info-rgb: 156, 195, 230;
+}
+
+/* Accent éclairci vers --text quand il sert de texte : reste lisible sur --card-2 même avec un thème sombre */
+@supports (color: color-mix(in srgb, red 50%, white)) {
+    :root {
+        --gst-accent-text: color-mix(in srgb, var(--accent) 72%, var(--text));
+    }
+}
+
 .admin-overlay {
     position: fixed;
     inset: 0;
-    z-index: 4000;
-    background: var(--bg);
-    overflow-y: auto;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    background: var(--gst-bg);
+    color: var(--gst-text);
+    color-scheme: dark;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-.admin-panel {
-    max-width: 680px;
+.gst-app-container {
+    max-width: 520px;
+    width: 100%;
     margin: 0 auto;
-    min-height: 100dvh;
-    padding: 12px 12px 32px;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(120% 50% at 50% -12%, rgba(var(--accent-rgb), 0.07), transparent 62%),
+        var(--gst-bg);
+    position: relative;
+    box-shadow: 0 0 0 1px var(--gst-border), 0 0 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+/* Focus clavier visible partout dans le panel et ses modales (certains champs coupent outline) */
+.admin-overlay :focus-visible,
+.gst-modal-backdrop :focus-visible {
+    outline: 2px solid var(--gst-accent);
+    outline-offset: 2px;
+}
+
+/* 🔝 Top Bar */
+.gst-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--gst-bg-bar);
+    border-bottom: 1px solid var(--gst-border);
+    flex-shrink: 0;
+}
+
+/* « Fermer » : même pastille que .top-pill de la boutique */
+.gst-btn-back {
+    background: transparent;
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 10px;
+    color: var(--gst-text);
+    font-family: var(--font-display);
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 34px;
+    padding: 4px 12px;
+    transition: background-color 0.15s ease;
+}
+
+.gst-btn-back:hover,
+.gst-btn-back:active {
+    background: var(--gst-bg-card-subtle);
+}
+
+.gst-title-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.15;
+}
+
+.gst-title-main {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--gst-text);
+    letter-spacing: -0.01em;
+}
+
+.gst-title-sub {
+    font-size: 0.72rem;
+    color: var(--gst-text-muted);
+    font-weight: 500;
+}
+
+.gst-btn-more {
+    background: transparent;
+    border: 1px solid var(--gst-border-strong);
+    color: var(--gst-text);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    transition: background-color 0.15s ease;
+}
+
+.gst-btn-more:hover,
+.gst-btn-more:active {
+    background: var(--gst-bg-card-subtle);
+}
+
+/* 🏷 Brand Bar */
+.gst-brand-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--gst-bg-bar);
+    border-bottom: 1px solid var(--gst-border);
+    flex-shrink: 0;
+}
+
+.gst-brand-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.gst-shop-name {
+    font-family: var(--font-display);
+    font-size: 0.98rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--gst-text);
+}
+
+.gst-support-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--gst-accent-text);
+    background: var(--gst-accent-soft);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    padding: 3px 9px;
+    border-radius: 999px;
+}
+
+.gst-lang-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border-strong);
+    padding: 4px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: var(--gst-text);
+    cursor: pointer;
+}
+
+.gst-lang-caret {
+    font-size: 0.6rem;
+    color: var(--gst-text-muted);
+}
+
+/* 📑 Horizontal Sub-Tabs Bar */
+.gst-subtabs-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--gst-bg);
+    border-bottom: 1px solid var(--gst-border);
+    flex-shrink: 0;
+}
+
+.gst-subtabs-scroll {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+}
+
+.gst-subtabs-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* Sous-onglets : onglet segmenté de la boutique (actif = --text sur --bg) */
+.gst-subtab-pill {
+    padding: 6px 13px;
+    border-radius: 9px;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: var(--gst-bg-card);
+    border: 1px solid var(--gst-border);
+    color: var(--gst-text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    flex-shrink: 0;
+}
+
+.gst-subtab-pill:hover {
+    color: var(--gst-text);
+    border-color: var(--gst-border-strong);
+}
+
+.gst-subtab-pill.active {
+    background: var(--gst-text);
+    color: var(--gst-bg);
+    border-color: var(--gst-text);
+}
+
+.gst-quick-list-btn {
+    padding: 6px 11px;
+    border-radius: 9px;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: var(--gst-accent-soft);
+    border: 1px solid var(--gst-accent-line);
+    color: var(--gst-accent-text);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.gst-quick-list-btn:hover {
+    background: rgba(var(--accent-rgb), 0.22);
+}
+
+/* 📜 Main Scrollable Body */
+/* Le bas laisse la place de la barre d'onglets fixe (60px + zone de sécurité de l'appareil) */
+.gst-main-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 14px calc(env(safe-area-inset-bottom, 0px) + 80px);
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.gst-tab-pane {
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+.gst-tab-pane.active {
+    display: flex;
+    width: 100%;
+}
+
+.gst-section {
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+/* 🃏 Cards & Boxes */
+.gst-card {
+    background: var(--gst-bg-card);
+    border: 1px solid var(--gst-border);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.gst-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--gst-text);
+}
+
+.gst-card-warning {
+    border-color: rgba(var(--gst-warning-rgb), 0.38);
+    background: rgba(var(--gst-warning-rgb), 0.06);
+    color: var(--gst-text);
+}
+
+.gst-card-info {
+    border-color: rgba(var(--gst-info-rgb), 0.3);
+    background: rgba(var(--gst-info-rgb), 0.05);
+    color: var(--gst-text);
+}
+
+.gst-card-text {
+    font-size: 0.82rem;
+    line-height: 1.45;
+    margin: 0;
+    color: inherit;
+    opacity: 0.95;
+}
+
+.gst-card-highlight {
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: var(--gst-warning);
+    margin-top: 4px;
+}
+
+.gst-card-callout-warn {
+    background: rgba(var(--gst-warning-rgb), 0.09);
+    border: 1px solid rgba(var(--gst-warning-rgb), 0.3);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--gst-warning);
+}
+
+.gst-card-callout-info {
+    background: rgba(var(--gst-info-rgb), 0.08);
+    border: 1px solid rgba(var(--gst-info-rgb), 0.25);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--gst-info);
+}
+
+.gst-card-row-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.gst-card-icon-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gst-circ-icon {
+    font-size: 1.15rem;
+}
+
+.gst-row-title {
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--gst-text);
+}
+
+.gst-row-sub {
+    font-size: 0.75rem;
+    color: var(--gst-text-muted);
+    margin-top: 2px;
+    line-height: 1.35;
+}
+
+.gst-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-top: 1px solid var(--gst-border);
+}
+
+/* 🔘 Smooth iOS-style Switches */
+.gst-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.gst-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* Éteint : rail neutre et pastille --muted (comme .admin-switch) ; allumé : rail --accent, pastille blanche */
+.gst-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: rgba(241, 238, 228, 0.08);
+    transition: .3s;
+    border-radius: 24px;
+    border: 1px solid var(--gst-border-strong);
+}
+
+.gst-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--gst-text-muted);
+    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.gst-switch input:checked + .gst-slider {
+    background-color: var(--gst-accent);
+    border-color: var(--gst-accent);
+    box-shadow: 0 0 10px var(--gst-glow);
+}
+
+.gst-switch input:checked + .gst-slider:before {
+    transform: translateX(20px);
+    background-color: #ffffff;
+}
+
+/* La case est invisible : le focus clavier se voit sur le rail */
+.gst-switch input:focus-visible + .gst-slider {
+    outline: 2px solid var(--gst-accent);
+    outline-offset: 2px;
+}
+
+/* 📝 Inputs, Textareas, Selects */
+.gst-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gst-field-subtitle {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gst-text-muted);
+}
+
+.gst-label-sm {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--gst-text);
+}
+
+.gst-caption {
+    font-size: 0.74rem;
+    color: var(--gst-text-subtle);
+    line-height: 1.4;
+    margin: 2px 0 0;
+}
+
+.gst-input, .gst-textarea, .gst-select {
+    width: 100%;
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 10px;
+    color: var(--gst-text);
+    padding: 10px 12px;
+    font-size: 0.86rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+}
+
+.gst-input:focus, .gst-textarea:focus, .gst-select:focus {
+    border-color: var(--gst-accent);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
+}
+
+.gst-input::placeholder,
+.gst-textarea::placeholder,
+.gst-input-search::placeholder {
+    color: var(--gst-text-subtle);
+    opacity: 1;
+}
+
+.gst-input-readonly {
+    background: rgba(241, 238, 228, 0.04);
+    border-color: var(--gst-border);
+    color: var(--gst-text-muted);
+    cursor: not-allowed;
+}
+
+.gst-search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 10px;
+    padding: 4px 12px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gst-search-box:focus-within {
+    border-color: var(--gst-accent);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
+}
+
+/* Le cadre de .gst-search-box montre déjà le focus */
+.gst-search-box .gst-input-search:focus-visible {
+    outline: none;
+}
+
+.gst-input-search {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--gst-text);
+    padding: 8px 0;
+    font-size: 0.86rem;
+    outline: none;
+}
+
+/* 🏷 Chips & Tags */
+.gst-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border-strong);
+    color: var(--gst-text);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.gst-tag-x, .gst-tag-del {
+    background: none;
+    border: none;
+    color: var(--gst-danger);
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 0;
+}
+
+.gst-filter-chips-row, .gst-sort-chips-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 0;
+}
+
+.gst-filter-chip, .gst-sort-chip {
+    padding: 6px 12px;
+    border-radius: 9px;
+    font-family: var(--font-display);
+    font-size: 0.76rem;
+    font-weight: 700;
+    background: var(--gst-bg-card);
+    border: 1px solid var(--gst-border);
+    color: var(--gst-text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.gst-filter-chip:hover, .gst-sort-chip:hover {
+    color: var(--gst-text);
+}
+
+.gst-filter-chip.active, .gst-sort-chip.active {
+    background: var(--gst-text);
+    color: var(--gst-bg);
+    border-color: var(--gst-text);
+}
+
+/* 🔘 Buttons */
+/* Principal = .btn.primary de la boutique : fond --accent, texte --accent-ink, ombre pleine --accent-2 */
+.gst-btn-primary {
+    background: var(--gst-accent);
+    color: var(--gst-accent-ink);
+    border: 1px solid var(--gst-accent);
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-size: 0.88rem;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
+    box-shadow: 0 3px 0 var(--gst-accent-2);
+}
+
+.gst-btn-primary:hover {
+    filter: brightness(1.06);
+}
+
+.gst-btn-primary:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--gst-accent-2);
+}
+
+.gst-btn-primary-sm {
+    background: var(--gst-accent);
+    color: var(--gst-accent-ink);
+    border: 1px solid var(--gst-accent);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 0 var(--gst-accent-2);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.gst-btn-primary-sm:active {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 var(--gst-accent-2);
+}
+
+/* Secondaire = .btn.ghost de la boutique */
+.gst-btn-secondary {
+    background: transparent;
+    color: var(--gst-text);
+    border: 1px solid var(--gst-border-strong);
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.15s ease;
+}
+
+.gst-btn-secondary-sm {
+    background: transparent;
+    color: var(--gst-text);
+    border: 1px solid var(--gst-border-strong);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.gst-btn-secondary:hover,
+.gst-btn-secondary:active,
+.gst-btn-secondary-sm:hover,
+.gst-btn-secondary-sm:active {
+    background: var(--gst-bg-card-subtle);
+}
+
+/* Danger = bouton de confirmation .gh-modal-btn-confirm.danger */
+.gst-btn-danger {
+    background: var(--gst-danger);
+    color: #2a0a03;
+    border: 1px solid var(--gst-danger);
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-size: 0.86rem;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 0 3px 0 #b8432c;
+}
+
+.gst-btn-danger-sm {
+    background: var(--gst-danger);
+    color: #2a0a03;
+    border: 1px solid var(--gst-danger);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 0.76rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 0 #b8432c;
+}
+
+.gst-btn-success-sm {
+    background: var(--gst-success);
+    color: #142310;
+    border: 1px solid var(--gst-success);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 0.76rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 0 #5c8f4a;
+}
+
+.gst-btn-danger:active,
+.gst-btn-danger-sm:active,
+.gst-btn-success-sm:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+/* 🎨 Theme Selector Grid */
+.gst-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.gst-theme-btn {
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 10px;
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    color: var(--gst-text-muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.gst-theme-btn:hover {
+    border-color: var(--gst-text-muted);
+}
+
+/* Pastille de couleur gardée lisible : le bouton actif n'est pas rempli d'accent */
+.gst-theme-btn.active {
+    border-color: var(--gst-accent);
+    background: var(--gst-accent-soft);
+    color: var(--gst-text);
+    box-shadow: inset 0 0 0 1px var(--gst-accent);
+}
+
+.gst-color-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(13, 15, 12, 0.6);
+}
+
+/* padding remis à zéro : la règle input de la boutique réduisait la pastille à un trait */
+.gst-color-picker-input {
+    width: 44px;
+    height: 32px;
+    padding: 2px;
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--gst-bg-input);
+}
+
+/* 📱 Bottom Navigation Bar (7 Tabs) */
+/* Même barre que .bottom-nav de la boutique : fond --bg-soft, onglet actif en --accent sur un fond teinté */
+.gst-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 520px;
+    height: calc(env(safe-area-inset-bottom, 0px) + 60px);
+    background: var(--gst-bg-bar);
+    border-top: 1px solid var(--gst-border-strong);
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch;
+    gap: 2px;
+    z-index: 10000;
+    padding: 5px 5px calc(env(safe-area-inset-bottom, 0px) + 5px);
+    box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.gst-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 13px;
+    color: var(--gst-text-muted);
+    font-family: var(--font-display);
+    font-size: 0.6rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    gap: 3px;
+    padding: 0 1px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    letter-spacing: -0.01em;
+}
+
+.gst-nav-label {
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.gst-nav-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+    filter: grayscale(1);
+    opacity: 0.55;
+    transition: filter 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.gst-nav-btn:hover {
+    color: var(--gst-text);
+}
+
+.gst-nav-btn.active {
+    color: var(--gst-accent-text);
+    background: rgba(var(--accent-rgb), 0.14);
+    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.25);
+}
+
+.gst-nav-btn.active .gst-nav-icon {
+    filter: none;
+    opacity: 1;
+    animation: navPop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.gst-nav-btn:active .gst-nav-icon {
+    transform: scale(0.86);
+}
+
+/* Téléphones étroits : les 7 onglets tiennent en 360px sans couper les libellés */
+@media (max-width: 420px) {
+    .gst-bottom-nav {
+        gap: 0;
+        padding-left: 3px;
+        padding-right: 3px;
+    }
+
+    .gst-nav-btn {
+        padding: 0;
+        font-size: 0.56rem;
+        letter-spacing: -0.02em;
+    }
+}
+
+/* 🖼 Modales & Sheets */
+.gst-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10500;
+    background: rgba(8, 9, 7, 0.78);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    color: var(--gst-text);
+    color-scheme: dark;
+}
+
+.gst-modal-dialog {
+    background: var(--gst-bg-card);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 460px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    animation: adModalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gst-modal-wide {
+    max-width: 500px;
+}
+
+@keyframes adModalPop {
+    from { transform: scale(0.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.gst-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--gst-bg-bar);
+    border-bottom: 1px solid var(--gst-border);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--gst-text);
+}
+
+.gst-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gst-modal-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--gst-bg-bar);
+    border-top: 1px solid var(--gst-border);
+}
+
+.gst-btn-close-modal {
+    background: none;
+    border: none;
+    border-radius: 50%;
+    color: var(--gst-text-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    min-width: 32px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.gst-btn-close-modal:hover,
+.gst-btn-close-modal:active {
+    background: var(--gst-bg-card-subtle);
+    color: var(--gst-text);
+}
+
+/* 📱 Phone Mockups for Loader & Background Previews */
+.gst-phone-mockup {
+    width: 220px;
+    height: 380px;
+    border-radius: 28px;
+    border: 4px solid var(--gst-bg-card-subtle);
+    background: #000;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px var(--gst-border-strong), 0 12px 30px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.gst-phone-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.gst-loader-logo-img {
+    width: 110px;
+    height: 110px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 12px rgba(var(--accent-rgb), 0.55));
+}
+
+.gst-btn-replay {
+    position: absolute;
+    bottom: 12px;
+    background: rgba(13, 15, 12, 0.7);
+    border: 1px solid var(--gst-border-strong);
+    color: var(--gst-text);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    z-index: 10;
+}
+
+/* Canvas inside phone preview */
+#gst-bg-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    display: block;
+}
+
+.gst-mini-store-mock {
+    position: relative;
+    z-index: 2;
+    width: 86%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+/* Mini-boutique de l'aperçu : mêmes surfaces que la vraie boutique */
+.gst-ms-header {
+    background: rgba(20, 23, 18, 0.85);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 8px;
+    padding: 6px;
+    font-family: var(--font-display);
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-align: center;
+    color: var(--gst-text);
+    backdrop-filter: blur(6px);
+}
+
+.gst-ms-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.gst-ms-card {
+    height: 60px;
+    background: rgba(24, 27, 22, 0.75);
+    border: 1px solid var(--gst-border);
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+}
+
+/* ==================== 13 INTRO LOADER ANIMATIONS ==================== */
+/* Mêmes animations sur le logo de l'intro de la boutique (classe anim-* posée par applyStoreIntroLoader) */
+/* Les lueurs qui étaient violettes suivent l'accent ; les autres teintes font l'identité de chaque animation */
+.intro-logo[class*="anim-"] {
+    opacity: 1;
+    transform: none;
+}
+
+.gst-loader-anim-target {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transform-origin: center center;
+}
+
+/* 1. Mosaïque */
+.anim-mosaique .gst-loader-logo-img,
+.anim-mosaique.gst-loader-logo-img,
+.intro-logo.anim-mosaique {
+    animation: animMosaique 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate;
+}
+@keyframes animMosaique {
+    0% { transform: scale(0.6) rotateX(70deg) rotateY(30deg); filter: drop-shadow(0 0 4px rgba(var(--accent-rgb), 0.7)) blur(2px); opacity: 0.4; }
+    50% { transform: scale(1.1) rotateX(-15deg) rotateY(-15deg); filter: drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.85)); opacity: 1; }
+    100% { transform: scale(1) rotateX(0deg) rotateY(0deg); filter: drop-shadow(0 0 24px var(--accent)); opacity: 1; }
+}
+
+/* 2. Hyperespace */
+.anim-hyperespace .gst-loader-logo-img,
+.anim-hyperespace.gst-loader-logo-img,
+.intro-logo.anim-hyperespace {
+    animation: animHyperespace 1.6s ease-in-out infinite;
+}
+@keyframes animHyperespace {
+    0% { transform: scale(0.1) rotate(-180deg); filter: blur(14px) brightness(3); opacity: 0; }
+    40% { transform: scale(1.25) rotate(15deg); filter: blur(0px) brightness(1.8) drop-shadow(0 0 25px #06b6d4); opacity: 1; }
+    70% { transform: scale(0.95) rotate(-5deg); filter: blur(0px) brightness(1) drop-shadow(0 0 15px #3b82f6); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* 3. Pièce 3D */
+.anim-piece3d .gst-loader-logo-img,
+.anim-piece3d.gst-loader-logo-img,
+.intro-logo.anim-piece3d {
+    animation: animPiece3D 2.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    transform-style: preserve-3d;
+}
+@keyframes animPiece3D {
+    0% { transform: perspective(600px) rotateY(0deg) scale(1); filter: drop-shadow(0 0 8px rgba(234, 179, 8, 0.5)); }
+    50% { transform: perspective(600px) rotateY(180deg) scale(1.15); filter: drop-shadow(0 0 22px rgba(234, 179, 8, 0.9)) brightness(1.4); }
+    100% { transform: perspective(600px) rotateY(360deg) scale(1); filter: drop-shadow(0 0 8px rgba(234, 179, 8, 0.5)); }
+}
+
+/* 4. Orbite */
+.anim-orbite .gst-loader-logo-img,
+.anim-orbite.gst-loader-logo-img,
+.intro-logo.anim-orbite {
+    animation: animOrbite 2.4s ease-in-out infinite;
+}
+@keyframes animOrbite {
+    0% { transform: translateY(0px) scale(0.9) rotate(0deg); filter: drop-shadow(0 0 10px var(--accent)); }
+    25% { transform: translateY(-12px) scale(1.08) rotate(4deg); filter: drop-shadow(8px -8px 20px #ec4899); }
+    50% { transform: translateY(0px) scale(1) rotate(0deg); filter: drop-shadow(0 0 15px #3b82f6); }
+    75% { transform: translateY(12px) scale(1.08) rotate(-4deg); filter: drop-shadow(-8px 8px 20px #10b981); }
+    100% { transform: translateY(0px) scale(0.9) rotate(0deg); filter: drop-shadow(0 0 10px var(--accent)); }
+}
+
+/* 5. Portail */
+.anim-portail .gst-loader-logo-img,
+.anim-portail.gst-loader-logo-img,
+.intro-logo.anim-portail {
+    animation: animPortail 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes animPortail {
+    0% { transform: scale(0) rotate(720deg); filter: drop-shadow(0 0 0px var(--accent)); opacity: 0; }
+    50% { transform: scale(1.2) rotate(180deg); filter: drop-shadow(0 0 28px rgba(var(--accent-rgb), 0.9)) hue-rotate(90deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 14px var(--accent)); opacity: 1; }
+}
+
+/* 6. Hologramme */
+.anim-hologramme .gst-loader-logo-img,
+.anim-hologramme.gst-loader-logo-img,
+.intro-logo.anim-hologramme {
+    animation: animHologramme 1.8s steps(12, end) infinite;
+}
+@keyframes animHologramme {
+    0%, 100% { transform: translate(0, 0) skew(0deg); filter: drop-shadow(0 0 12px #06b6d4) opacity(0.9); }
+    20% { transform: translate(-3px, 2px) skew(-2deg); filter: drop-shadow(0 0 20px #22d3ee) opacity(0.7); }
+    40% { transform: translate(3px, -2px) skew(3deg); filter: drop-shadow(0 0 6px #0891b2) opacity(0.95); }
+    60% { transform: translate(-2px, -1px) skew(-1deg); filter: drop-shadow(0 0 18px #67e8f9) opacity(0.8); }
+    80% { transform: translate(2px, 1px) skew(1deg); filter: drop-shadow(0 0 14px #06b6d4) opacity(1); }
+}
+
+/* 7. Éventail */
+.anim-eventail .gst-loader-logo-img,
+.anim-eventail.gst-loader-logo-img,
+.intro-logo.anim-eventail {
+    animation: animEventail 1.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite alternate;
+}
+@keyframes animEventail {
+    0% { transform: rotate(-45deg) scale(0.75); opacity: 0.6; filter: drop-shadow(0 0 6px #f43f5e); }
+    50% { transform: rotate(15deg) scale(1.15); opacity: 1; filter: drop-shadow(0 0 22px #fb7185); }
+    100% { transform: rotate(0deg) scale(1); opacity: 1; filter: drop-shadow(0 0 14px #e11d48); }
+}
+
+/* 8. Diaphragme */
+.anim-diaphragme .gst-loader-logo-img,
+.anim-diaphragme.gst-loader-logo-img,
+.intro-logo.anim-diaphragme {
+    animation: animDiaphragme 2s ease-in-out infinite;
+}
+@keyframes animDiaphragme {
+    0% { clip-path: circle(5% at 50% 50%); transform: scale(1.3); filter: blur(4px); }
+    50% { clip-path: circle(75% at 50% 50%); transform: scale(1); filter: blur(0px) drop-shadow(0 0 20px rgba(var(--accent-rgb), 0.85)); }
+    80%, 100% { clip-path: circle(100% at 50% 50%); transform: scale(1); filter: drop-shadow(0 0 12px var(--accent)); }
+}
+
+/* 9. Portes */
+.anim-portes .gst-loader-logo-img,
+.anim-portes.gst-loader-logo-img,
+.intro-logo.anim-portes {
+    animation: animPortes 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+}
+@keyframes animPortes {
+    0% { transform: scaleX(0.1) scaleY(1.3); filter: brightness(2) drop-shadow(0 0 4px #10b981); opacity: 0.3; }
+    50% { transform: scaleX(1.15) scaleY(0.95); filter: brightness(1.2) drop-shadow(0 0 18px #34d399); opacity: 1; }
+    100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 12px #059669); opacity: 1; }
+}
+
+/* 10. Pulsation */
+.anim-pulsation .gst-loader-logo-img,
+.anim-pulsation.gst-loader-logo-img,
+.intro-logo.anim-pulsation {
+    animation: animPulsation 1.2s ease-in-out infinite;
+}
+@keyframes animPulsation {
+    0%, 100% { transform: scale(0.92); filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.4)); }
+    30% { transform: scale(1.18); filter: drop-shadow(0 0 28px rgba(var(--accent-rgb), 0.95)) brightness(1.3); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.7)); }
+    70% { transform: scale(1.14); filter: drop-shadow(0 0 24px rgba(var(--accent-rgb), 0.9)); }
+}
+
+/* 11. Goutte d'huile */
+.anim-goutte .gst-loader-logo-img,
+.anim-goutte.gst-loader-logo-img,
+.intro-logo.anim-goutte {
+    animation: animGoutte 2.4s ease-in-out infinite;
+}
+@keyframes animGoutte {
+    0%, 100% { border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 10px #f59e0b); }
+    25% { border-radius: 60% 40% 70% 30% / 40% 60% 30% 70%; transform: scale(1.08) rotate(5deg); filter: drop-shadow(0 0 20px #fbbf24); }
+    50% { border-radius: 40% 60% 30% 70% / 60% 30% 70% 40%; transform: scale(0.96) rotate(-4deg); filter: drop-shadow(0 0 14px #d97706); }
+    75% { border-radius: 70% 30% 50% 50% / 30% 70% 50% 50%; transform: scale(1.06) rotate(3deg); filter: drop-shadow(0 0 22px #f59e0b); }
+}
+
+/* 12. Glitch */
+.anim-glitch .gst-loader-logo-img,
+.anim-glitch.gst-loader-logo-img,
+.intro-logo.anim-glitch {
+    animation: animGlitch 1.4s steps(6, end) infinite;
+}
+@keyframes animGlitch {
+    0%, 100% { transform: translate(0); filter: drop-shadow(0 0 10px var(--accent)); }
+    15% { transform: translate(-4px, 2px) skewX(-6deg); filter: drop-shadow(-3px 0 #ef4444) drop-shadow(3px 0 #06b6d4); }
+    30% { transform: translate(4px, -2px) skewX(6deg); filter: drop-shadow(3px 0 #10b981) drop-shadow(-3px 0 #ec4899); }
+    55% { transform: translate(-2px, -3px); filter: drop-shadow(-4px 0 #f59e0b) drop-shadow(4px 0 var(--accent)); }
+    75% { transform: translate(3px, 1px) skewX(-3deg); filter: drop-shadow(2px 0 #ef4444) drop-shadow(-2px 0 #06b6d4); }
+}
+
+/* 13. Projecteur */
+.anim-projecteur .gst-loader-logo-img,
+.anim-projecteur.gst-loader-logo-img,
+.intro-logo.anim-projecteur {
+    animation: animProjecteur 2.2s ease-in-out infinite alternate;
+}
+@keyframes animProjecteur {
+    0% { transform: scale(0.85); filter: brightness(0.3) drop-shadow(0 0 2px rgba(255, 255, 255, 0.1)); }
+    50% { transform: scale(1.12); filter: brightness(1.6) drop-shadow(0 0 35px #ffffff) drop-shadow(0 0 50px var(--accent)); }
+    100% { transform: scale(1); filter: brightness(1.1) drop-shadow(0 0 18px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 25px var(--accent)); }
+}
+
+.gst-choices-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 6px;
+}
+
+/* Choix dans une grille (loader, fond, devise…) : comme .qty-card, le choix actif est rempli d'accent */
+.gst-choice-btn {
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 10px;
+    color: var(--gst-text);
+    padding: 9px 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+}
+
+.gst-choice-btn:hover {
+    border-color: var(--gst-text-muted);
+}
+
+.gst-choice-btn.active {
+    background: var(--gst-accent);
+    color: var(--gst-accent-ink);
+    border-color: var(--gst-accent);
+}
+
+/* 🧙‍♂️ 3-Step Wizard Modal */
+.gst-wizard-steps-header {
+    display: flex;
+    border-bottom: 1px solid var(--gst-border);
+    background: var(--gst-bg-bar);
+}
+
+.gst-step-pill {
+    flex: 1;
+    text-align: center;
+    padding: 10px 4px;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gst-text-muted);
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.gst-step-pill.active {
+    color: var(--gst-text);
+    border-bottom-color: var(--gst-accent);
+}
+
+.gst-wizard-step-pane {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gst-wizard-step-pane.active {
+    display: flex;
+}
+
+/* 📑 Quick List Drawer Sheet */
+.gst-drawer-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 520px;
+    max-height: 80vh;
+    background: var(--gst-bg-card);
+    border: 1px solid var(--gst-border-strong);
+    border-bottom: 0;
+    border-radius: 20px 20px 0 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+    animation: adSheetSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Poignée du tiroir */
+.gst-drawer-sheet::before {
+    content: "";
+    flex-shrink: 0;
+    width: 38px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: 999px;
+    background: var(--gst-border-strong);
+}
+
+@keyframes adSheetSlide {
+    from { transform: translate(-50%, 100%); }
+    to { transform: translate(-50%, 0); }
+}
+
+.gst-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px 12px;
+    border-bottom: 1px solid var(--gst-border);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--gst-text);
+}
+
+.gst-drawer-content {
+    padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 14px);
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.gst-drawer-item-btn,
+.gst-drawer-item {
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--gst-text);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.gst-drawer-item-btn:hover,
+.gst-drawer-item:hover {
+    background: rgba(var(--accent-rgb), 0.08);
+    color: var(--gst-text);
+    border-color: var(--gst-accent-line);
+}
+
+/* 📦 Product Cards in Tab 3 (.gst-prod-card-* : classes rendues par script.js) */
+/* Les listes (produits, commandes, tickets, clients) sont dans une .gst-card : leurs fiches sont en --card-2 */
+.gst-product-card-pro,
+.gst-prod-card {
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 0.2s ease;
+}
+
+.gst-product-card-pro:hover,
+.gst-prod-card:hover {
+    border-color: var(--gst-border-strong);
+}
+
+.gst-prod-top-row,
+.gst-prod-card-top {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.gst-prod-thumb,
+.gst-prod-card-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border);
+    flex-shrink: 0;
+}
+
+.gst-prod-info,
+.gst-prod-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gst-prod-name,
+.gst-prod-card-title {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--gst-text);
+}
+
+.gst-prod-cat,
+.gst-prod-card-cat {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--gst-accent-text);
+}
+
+.gst-prod-strain-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+
+.gst-strain-chip {
+    font-size: 0.68rem;
+    background: rgba(241, 238, 228, 0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--gst-text-muted);
+}
+
+.gst-prod-actions-row,
+.gst-prod-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 8px;
+    border-top: 1px solid var(--gst-border);
+}
+
+.gst-btn-chip-action,
+.gst-prod-btn-action {
+    background: transparent;
+    border: 1px solid var(--gst-border-strong);
+    color: var(--gst-text);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.gst-btn-chip-action:hover,
+.gst-prod-btn-action:hover {
+    background: var(--gst-bg-card-subtle);
+}
+
+.gst-btn-chip-action.active {
+    background: var(--gst-accent);
+    color: var(--gst-accent-ink);
+    border-color: var(--gst-accent);
+}
+
+.gst-btn-chip-action.danger,
+.gst-prod-btn-action.danger {
+    color: var(--gst-danger);
+    border-color: rgba(var(--gst-danger-rgb), 0.35);
+}
+
+.gst-product-cards-container,
+.gst-cat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Miniature : photo, première image de la vidéo ou emoji, toujours 60 x 60 */
+.gst-prod-card-thumb {
+    display: block;
+}
+
+.gst-prod-card-thumb-emoji {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+}
+
+.gst-prod-card-info {
+    min-width: 0;
+}
+
+.gst-prod-card-title {
+    overflow-wrap: anywhere;
+}
+
+.gst-prod-card.is-out .gst-prod-card-thumb {
+    filter: grayscale(0.8);
+    opacity: 0.6;
+}
+
+.gst-prod-badges-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.gst-badge-status,
+.gst-badge-promo,
+.gst-badge-new {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    font-family: inherit;
+    line-height: 1.2;
+    border: 1px solid transparent;
+}
+
+.gst-badge-status {
+    cursor: pointer;
+}
+
+.gst-badge-status:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.gst-badge-status.in-stock {
+    background: rgba(var(--gst-success-rgb), 0.12);
+    border-color: rgba(var(--gst-success-rgb), 0.35);
+    color: var(--gst-success);
+}
+
+.gst-badge-status.out-stock {
+    background: rgba(var(--gst-danger-rgb), 0.12);
+    border-color: rgba(var(--gst-danger-rgb), 0.35);
+    color: var(--gst-danger);
+}
+
+/* Promo : l'orange de la boutique (#ff8a3d) */
+.gst-badge-promo {
+    background: rgba(255, 138, 61, 0.16);
+    color: #ffae78;
+}
+
+.gst-badge-new {
+    background: var(--gst-accent-soft);
+    border-color: rgba(var(--accent-rgb), 0.25);
+    color: var(--gst-accent-text);
+}
+
+/* Flèches : position du produit dans sa catégorie */
+.gst-prod-reorder {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.gst-prod-reorder-btn {
+    width: 32px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border-strong);
+    color: var(--gst-text);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.gst-prod-reorder-btn:hover {
+    border-color: var(--gst-accent-line);
+}
+
+.gst-prod-reorder-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.gst-prod-card-actions .gst-prod-btn-action {
+    flex: 1;
+    padding: 6px 8px;
+}
+
+/* Catégories (onglet Produits) */
+.gst-cat-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border-strong);
+}
+
+.gst-cat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 12px;
+}
+
+.gst-cat-emoji {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--gst-bg-input);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.gst-cat-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.gst-cat-name {
+    font-family: var(--font-display);
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--gst-text);
+    overflow-wrap: anywhere;
+}
+
+.gst-cat-meta {
+    font-size: 0.72rem;
+    color: var(--gst-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Fiches clients (onglet Utilisateurs) */
+.gst-user-crm-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--gst-accent-soft);
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
+    color: var(--gst-accent-text);
+    font-family: var(--font-display);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.gst-user-crm-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gst-user-crm-name {
+    font-family: var(--font-display);
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--gst-text);
+    overflow-wrap: anywhere;
+}
+
+.gst-user-crm-handle {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--gst-accent-text);
+}
+
+.gst-user-crm-id {
+    font-size: 0.7rem;
+    color: var(--gst-text-subtle);
+}
+
+.gst-btn-icon-dm {
+    text-decoration: none;
+}
+
+.gst-btn-crm-profile {
+    background: var(--gst-accent);
+    border: 1px solid var(--gst-accent);
+    color: var(--gst-accent-ink);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 0.74rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 0 var(--gst-accent-2);
+}
+
+/* Tickets SAV, détail des commandes */
+.gst-ticket-card {
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gst-ticket-card strong {
+    font-family: var(--font-display);
+    color: var(--gst-text);
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+}
+
+.gst-order-meta {
+    font-size: 0.74rem;
+    color: var(--gst-text-muted);
+}
+
+.gst-order-summary {
+    font-size: 0.8rem;
+    color: var(--gst-text);
+    opacity: 0.85;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+/* Admins secondaires, boutons inline du /start */
+.gst-admin-chip-row,
+.gst-start-btn-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 10px;
+    margin-top: 6px;
+}
+
+.gst-admin-chip-row .gst-user-handle {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.gst-start-btn-row {
+    flex-wrap: wrap;
+}
+
+.gst-input-sm,
+.gst-select-sm {
+    flex: 1 1 120px;
+    min-width: 0;
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 8px;
+    color: var(--gst-text);
+    padding: 7px 9px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.gst-input-sm:focus,
+.gst-select-sm:focus {
+    border-color: var(--gst-accent);
+}
+
+.gst-btn-remove-sm {
+    background: rgba(var(--gst-danger-rgb), 0.12);
+    border: 1px solid rgba(var(--gst-danger-rgb), 0.35);
+    color: var(--gst-danger);
+    padding: 6px 9px;
+    border-radius: 8px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.gst-btn-remove-sm:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+/* Boutons du panel désactivés (envoi en cours, option pas encore disponible) */
+.gst-btn-primary:disabled,
+.gst-btn-primary-sm:disabled,
+.gst-btn-secondary-sm:disabled,
+.gst-btn-success-sm:disabled,
+.gst-btn-danger-sm:disabled,
+.gst-btn-chip-action:disabled,
+.gst-btn-choice:disabled,
+.gst-btn-icon-circ:disabled {
+    opacity: 0.45;
+    cursor: default;
+    box-shadow: none;
+    transform: none;
+    filter: none;
+}
+
+/* Admins : état du lien pseudo ↔ compte, résultats de la recherche */
+.gst-admin-link-status {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--gst-text-muted);
+}
+
+.gst-admin-chip-row.is-self .gst-user-handle {
+    color: var(--gst-accent-text);
+}
+
+/* Avis à modérer : l'or des étoiles de la boutique */
+.gst-review-stars {
+    color: var(--gst-warning);
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.gst-review-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* Éditeur /start : barre de mise en forme, aperçu du message, enregistrement */
+.gst-format-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.gst-start-preview {
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--gst-text);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.gst-start-preview code {
+    background: rgba(241, 238, 228, 0.08);
+    border-radius: 4px;
+    padding: 0 4px;
+}
+
+/* Lien dans l'aperçu du message Telegram : bleu adouci, comme un lien dans le chat */
+.gst-start-preview .gst-preview-link {
+    color: var(--gst-info);
+    text-decoration: underline;
+}
+
+.gst-start-preview-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 10px;
+    white-space: normal;
+}
+
+.gst-start-preview-btn {
+    background: rgba(241, 238, 228, 0.08);
+    border-radius: 8px;
+    padding: 6px 8px;
+    text-align: center;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+/* Collée en bas de la zone qui défile (son padding-bottom laisse déjà la place de la barre d'onglets) */
+/* Même barre que .checkout-row de la boutique */
+.gst-start-save-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    gap: 10px;
+    margin-top: 0;
+    padding: 10px 12px;
+    background: var(--gst-bg-card);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 14px;
+    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.gst-save-status-indicator.is-dirty {
+    color: var(--gst-warning);
+}
+
+/* Menu ••• : une action par ligne */
+.gst-drawer-content.gst-drawer-list {
+    grid-template-columns: 1fr;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+}
+
+/* Navigation rapide */
+.gst-drawer-item-icon {
+    flex-shrink: 0;
+}
+
+.gst-drawer-item-label {
+    flex: 1;
+    min-width: 0;
+}
+
+.gst-chevron {
+    color: var(--gst-text-subtle);
+}
+
+/* 📋 Order Cards in Tab 4 */
+.gst-order-card-pro,
+.gst-order-card {
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gst-order-header-row,
+.gst-order-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gst-order-id-tag,
+.gst-order-id {
+    font-family: var(--font-display);
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: var(--gst-text);
+}
+
+/* Total en accent, comme .order-card-total de la boutique */
+.gst-order-total-big,
+.gst-order-total {
+    font-family: var(--font-display);
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: var(--gst-accent-text);
+}
+
+.gst-order-type-badge,
+.gst-badge-type {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    background: var(--gst-accent-soft);
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
+    color: var(--gst-accent-text);
+}
+
+.gst-order-status-badge {
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.gst-order-status-badge.delivered {
+    background: rgba(var(--gst-success-rgb), 0.16);
+    color: var(--gst-success);
+}
+
+.gst-order-status-badge.pending {
+    background: rgba(var(--gst-warning-rgb), 0.16);
+    color: var(--gst-warning);
+}
+
+/* 👥 User Cards in Tab 7 */
+.gst-user-row-pro,
+.gst-user-crm-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 12px;
+    gap: 8px;
+}
+
+.gst-user-name-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gst-user-display-name {
+    font-family: var(--font-display);
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--gst-text);
+}
+
+.gst-user-handle-sub {
+    font-size: 0.74rem;
+    color: var(--gst-accent-text);
+}
+
+.gst-user-id-sub {
+    font-size: 0.7rem;
+    color: var(--gst-text-subtle);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gst-user-actions-row,
+.gst-user-crm-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gst-btn-circ-action,
+.gst-btn-icon-copy,
+.gst-btn-icon-dm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border-strong);
+    color: var(--gst-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.gst-btn-circ-action:hover,
+.gst-btn-icon-copy:hover,
+.gst-btn-icon-dm:hover {
+    background: var(--gst-accent);
+    border-color: var(--gst-accent);
+    color: var(--gst-accent-ink);
+}
+
+/* 4-Stat Quad Grid */
+.gst-stats-quad {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.gst-stat-box {
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gst-stat-val,
+.gst-stat-number {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--gst-text);
+}
+
+.gst-stat-lbl,
+.gst-stat-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--gst-text-muted);
+}
+
+/* Couleurs des chiffres du panel (classes posées dans index.html) : palette de la boutique */
+.text-green { color: var(--gst-success) !important; }
+.text-red { color: var(--gst-danger) !important; }
+.text-purple { color: var(--gst-accent-text) !important; }
+.text-yellow { color: var(--gst-warning) !important; }
+.text-cyan { color: var(--gst-info) !important; }
+
+/* Grid 3 Actions */
+/* minmax(0, …) + retour à la ligne : les trois boutons tiennent dans la carte dès 360px */
+.gst-actions-grid-3 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 6px;
+    margin: 10px 0;
+}
+
+.gst-btn-action {
+    background: transparent;
+    border: 1px solid var(--gst-border-strong);
+    color: var(--gst-text);
+    padding: 9px 6px;
+    border-radius: 9px;
+    font-family: var(--font-display);
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    transition: background-color 0.15s ease;
+}
+
+.gst-btn-action:hover,
+.gst-btn-action:active {
+    background: var(--gst-bg-card-subtle);
+}
+
+.gst-btn-action-primary {
+    background: var(--gst-accent);
+    border: 1px solid var(--gst-accent);
+    color: var(--gst-accent-ink);
+    padding: 9px 6px;
+    border-radius: 9px;
+    font-family: var(--font-display);
+    font-size: 0.74rem;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 0 2px 0 var(--gst-accent-2);
+    white-space: normal;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+/* Details and Accordions */
+.gst-details-accordion {
+    border-top: 1px solid var(--gst-border);
+    padding-top: 8px;
+}
+
+.gst-summary {
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--gst-text);
+    outline: none;
+}
+
+.gst-summary::marker {
+    color: var(--gst-accent);
+}
+
+.gst-details-body {
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Prices table in Wizard */
+.gst-prices-table {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gst-price-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gst-input-qty { width: 55px; text-align: center; }
+.gst-select-unit { width: 65px; }
+.gst-input-price { flex: 1; }
+.gst-btn-del-row {
+    background: none;
+    border: none;
+    color: var(--gst-danger);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+}
+
+.gst-db-preview-box {
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--gst-text-muted);
+    font-family: monospace;
+    font-size: 0.8rem;
+    margin: 4px 0 0;
+}
+
+/* Tableau des paliers : quantité, unité, prix livraison, prix sur place, retrait */
+.gst-price-row .gst-input,
+.gst-price-row .gst-select {
+    padding: 8px 6px;
+    font-size: 0.82rem;
+}
+
+.gst-price-row .gst-input-qty {
+    flex: 0 0 52px;
+}
+
+.gst-price-row .gst-select-unit {
+    flex: 0 0 64px;
+}
+
+.gst-price-input-eur {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--gst-text-muted);
+    font-size: 0.76rem;
+}
+
+.gst-price-input-eur .gst-input-eur {
+    min-width: 0;
+    text-align: right;
+}
+
+.gst-btn-remove-price {
+    flex: 0 0 26px;
+    background: none;
+    border: none;
+    color: var(--gst-danger);
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 0;
+}
+
+.gst-price-row-head {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--gst-text-subtle);
+}
+
+.gst-db-preview-box {
+    white-space: pre-wrap;
+}
+
+.gst-db-preview-box:empty {
+    display: none;
+}
+
+/* Aperçu photo / vidéo du formulaire produit */
+.gst-media-preview-container {
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border);
+}
+
+.gst-media-preview-container img,
+.gst-media-preview-container video {
+    width: 100%;
+    max-height: 160px;
+    object-fit: cover;
+    background: #000;
+}
+
+.gst-media-preview-container .gst-empty-placeholder {
+    padding: 14px 12px;
+}
+
+.gst-input-btn-row .gst-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.gst-input-btn-row .gst-btn-secondary-sm,
+.gst-card-row-head > .gst-btn-primary-sm {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Champ suivi de son unité (%, €…) sur la même ligne */
+.gst-input-with-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--gst-text-muted);
+}
+
+.gst-input-with-label .gst-input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Champs que le serveur n'enregistre pas encore : visibles, désactivés */
+.gst-field-unsaved {
+    opacity: 0.5;
+}
+
+.gst-field-unsaved input:disabled,
+.gst-field-unsaved .gst-switch {
+    cursor: not-allowed;
+}
+
+.gst-unsaved-tag {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(241, 238, 228, 0.08);
+    color: var(--gst-text-muted);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: middle;
+}
+
+#pw-save-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.gst-two-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.gst-btn-row-trio {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.gst-btn-choice {
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 8px;
+    padding: 8px 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gst-text-muted);
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+}
+
+.gst-btn-choice:hover {
+    color: var(--gst-text);
+}
+
+.gst-btn-choice.active {
+    background: var(--gst-accent);
+    color: var(--gst-accent-ink);
+    border-color: var(--gst-accent);
+}
+
+.gst-card-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 12px;
+    padding: 10px;
+    color: var(--gst-text);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.gst-card-nav-btn:hover {
+    border-color: var(--gst-accent-line);
+    background: rgba(var(--accent-rgb), 0.06);
+}
+
+.gst-nav-spark {
+    color: var(--gst-accent);
+    font-size: 1rem;
+}
+
+.gst-card-nav-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.gst-cn-title {
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.gst-cn-sub {
+    font-size: 0.7rem;
+    color: var(--gst-text-muted);
+}
+
+.gst-cn-arrow {
+    font-size: 1.1rem;
+    color: var(--gst-text-subtle);
+}
+
+.gst-logo-preview-box {
+    width: 100px;
+    height: 100px;
+    border-radius: 16px;
+    background: var(--gst-bg-input);
+    border: 2px dashed var(--gst-border-strong);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.gst-logo-preview {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.gst-bg-preview-box {
+    width: 100%;
+    height: 120px;
+    border-radius: 12px;
+    background: var(--gst-bg-input);
+    overflow: hidden;
+    border: 1px solid var(--gst-border-strong);
+}
+
+.gst-bg-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gst-store-btns-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+/* Aperçu des boutons de la boutique : panier = .btn.primary ; Telegram et Instagram gardent leurs couleurs de marque */
+.gst-preview-btn-cart {
+    background: var(--gst-accent);
+    color: var(--gst-accent-ink);
+    border: none;
+    border-radius: 8px;
+    padding: 9px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.82rem;
+    box-shadow: 0 2px 0 var(--gst-accent-2);
+}
+
+.gst-preview-btn-tg {
+    background: #0284c7;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.82rem;
+}
+
+.gst-preview-btn-insta {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.82rem;
+}
+
+.gst-status-bot-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid rgba(var(--gst-success-rgb), 0.3);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 8px;
+}
+
+.gst-badge-active {
+    background: rgba(var(--gst-success-rgb), 0.16);
+    color: var(--gst-success);
+    font-weight: 800;
+    font-size: 0.74rem;
+    padding: 4px 8px;
+    border-radius: 999px;
+    margin-left: auto;
+}
+
+.gst-badge-principal {
+    background: var(--gst-accent-soft);
+    color: var(--gst-accent-text);
+    font-weight: 800;
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 999px;
+    margin-left: auto;
+}
+
+.gst-cni-preview-box {
+    width: 100%;
+    height: 140px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--gst-border-strong);
+}
+
+.gst-cni-sample-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gst-currency-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.gst-btn-cur {
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border-strong);
+    border-radius: 8px;
+    padding: 8px 4px;
+    color: var(--gst-text-muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+}
+
+.gst-btn-cur:hover {
+    color: var(--gst-text);
+}
+
+.gst-btn-cur.active {
+    background: var(--gst-accent);
+    color: var(--gst-accent-ink);
+    border-color: var(--gst-accent);
+}
+
+.gst-link-btn {
+    background: none;
+    border: none;
+    color: var(--gst-accent-text);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.gst-empty-placeholder {
+    padding: 24px 12px;
+    text-align: center;
+    color: var(--gst-text-muted);
+    font-size: 0.84rem;
+    font-style: italic;
+}
+
+.gst-empty-placeholder.gst-load-error {
+    color: var(--gst-danger);
+    font-style: normal;
+}
+
+.gst-subtabs-inner {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.gst-subpane {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gst-subpane.active {
+    display: flex;
+}
+
+.gst-admin-card-lead,
+.gst-user-card-lead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-top: 6px;
+}
+
+.gst-user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--gst-accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.gst-user-info-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.gst-user-handle {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--gst-text);
+}
+
+.gst-user-id {
+    font-size: 0.72rem;
+    color: var(--gst-text-subtle);
+}
+
+/* Fiche client (rendue par script.js) : ses couleurs en ligne sont ramenées à la palette du panel */
+#gst-user-modal-body .gst-user-info-col > strong {
+    font-family: var(--font-display);
+    color: var(--gst-text) !important;
+}
+
+#gst-user-modal-body .gst-user-info-col > span:nth-of-type(1) {
+    color: var(--gst-accent-text) !important;
+}
+
+#gst-user-modal-body .gst-user-info-col > span:nth-of-type(2) {
+    color: var(--gst-text-muted) !important;
+}
+
+/* Deux choix côte à côte : contrôle segmenté de la boutique (.service-switch) */
+.gst-tab-toggle-group {
+    display: flex;
+    gap: 4px;
+    margin: 8px 0;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border);
+}
+
+.gst-pill-tab {
+    flex: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    padding: 7px;
+    font-family: var(--font-display);
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--gst-text-muted);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.gst-pill-tab:hover {
+    color: var(--gst-text);
+}
+
+.gst-pill-tab.active {
+    background: var(--gst-text);
+    color: var(--gst-bg);
+    border-color: var(--gst-text);
+}
+
+.gst-chat-selected-pill {
+    background: rgba(var(--gst-success-rgb), 0.12);
+    border: 1px solid rgba(var(--gst-success-rgb), 0.3);
+    color: var(--gst-success);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-top: 6px;
+}
+
+.gst-btn-row-dual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.gst-card-bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+}
+
+.gst-save-status-indicator {
+    font-size: 0.75rem;
+    color: var(--gst-success);
+    font-weight: 700;
+}
+
+.gst-btn-icon-circ {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border-strong);
+    color: var(--gst-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.gst-btn-icon-circ:hover {
+    border-color: var(--gst-accent-line);
+    color: var(--gst-accent-text);
+}
+
+.gst-btn-help-tags {
+    background: none;
+    border: none;
+    color: var(--gst-accent-text);
+    font-size: 0.74rem;
+    cursor: pointer;
+}
+
+.gst-label-with-count {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gst-counter {
+    font-size: 0.72rem;
+    color: var(--gst-text-subtle);
+}
+
+.gst-upload-dropzone {
+    border: 2px dashed var(--gst-border-strong);
+    background: var(--gst-bg-input);
+    border-radius: 12px;
+    padding: 20px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+    text-align: center;
+    transition: border-color 0.15s ease;
+}
+
+.gst-upload-dropzone:hover {
+    border-color: var(--gst-accent-line);
+}
+
+.gst-upload-dropzone strong {
+    font-size: 0.84rem;
+    color: var(--gst-text);
+}
+
+.gst-upload-dropzone small {
+    font-size: 0.72rem;
+    color: var(--gst-text-muted);
+}
+
+.gst-icon-audio {
+    font-size: 1.5rem;
+    color: var(--gst-accent);
+}
+
+.gst-input-btn-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.gst-input-add-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.gst-city-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--gst-text);
+    margin-top: 4px;
+}
+
+.gst-btn-del-city {
+    background: none;
+    border: none;
+    color: var(--gst-danger);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+/* Éléments du panel qui n'avaient pas de style (zones PlugX, lots de la roue, jalons Nème client) */
+.gst-tags-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 12px;
+    background: var(--gst-bg-input);
+    border: 1px solid var(--gst-border);
+}
+
+.gst-country-tag {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--gst-accent-soft);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    color: var(--gst-text);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.gst-city-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.gst-input-add-row .gst-input-ghost {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+}
+
+.gst-btn-add-ghost,
+.gst-btn-del-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid var(--gst-border-strong);
+    color: var(--gst-text);
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.gst-btn-add-ghost:hover,
+.gst-btn-del-icon:hover {
+    background: var(--gst-bg-card-subtle);
+}
+
+.gst-milestone-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 12px;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+}
+
+.gst-milestone-num,
+.gst-prize-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--gst-text-muted);
+}
+
+.gst-prize-row + .gst-prize-row {
+    margin-top: 6px;
+}
+
+.gst-input-num-sm,
+.gst-input-pct {
+    width: 72px;
+    flex: 0 0 72px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.gst-hint-tag {
+    margin-left: 6px;
+    color: var(--gst-accent-text);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.gst-wheel-total-sum {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--gst-text-muted);
 }
 
 .admin-topbar {
@@ -2554,12 +5620,14 @@ select option {
 }
 
 /* --- PREMIUM TOAST NOTIFICATION --- */
+/* Au-dessus de tout : panel admin (9999), ses modales (10500) et la confirmation (99999) */
 .gh-toast {
     position: fixed;
     top: 16px;
     left: 50%;
     transform: translate(-50%, -12px);
-    z-index: 9999;
+    z-index: 100000;
+    max-width: calc(100vw - 32px);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -2587,7 +5655,21 @@ select option {
 }
 
 .gh-toast .toast-message {
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.gh-toast.gh-toast-error {
+    background: #fde8e8;
+    color: #7f1d1d;
+}
+
+.gh-toast.gh-toast-error .toast-icon {
+    color: #dc2626;
+}
+
+.gh-toast.gh-toast-info .toast-icon {
+    color: #2563eb;
 }
 
 /* ===== VIDEO FULLSCREEN OVERLAY ===== */

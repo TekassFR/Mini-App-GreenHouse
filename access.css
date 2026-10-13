@@ -1,0 +1,3195 @@
+/* ==========================================================================
+   CONTRÔLES D'ACCÈS — chargé après style.css
+   Boutique : écran d'accès plein écran, rappel admin, réseaux de contact, « Commander sur … »
+   Panel (préfixe gst-) : mode fermé, réseaux, bot backup, vérifications CNI / approbation
+   Jamais de classe « ad-… » ni banner / sponsor / advert : les bloqueurs de pub les masquent.
+   ========================================================================== */
+
+/* ---------- Boutique : éléments masqués par l'attribut hidden (script.js) ---------- */
+.access-screen[hidden],
+.access-staff-note[hidden],
+.contact-note[hidden],
+.contact-networks[hidden],
+.detail-order-links[hidden] {
+    display: none !important;
+}
+
+/* Écran d'accès affiché : la boutique derrière n'est ni visible ni défilable */
+body.access-locked {
+    overflow: hidden;
+}
+
+body.access-locked .app-shell {
+    visibility: hidden;
+}
+
+/* ---------- Écran d'accès (D.A. de la boutique) ---------- */
+.access-screen {
+    position: fixed;
+    inset: 0;
+    /* au-dessus de la boutique et de la fiche produit (3000), sous l'intro (5000) qui s'efface dessus */
+    z-index: 4000;
+    display: flex;
+    padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background-color: var(--bg);
+    background-image:
+        radial-gradient(120% 65% at 50% -8%, rgba(var(--accent-rgb, 111, 191, 115), 0.24), transparent 62%),
+        linear-gradient(180deg, rgba(13, 15, 12, 0.82), rgba(13, 15, 12, 0.97) 58%),
+        var(--shop-bg-image, url("background.png"));
+    background-size: auto, auto, cover;
+    background-position: center top, center, center;
+    background-repeat: no-repeat;
+    color: var(--text);
+    opacity: 1;
+    transition: opacity 0.35s ease;
+}
+
+.access-screen.is-leaving {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.access-card {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    /* centré quand il tient dans l'écran, défilable sinon */
+    margin: auto;
+    padding: 30px 20px 22px;
+    text-align: center;
+    border: 1px solid var(--line-strong);
+    border-radius: 22px;
+    background: var(--card);
+    background: color-mix(in srgb, var(--card) 90%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    animation: accessCardIn 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+
+/* Filet de couleur du thème en haut de la carte */
+.access-card::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 18%;
+    right: 18%;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+.access-emblem {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 18px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 26%, rgba(var(--accent-rgb, 111, 191, 115), 0.3), rgba(var(--accent-rgb, 111, 191, 115), 0.07) 72%);
+    border: 1px solid rgba(var(--accent-rgb, 111, 191, 115), 0.42);
+    box-shadow: 0 0 0 8px rgba(var(--accent-rgb, 111, 191, 115), 0.06), 0 14px 32px rgba(var(--accent-rgb, 111, 191, 115), 0.18);
+}
+
+.access-emblem::after {
+    content: "";
+    position: absolute;
+    inset: -9px;
+    border-radius: 50%;
+    border: 1px solid rgba(var(--accent-rgb, 111, 191, 115), 0.4);
+    animation: accessPulse 2.6s ease-out infinite;
+    pointer-events: none;
+}
+
+.access-emblem-icon {
+    font-size: 2.6rem;
+    line-height: 1;
+}
+
+/* Logo de la boutique en pastille sur l'emblème */
+.access-logo {
+    position: absolute;
+    right: -6px;
+    bottom: -4px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--card);
+    background: var(--bg);
+}
+
+.access-kicker {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.access-title {
+    margin-top: 6px;
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 6.5vw, 1.75rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.access-message {
+    margin-top: 10px;
+    font-size: 0.93rem;
+    line-height: 1.55;
+    color: var(--muted);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.access-hint {
+    margin-top: 14px;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: var(--muted);
+}
+
+/* Fermeture programmée : heure de réouverture */
+.access-clock {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin-top: 20px;
+    padding: 12px 26px 10px;
+    border-radius: 16px;
+    border: 1px dashed rgba(var(--accent-rgb, 111, 191, 115), 0.5);
+    background: rgba(var(--accent-rgb, 111, 191, 115), 0.07);
+}
+
+.access-clock-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.access-clock-time {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+}
+
+/* Étapes numérotées (bot backup, canal, vérification) */
+.access-steps {
+    display: grid;
+    gap: 8px;
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+}
+
+.access-steps li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--bg-soft, var(--bg));
+    font-size: 0.88rem;
+    line-height: 1.35;
+    color: var(--text);
+}
+
+.access-step-num {
+    flex: 0 0 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+/* Mobile uniquement : plateformes acceptées */
+.access-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.access-chips span {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-soft, var(--bg));
+    font-size: 0.8rem;
+    color: var(--text);
+}
+
+/* Vérification : statut de la demande et motif du refus */
+.access-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.access-pill.is-pending {
+    color: #f5c451;
+    background: rgba(245, 196, 81, 0.12);
+    border: 1px solid rgba(245, 196, 81, 0.35);
+}
+
+.access-pill.is-pending::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: accessBlink 1.2s ease-in-out infinite;
+}
+
+.access-pill.is-rejected {
+    color: var(--danger, #ff6a4d);
+    background: rgba(255, 106, 77, 0.1);
+    border: 1px solid rgba(255, 106, 77, 0.35);
+}
+
+.access-reason {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 106, 77, 0.25);
+    background: rgba(255, 106, 77, 0.06);
+    font-size: 0.86rem;
+    line-height: 1.45;
+    text-align: left;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.access-reason strong {
+    margin-right: 4px;
+    font-weight: 700;
+    color: var(--danger, #ff6a4d);
+}
+
+.access-actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.access-actions .btn {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+}
+
+.access-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.access-status {
+    min-height: 1.2em;
+    margin-top: 12px;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+@keyframes accessCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.97);
+    }
+}
+
+@keyframes accessPulse {
+    0% {
+        transform: scale(0.92);
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: scale(1.28);
+        opacity: 0;
+    }
+}
+
+@keyframes accessBlink {
+    50% {
+        opacity: 0.25;
+    }
+}
+
+/* ---------- Rappel admin : contrôles actifs qu'il contourne ---------- */
+.access-staff-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 2px 0 10px;
+    padding: 8px 8px 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--accent-rgb, 111, 191, 115), 0.35);
+    background: rgba(var(--accent-rgb, 111, 191, 115), 0.1);
+    font-size: 0.76rem;
+    line-height: 1.35;
+    color: var(--text);
+}
+
+.access-staff-note-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.access-staff-note-close {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+/* ---------- Page Infos : texte libre et réseaux de contact ---------- */
+.contact-note {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.contact-networks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.contact-networks-label {
+    grid-column: 1 / -1;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.contact-net-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 11px 10px;
+}
+
+/* Onglet Infos désactivé dans la gestion (contact_tab_enabled = "false") : 5 onglets */
+.bottom-nav.contact-tab-off {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.bottom-nav.contact-tab-off::before {
+    width: calc((100% - 12px) / 5);
+}
+
+.bottom-nav.contact-tab-off .tab-btn[data-page="info"] {
+    display: none;
+}
+
+/* ---------- Fiche produit : « Commander sur … » ---------- */
+.detail-order-links {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.detail-order-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 13px 14px;
+    font-size: 0.9rem;
+}
+
+.detail-order-icon {
+    font-size: 1.05rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .access-screen {
+        transition: none;
+    }
+
+    .access-card,
+    .access-emblem::after,
+    .access-pill.is-pending::before {
+        animation: none;
+    }
+}
+
+/* ==========================================================================
+   PANEL ADMIN (onglet Réglages) — compléments des classes gst- de style.css
+   ========================================================================== */
+
+/* Mode fermé : état calculé par le serveur (closed_now) */
+.gst-state-line {
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.gst-state-line.is-open {
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.gst-state-line.is-closed {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* Réseaux : aperçu des boutons de la fiche produit */
+.gst-store-btns-preview > div {
+    text-align: center;
+}
+
+.gst-preview-btn-net {
+    padding: 9px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #fff;
+    background: #334155;
+}
+
+.gst-preview-btn-net[data-net="whatsapp"] {
+    background: #16a34a;
+}
+
+.gst-preview-btn-net[data-net="signal"] {
+    background: #3a76f0;
+}
+
+.gst-preview-btn-net[data-net="snapchat"] {
+    background: #fffc00;
+    color: #111;
+}
+
+.gst-preview-btn-net[data-net="potato"] {
+    background: #d97706;
+}
+
+.gst-preview-btn-net[data-net="luffa"] {
+    background: #0d9488;
+}
+
+/* Bot backup : carte d'état (non configuré / arrêté) */
+.gst-status-bot-card.is-off {
+    border-color: rgba(148, 163, 184, 0.3);
+}
+
+.gst-status-bot-card.is-down {
+    border-color: rgba(239, 68, 68, 0.45);
+}
+
+.gst-status-bot-card .gst-user-info-col {
+    min-width: 0;
+}
+
+.gst-badge-active {
+    white-space: nowrap;
+}
+
+.gst-badge-active.is-off {
+    background: rgba(148, 163, 184, 0.16);
+    color: #cbd5e1;
+}
+
+.gst-badge-active.is-down {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+}
+
+.gst-input-btn-row > button {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.gst-btn-danger:disabled,
+.gst-btn-secondary:disabled,
+.gst-btn-remove-sm:disabled {
+    opacity: 0.45;
+    cursor: default;
+    box-shadow: none;
+}
+
+/* CNI : image d'exemple, compteurs, demandes en attente */
+.gst-cni-preview-box {
+    display: grid;
+    place-items: center;
+}
+
+.gst-cni-preview-box .gst-empty-placeholder {
+    padding: 12px;
+}
+
+.gst-btn-row-dual .gst-upload-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.gst-stats-trio {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.gst-stats-trio .gst-stat-box {
+    align-items: center;
+    padding: 8px 6px;
+    text-align: center;
+}
+
+.gst-verif-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gst-verif-status {
+    flex-shrink: 0;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.14);
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #fbbf24;
+    white-space: nowrap;
+}
+
+.gst-verif-photo-box {
+    min-height: 64px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 10px;
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    background: #0f0b1f;
+}
+
+.gst-verif-photo-box.is-empty {
+    min-height: 0;
+}
+
+.gst-verif-photo {
+    display: block;
+    width: 100%;
+    max-height: 240px;
+    object-fit: cover;
+    cursor: zoom-in;
+}
+
+.gst-verif-photo.is-zoomed {
+    max-height: none;
+    object-fit: contain;
+    cursor: zoom-out;
+}
+
+.gst-verif-photo-state {
+    padding: 12px 10px;
+    font-size: 0.78rem;
+    text-align: center;
+    color: var(--gst-text-muted, #9ca3af);
+}
+
+/* Motif du refus, saisi dans la modale de confirmation (D.A. de la boutique) */
+.gh-modal-message .gst-verif-reason {
+    display: block;
+    width: 100%;
+    min-height: 72px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-soft, var(--bg));
+    color: var(--text);
+    font: inherit;
+    font-size: 0.86rem;
+    text-align: left;
+    resize: vertical;
+}
+
+/* === Bot === */
+/* Image de fond masquée sur ordinateur (réglage background_hide_desktop, classe posée par script.js) : fond uni */
+body.shop-bg-off,
+body.shop-bg-off.has-custom-bg {
+    background-image: none;
+}
+
+body.shop-bg-off .access-screen {
+    background-image: radial-gradient(120% 65% at 50% -8%, rgba(var(--accent-rgb, 111, 191, 115), 0.24), transparent 62%);
+    background-size: auto;
+}
+
+/* CRM coupé (crm_enabled = "false") : onglet Utilisateurs et compteurs des onglets Produits et Commandes masqués */
+#admin-overlay.gst-crm-off .gst-nav-btn[data-gst-nav="utilisateurs"],
+#admin-overlay.gst-crm-off #gst-pane-utilisateurs,
+#admin-overlay.gst-crm-off #gst-pane-produits .gst-stats-quad,
+#admin-overlay.gst-crm-off #gst-pane-commandes .gst-stats-quad {
+    display: none !important;
+}
+
+/* Lignes d'état neutre et à surveiller (complètent .gst-state-line.is-open / .is-closed) */
+.gst-state-line.is-off {
+    color: var(--muted);
+    background: rgba(148, 163, 184, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.gst-state-line.is-warn {
+    color: var(--gst-warning, #f2c14e);
+    background: rgba(var(--gst-warning-rgb, 242, 193, 78), 0.12);
+    border: 1px solid rgba(var(--gst-warning-rgb, 242, 193, 78), 0.32);
+}
+
+.gst-card > .gst-state-line {
+    margin-top: 10px;
+}
+
+.gst-caption.is-error {
+    color: var(--gst-danger, var(--danger));
+}
+
+/* Image de fond : rien d'affiché avant la lecture des réglages (pas d'image cassée) */
+.gst-bg-preview-img:not([src]) {
+    visibility: hidden;
+}
+
+.gst-bg-targets-list {
+    display: grid;
+    gap: 6px;
+}
+
+.gst-bg-target-thumb {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid var(--gst-border-strong, var(--line));
+    background: var(--gst-bg-input, var(--card-2));
+}
+
+/* Lien à partager : affiché en entier, sélectionnable */
+.gst-bg-target-row .gst-cat-meta {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    -webkit-user-select: all;
+    user-select: all;
+}
+
+.gst-bg-target-row .gst-btn-icon-copy {
+    flex-shrink: 0;
+}
+
+/* Profil du bot et canal de logs : carte d'état avec son bouton à droite */
+.gst-status-bot-card > .gst-btn-secondary-sm,
+.gst-status-bot-card > .gst-btn-remove-sm {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+#gst-bot-profile-save-btn,
+#gst-tg-logs-test-btn {
+    width: 100%;
+    margin-top: 6px;
+}
+
+/* Logs Telegram : étapes de liaison et commande /logs CODE */
+.gst-steps {
+    display: grid;
+    gap: 4px;
+    margin: 4px 0 10px;
+    padding-left: 20px;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--muted);
+}
+
+.gst-steps strong {
+    color: var(--text);
+}
+
+#gst-sec-logs .gst-input-btn-row {
+    flex-wrap: wrap;
+}
+
+#gst-tg-logs-code {
+    flex: 1 1 100%;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.04em;
+}
+
+#gst-sec-logs .gst-input-btn-row > button {
+    flex: 1 1 auto;
+}
+
+/* === Messages === */
+/* Équipe Messages : diffusion, modèles, messages automatiques, tickets SAV (panel et boutique), Autoclean.
+   Variables de la boutique et classes gst-* existantes ; rien d'autre n'est modifié. */
+
+/* Éléments masqués par l'attribut hidden (script.js) : passent devant les display des classes gst-* */
+#gst-pane-messages [hidden],
+#gst-pane-tickets [hidden],
+#gst-sec-autoclean [hidden],
+.support-card[hidden],
+.support-card [hidden] {
+    display: none !important;
+}
+
+/* ---------- Panel : composeur de diffusion ---------- */
+.gst-msg-templates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gst-msg-template-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--gst-border);
+    background: var(--gst-bg-card-subtle);
+}
+
+.gst-msg-template-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gst-msg-template-info strong {
+    font-family: var(--font-display);
+    font-size: 0.84rem;
+    color: var(--gst-text);
+    overflow-wrap: anywhere;
+}
+
+.gst-msg-template-info .gst-order-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gst-msg-template-actions,
+.gst-auto-slot-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.gst-msg-media-box img,
+.gst-msg-media-box video {
+    max-height: 200px;
+    object-fit: contain;
+}
+
+.gst-msg-html-state {
+    font-size: 0.72rem;
+    color: var(--gst-success);
+    line-height: 1.35;
+    padding-right: 8px;
+}
+
+.gst-msg-html-state.is-error {
+    color: var(--gst-danger);
+}
+
+.gst-counter.is-over {
+    color: var(--gst-danger);
+    font-weight: 800;
+}
+
+/* Aperçu : bulle de conversation Telegram (mise en forme reproduite, liens non cliquables) */
+.gst-msg-preview {
+    align-self: flex-start;
+    max-width: 100%;
+    min-width: 60%;
+    background: var(--gst-bg-card-subtle);
+    border: 1px solid var(--gst-border);
+    border-radius: 14px 14px 14px 4px;
+    padding: 8px;
+    color: var(--gst-text);
+}
+
+.gst-msg-preview-media {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.gst-msg-preview-media img,
+.gst-msg-preview-media video {
+    display: block;
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+    background: #000;
+}
+
+.gst-msg-preview-media .gst-empty-placeholder {
+    padding: 16px 10px;
+    background: var(--gst-bg-input);
+}
+
+.gst-msg-preview-text {
+    padding: 2px 4px;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.gst-msg-preview-empty {
+    color: var(--gst-text-muted);
+    font-style: italic;
+}
+
+.gst-msg-preview code,
+.gst-msg-preview pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: rgba(241, 238, 228, 0.08);
+    border-radius: 4px;
+    padding: 0 4px;
+}
+
+.gst-msg-preview pre {
+    display: block;
+    padding: 6px 8px;
+    white-space: pre-wrap;
+}
+
+.gst-msg-preview blockquote {
+    border-left: 3px solid var(--gst-accent);
+    padding-left: 8px;
+    margin: 2px 0;
+}
+
+.gst-msg-preview .gst-preview-link {
+    color: var(--gst-info);
+    text-decoration: underline;
+}
+
+/* Spoiler : texte flouté comme dans Telegram */
+.gst-msg-spoiler {
+    color: transparent;
+    background: rgba(241, 238, 228, 0.16);
+    border-radius: 4px;
+    text-shadow: 0 0 7px rgba(241, 238, 228, 0.75);
+}
+
+.gst-msg-target-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.gst-msg-target-extra {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.gst-msg-backup-state {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--gst-text-muted);
+}
+
+.gst-msg-count-line,
+.gst-msg-status-line {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.gst-msg-count-line {
+    color: var(--gst-text-muted);
+    font-weight: 700;
+}
+
+.gst-msg-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.gst-msg-actions > button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* ---------- Panel : messages automatiques ---------- */
+.gst-auto-slots-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.gst-auto-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--gst-border);
+    background: var(--gst-bg-card-subtle);
+}
+
+.gst-auto-slot.is-off {
+    opacity: 0.6;
+}
+
+.gst-auto-slot-time {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: var(--gst-text);
+}
+
+.gst-auto-slot-text {
+    font-size: 0.8rem;
+    color: var(--gst-text);
+    overflow-wrap: anywhere;
+}
+
+.gst-auto-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.gst-day-chip {
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--gst-border-strong);
+    background: transparent;
+    color: var(--gst-text-muted);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+button.gst-day-chip {
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.gst-day-chip.on {
+    background: var(--gst-accent-soft);
+    border-color: var(--gst-accent-line);
+    color: var(--gst-accent-text);
+}
+
+.gst-auto-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px dashed var(--gst-accent-line);
+    background: var(--gst-bg-card-subtle);
+}
+
+/* ---------- Panel : tickets SAV ---------- */
+.gst-tickets-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.gst-ticket-open-btn {
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s ease;
+}
+
+.gst-ticket-open-btn:hover,
+.gst-ticket-open-btn.has-unread {
+    border-color: var(--gst-accent-line);
+}
+
+.gst-ticket-last {
+    font-size: 0.78rem;
+    color: var(--gst-text-muted);
+    overflow-wrap: anywhere;
+}
+
+.gst-ticket-unread {
+    align-self: flex-start;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--gst-accent);
+    color: var(--gst-accent-ink);
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.gst-ticket-modal-body {
+    gap: 8px;
+}
+
+.gst-convo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 46vh;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.gst-convo-msg {
+    max-width: 86%;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--gst-border);
+    background: var(--gst-bg-card-subtle);
+}
+
+.gst-convo-msg.from-client {
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+.gst-convo-msg.from-admin {
+    align-self: flex-end;
+    background: var(--gst-accent-soft);
+    border-color: var(--gst-accent-line);
+    border-bottom-right-radius: 4px;
+}
+
+.gst-convo-msg.from-system {
+    align-self: center;
+    max-width: 100%;
+    padding: 2px 8px;
+    border: 0;
+    background: transparent;
+    text-align: center;
+}
+
+.gst-convo-text {
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--gst-text);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.gst-convo-msg.from-system .gst-convo-text {
+    font-size: 0.72rem;
+    color: var(--gst-text-muted);
+}
+
+.gst-convo-meta {
+    margin-top: 3px;
+    font-size: 0.66rem;
+    color: var(--gst-text-muted);
+}
+
+.gst-ticket-reply {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.gst-ticket-reply .gst-msg-actions {
+    margin-top: 0;
+}
+
+.gst-autoclean-stats {
+    margin-top: 8px;
+}
+
+/* ---------- Boutique : carte Support (page Infos) ---------- */
+.support-desc {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.support-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.support-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.support-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-soft);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+
+.support-input:focus {
+    outline: none;
+    border-color: rgba(var(--accent-rgb), 0.7);
+}
+
+.support-count,
+.support-hint {
+    font-size: 0.74rem;
+    color: var(--muted);
+}
+
+/* les <p> des cartes de la page Infos sont en flex : alignement par justify-content */
+.support-count {
+    justify-content: flex-end;
+    text-align: right;
+    margin-top: -4px;
+}
+
+.support-hint.is-error {
+    color: var(--danger);
+}
+
+.support-status {
+    font-size: 0.82rem;
+    color: var(--text);
+}
+
+.support-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.support-head strong {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-display);
+    overflow-wrap: anywhere;
+}
+
+.support-pill {
+    flex-shrink: 0;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.support-pill.is-open {
+    background: rgba(var(--accent-rgb), 0.16);
+    color: var(--accent);
+}
+
+.support-pill.is-closed {
+    background: rgba(241, 238, 228, 0.08);
+    color: var(--muted);
+}
+
+.support-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 2px 0;
+}
+
+.support-bubble {
+    max-width: 85%;
+    padding: 8px 11px;
+    border-radius: 14px;
+}
+
+.support-bubble.from-client {
+    align-self: flex-end;
+    background: rgba(var(--accent-rgb), 0.16);
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
+    border-bottom-right-radius: 4px;
+}
+
+.support-bubble.from-admin {
+    align-self: flex-start;
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 4px;
+}
+
+.support-bubble.from-system {
+    align-self: center;
+    max-width: 100%;
+    padding: 2px 6px;
+    text-align: center;
+}
+
+.support-bubble-text {
+    font-size: 0.86rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.support-bubble.from-system .support-bubble-text {
+    font-size: 0.74rem;
+    color: var(--muted);
+}
+
+.support-bubble-meta {
+    margin-top: 4px;
+    font-size: 0.66rem;
+    color: var(--muted);
+}
+
+/* === Catalogue === */
+/* Boutique : multi-ville (écran de choix, profil), promotion globale, likes, options du panier.
+   Panel (gst-) : villes, promo, likes, envoi postal, adresses crypto, groupe et statuts des commandes, jalons N-ème client. */
+
+/* ---------- Éléments masqués par l'attribut hidden (script.js) ---------- */
+.service-btn[hidden],
+.cart-closed-note[hidden],
+.cart-postal-group[hidden],
+.cart-pay-group[hidden],
+.cart-wallet[hidden],
+.cart-promo-line[hidden],
+.profile-city-card[hidden],
+.detail-like-btn[hidden],
+.gst-multicity-warning[hidden] {
+    display: none !important;
+}
+
+/* ---------- Choix de la ville (D.A. de l'écran d'accès) ---------- */
+body.city-locked {
+    overflow: hidden;
+}
+
+body.city-locked .app-shell {
+    visibility: hidden;
+}
+
+/* sous l'écran d'accès (4000) : un blocage d'accès passe toujours avant le choix de la ville */
+.access-screen.city-screen {
+    z-index: 3900;
+}
+
+.city-options {
+    display: grid;
+    gap: 8px;
+    margin-top: 20px;
+    text-align: left;
+}
+
+.city-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-soft);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.08s ease;
+}
+
+.city-option:hover {
+    border-color: rgba(var(--accent-rgb), 0.6);
+}
+
+.city-option:active {
+    transform: scale(0.98);
+}
+
+.city-option:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.city-option.is-current {
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.1);
+}
+
+.city-option-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.city-option-tag {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.profile-city-change.refresh-chip {
+    width: auto;
+    padding: 0 12px;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.profile-city-name {
+    margin-top: 6px;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+/* ---------- Promotion globale : prix barrés ---------- */
+.price-old {
+    color: var(--muted);
+    font-size: 0.8em;
+    font-weight: 600;
+    text-decoration: line-through;
+    text-decoration-color: rgba(var(--accent-rgb), 0.7);
+}
+
+.qty-card.active .price-old {
+    color: var(--accent-ink);
+    opacity: 0.7;
+}
+
+.promo-pill {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 2;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #ff8a3d;
+    color: #1f0e02;
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+/* ---------- Likes : cœur sur la carte et dans la fiche produit ---------- */
+.card-like-btn,
+.detail-like-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid rgba(241, 238, 228, 0.18);
+    border-radius: 999px;
+    background: rgba(13, 15, 12, 0.72);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.12s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.card-like-btn {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    z-index: 3;
+    min-height: 30px;
+    padding: 4px 9px;
+    font-size: 0.78rem;
+}
+
+.detail-like-btn {
+    margin: 10px 0 0 8px;
+    padding: 5px 12px;
+    font-size: 0.82rem;
+    vertical-align: middle;
+}
+
+.card-like-btn:active,
+.detail-like-btn:active {
+    transform: scale(0.92);
+}
+
+.like-heart {
+    font-size: 1.05em;
+    line-height: 1;
+}
+
+.card-like-btn.is-liked,
+.detail-like-btn.is-liked {
+    border-color: rgba(var(--accent-rgb), 0.7);
+    background: rgba(var(--accent-rgb), 0.2);
+}
+
+.is-liked .like-heart {
+    color: var(--accent);
+}
+
+.like-word {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+/* ---------- Panier : envoi postal, créneau, paiement, commandes fermées ---------- */
+.cart-closed-note {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px dashed rgba(var(--accent-rgb), 0.55);
+    background: rgba(var(--accent-rgb), 0.08);
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.checkout-panel .field-group + .field-group {
+    margin-top: 10px;
+}
+
+.cart-select {
+    width: 100%;
+    min-width: 0;
+    border-radius: 10px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-soft);
+    color: var(--text);
+    padding: 11px 12px;
+    font: inherit;
+    transition: border-color 0.15s ease;
+}
+
+.cart-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.cart-slot-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 8px;
+}
+
+.cart-pay-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.cart-pay-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.pay-option {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-soft);
+    color: var(--muted);
+    font-family: var(--font-display);
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.pay-option.active {
+    border-color: var(--text);
+    background: var(--text);
+    color: var(--bg);
+}
+
+.cart-wallet {
+    display: grid;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(var(--accent-rgb), 0.4);
+    background: rgba(var(--accent-rgb), 0.06);
+}
+
+.cart-wallet-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.cart-wallet-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cart-wallet-address {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: var(--text);
+    overflow-wrap: anywhere;
+    user-select: all;
+    -webkit-user-select: all;
+}
+
+.cart-wallet-copy {
+    flex-shrink: 0;
+    padding: 7px 10px;
+}
+
+.cart-wallet-hint {
+    font-size: 0.74rem;
+    line-height: 1.4;
+    color: var(--muted);
+}
+
+.cart-promo-line {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* ---------- Panel : Multi-Ville ---------- */
+.gst-cities-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.gst-city-row.gst-city-item {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.gst-city-item.is-off {
+    opacity: 0.6;
+}
+
+.gst-city-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 160px;
+    min-width: 0;
+}
+
+.gst-city-name {
+    overflow-wrap: anywhere;
+}
+
+.gst-city-meta {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--gst-text-muted);
+    overflow-wrap: anywhere;
+}
+
+.gst-city-off-tag {
+    margin-left: 4px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(var(--gst-warning-rgb), 0.16);
+    color: var(--gst-warning);
+    font-size: 0.66rem;
+}
+
+.gst-city-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.gst-city-controls .gst-btn-icon-circ {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+}
+
+.gst-city-add-row .gst-input:first-child,
+.gst-wallet-add-row .gst-input:not(.gst-wallet-coin-input) {
+    flex: 1;
+    min-width: 0;
+}
+
+.gst-wallet-coin-input {
+    flex: 0 0 110px;
+    min-width: 0;
+}
+
+.gst-multicity-warning {
+    margin-top: 8px;
+}
+
+/* ---------- Panel : Produits (promo, villes, likes) ---------- */
+.gst-promo-fields {
+    margin-top: 6px;
+}
+
+.gst-badge-city,
+.gst-badge-likes {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.gst-badge-city {
+    max-width: 100%;
+    background: rgba(var(--gst-info-rgb), 0.12);
+    color: var(--gst-info);
+    overflow-wrap: anywhere;
+}
+
+.gst-badge-city.is-all {
+    background: var(--gst-bg-card-subtle);
+    color: var(--gst-text-muted);
+}
+
+.gst-badge-likes {
+    background: var(--gst-accent-soft);
+    color: var(--gst-accent-text);
+}
+
+.gst-city-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.gst-city-chip {
+    padding: 6px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--gst-border-strong);
+    background: var(--gst-bg-input);
+    color: var(--gst-text-muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.gst-city-chip.active {
+    border-color: var(--gst-accent);
+    background: var(--gst-accent-soft);
+    color: var(--gst-accent-text);
+}
+
+.gst-city-chip.is-off {
+    border-style: dashed;
+}
+
+/* ---------- Panel : Commandes (groupe de réception, listes, statuts) ---------- */
+.gst-order-chats,
+.gst-list-editor-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gst-chat-row,
+.gst-list-editor-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--gst-border);
+    background: var(--gst-bg-card-subtle);
+    font-size: 0.8rem;
+}
+
+.gst-chat-row.is-empty {
+    border-style: dashed;
+}
+
+.gst-chat-scope,
+.gst-list-editor-main {
+    font-weight: 800;
+    color: var(--gst-text);
+}
+
+.gst-chat-title,
+.gst-list-editor-side {
+    flex: 1;
+    min-width: 0;
+    color: var(--gst-text-muted);
+    overflow-wrap: anywhere;
+}
+
+.gst-list-editor-side {
+    text-align: right;
+}
+
+.gst-list-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 4px 0 10px;
+}
+
+.gst-calendar-days-row {
+    margin: 4px 0 10px;
+    font-size: 0.78rem;
+}
+
+.gst-calendar-days-row .gst-input-sm {
+    flex: 0 0 72px;
+    text-align: center;
+}
+
+.gst-order-details {
+    display: grid;
+    gap: 2px;
+    font-size: 0.78rem;
+    color: var(--gst-text-muted);
+    overflow-wrap: anywhere;
+}
+
+.gst-order-status-badge.is-new {
+    background: rgba(var(--gst-info-rgb), 0.16);
+    color: var(--gst-info);
+}
+
+.gst-order-status-badge.is-accepted,
+.gst-order-status-badge.is-delivering {
+    background: rgba(var(--gst-warning-rgb), 0.16);
+    color: var(--gst-warning);
+}
+
+.gst-order-status-badge.is-delivered {
+    background: rgba(var(--gst-success-rgb), 0.16);
+    color: var(--gst-success);
+}
+
+.gst-order-status-badge.is-cancelled {
+    background: rgba(var(--gst-danger-rgb), 0.16);
+    color: var(--gst-danger);
+}
+
+.gst-order-status-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.gst-order-status-btn {
+    padding: 7px 8px;
+    border-radius: 9px;
+    border: 1px solid var(--gst-border-strong);
+    background: var(--gst-bg-input);
+    color: var(--gst-text);
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.gst-order-status-btn:hover {
+    border-color: var(--gst-accent-line);
+}
+
+.gst-order-status-btn.active {
+    border-color: var(--gst-accent);
+    background: var(--gst-accent-soft);
+    color: var(--gst-accent-text);
+    cursor: default;
+}
+
+.gst-order-status-btn:disabled:not(.active) {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+#gst-orders-status-chips {
+    margin-top: 8px;
+}
+
+/* Nouveau nom d'une ville, saisi dans la modale de confirmation (D.A. de la boutique) */
+.gh-modal-message .gst-city-rename-input {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-soft, var(--bg));
+    color: var(--text);
+    font: inherit;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 380px) {
+    .cart-slot-row {
+        grid-template-columns: 1fr;
+    }
+
+    .gst-order-status-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === Fidélité === */
+/* Rang & parrainage, roue de la fortune, jeu concours, avis (profil, panier et page Avis de la boutique ; sections
+   Rang, Roue, Concours et Avis du panel). Couleurs : variables de la boutique (--accent, --card, --line…). */
+
+/* Éléments masqués par le script : l'attribut hidden l'emporte sur les display des classes de la boutique */
+.review-form[hidden],
+.loyalty-review-note[hidden],
+.loyalty-cart[hidden],
+.loyalty-photo[hidden],
+.loyalty-photo-preview[hidden],
+.loyalty-photo-remove[hidden],
+.gst-fid-entries[hidden] {
+    display: none !important;
+}
+
+/* Onglet Avis masqué (reviews_enabled ou reviews_tab_enabled coupé) : 5 onglets, 4 si l'onglet Infos l'est aussi */
+.bottom-nav.reviews-tab-off {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.bottom-nav.reviews-tab-off::before {
+    width: calc((100% - 12px) / 5);
+}
+
+.bottom-nav.reviews-tab-off.contact-tab-off {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.bottom-nav.reviews-tab-off.contact-tab-off::before {
+    width: calc((100% - 12px) / 4);
+}
+
+.bottom-nav.reviews-tab-off .tab-btn[data-page="reviews"] {
+    display: none;
+}
+
+/* Page ouverte depuis un bouton du profil (onglet masqué) : pas d'indicateur sous un autre onglet */
+.bottom-nav.loyalty-nav-off::before {
+    opacity: 0;
+}
+
+#page-reviews.loyalty-form-only .review-score,
+#page-reviews.loyalty-form-only #review-list {
+    display: none;
+}
+
+/* ---------- Profil : cartes fidélité ---------- */
+.loyalty-zone,
+.loyalty-zone > div {
+    display: contents;
+}
+
+.loyalty-card {
+    display: grid;
+    gap: 10px;
+}
+
+.loyalty-card .profile-section-head {
+    margin-bottom: 0;
+    gap: 10px;
+}
+
+.loyalty-card p {
+    margin: 0;
+}
+
+.loyalty-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
+    background: rgba(var(--accent-rgb), 0.12);
+    color: var(--text);
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.loyalty-chip-ok {
+    max-width: none;
+}
+
+.loyalty-points {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.loyalty-points-value {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--accent);
+}
+
+.loyalty-points-unit {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--text);
+}
+
+.loyalty-points-total {
+    margin-left: auto;
+}
+
+.loyalty-progress {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    overflow: hidden;
+}
+
+.loyalty-progress span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+}
+
+.loyalty-code-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px dashed rgba(var(--accent-rgb), 0.45);
+    background: var(--bg-soft);
+}
+
+.loyalty-code {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: var(--text);
+}
+
+.loyalty-code.small {
+    font-size: 0.86rem;
+    letter-spacing: 0.06em;
+}
+
+.loyalty-code-actions {
+    display: grid;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+.loyalty-code-actions .btn,
+.loyalty-ref-row .btn {
+    padding: 9px 12px;
+    font-size: 0.8rem;
+}
+
+.loyalty-ref-form {
+    display: grid;
+    gap: 6px;
+}
+
+.loyalty-ref-form label {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.loyalty-ref-row {
+    display: flex;
+    gap: 8px;
+}
+
+.loyalty-ref-row input {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.loyalty-ref-row .btn {
+    flex: 0 0 auto;
+}
+
+.loyalty-subtitle {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.92rem;
+    margin-bottom: 4px !important;
+}
+
+.loyalty-rewards ul {
+    list-style: none;
+    display: grid;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.loyalty-rewards li {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.loyalty-code-list {
+    display: grid;
+    gap: 6px;
+}
+
+.loyalty-code-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 2px 10px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    font-size: 0.82rem;
+}
+
+.loyalty-code-row .muted {
+    grid-column: 2;
+    font-size: 0.74rem;
+}
+
+.loyalty-wide-btn {
+    width: 100%;
+    padding: 13px;
+    font-size: 0.95rem;
+}
+
+.loyalty-wide-btn:disabled,
+.loyalty-chip-btn:disabled,
+.loyalty-code-actions .btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+    box-shadow: none;
+    transform: none;
+}
+
+.loyalty-center {
+    text-align: center;
+}
+
+/* Roue : disque conic-gradient (un secteur par lot), libellés le long des rayons, pointeur en haut */
+.loyalty-wheel {
+    position: relative;
+    width: min(250px, 100%);
+    aspect-ratio: 1;
+    margin: 4px auto 2px;
+}
+
+.loyalty-wheel-disc {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 4px solid var(--card-2);
+    box-shadow: 0 0 0 1px var(--line-strong), 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    will-change: transform;
+}
+
+.loyalty-wheel-label {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44%;
+    margin-top: -0.6em;
+    padding-right: 6%;
+    transform-origin: 0 50%;
+    transform: rotate(calc(var(--a) - 90deg));
+    text-align: right;
+    font-size: 0.64rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+.loyalty-wheel-pointer {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    z-index: 2;
+    width: 0;
+    height: 0;
+    transform: translateX(-50%);
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 22px solid var(--text);
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+}
+
+.loyalty-wheel-hub {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 2;
+    width: 46px;
+    height: 46px;
+    transform: translate(-50%, -50%);
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--card);
+    border: 2px solid rgba(var(--accent-rgb), 0.6);
+    font-size: 1.3rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.loyalty-wheel-result {
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--accent);
+}
+
+.loyalty-wheel-result + .muted {
+    text-align: center;
+}
+
+.loyalty-contest-title {
+    font-size: 1.15rem;
+    line-height: 1.25;
+}
+
+.loyalty-contest-prize {
+    font-weight: 700;
+}
+
+.loyalty-contest-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+/* ---------- Panier : avantages fidélité ---------- */
+.loyalty-cart {
+    display: grid;
+    gap: 8px;
+}
+
+.loyalty-cart-title {
+    font-size: 1rem;
+}
+
+.loyalty-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.loyalty-chip-btn {
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--bg-soft);
+    color: var(--muted);
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.loyalty-chip-btn.active {
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.14);
+    color: var(--text);
+}
+
+.loyalty-cart-line {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.86rem;
+}
+
+/* ---------- Avis : note quand le formulaire est fermé, photo jointe ---------- */
+.loyalty-review-note {
+    font-size: 0.88rem;
+    line-height: 1.4;
+}
+
+.loyalty-photo {
+    display: grid;
+    gap: 8px;
+}
+
+.loyalty-photo-row {
+    display: flex;
+    gap: 8px;
+}
+
+.loyalty-photo-row .btn {
+    padding: 9px 12px;
+    font-size: 0.82rem;
+}
+
+.loyalty-photo-btn {
+    flex: 1 1 auto;
+}
+
+.loyalty-photo-preview,
+.loyalty-review-photo {
+    display: block;
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+}
+
+.loyalty-review-photo {
+    margin-top: 8px;
+}
+
+.loyalty-photo-status:empty {
+    display: none;
+}
+
+/* ---------- Panel : sections Rang, Roue, Concours, Avis ---------- */
+.gst-fid-rows {
+    display: grid;
+    gap: 6px;
+    margin: 8px 0;
+}
+
+.gst-fid-row .gst-input-num-sm {
+    flex: 0 0 52px;
+    width: 52px;
+}
+
+.gst-wheel-prizes-list {
+    display: grid;
+    gap: 8px;
+    margin: 6px 0 8px;
+}
+
+.gst-fid-prize {
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--gst-border, var(--line));
+    background: var(--gst-bg-card-subtle, var(--card-2));
+}
+
+.gst-fid-prize .gst-prize-row + .gst-prize-row {
+    margin-top: 0;
+}
+
+.gst-wheel-total-sum {
+    margin-top: 8px;
+}
+
+.gst-wheel-total-sum.gst-fid-warn {
+    color: var(--gst-warning, #f2c14e);
+}
+
+.gst-btn-primary-sm.gst-fid-unsaved {
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.35);
+}
+
+.gst-fid-dimmed {
+    opacity: 0.5;
+}
+
+.gst-fid-pos {
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.gst-fid-points {
+    display: grid;
+    justify-items: end;
+    line-height: 1.1;
+    flex: 0 0 auto;
+}
+
+.gst-fid-points strong {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--accent);
+}
+
+.gst-fid-points span {
+    font-size: 0.68rem;
+    color: var(--muted);
+}
+
+.gst-fid-contest {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
+    background: rgba(var(--accent-rgb), 0.06);
+}
+
+.gst-fid-entries {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.gst-fid-form {
+    display: grid;
+    gap: 6px;
+}
+
+.gst-fid-form .gst-btn-row-dual {
+    margin-top: 6px;
+}
+
+/* Champs saisis dans la modale de confirmation (ajustement des points, annonce du tirage) */
+.gh-modal-message .gst-fid-modal-input {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-soft, var(--bg));
+    color: var(--text);
+    font: inherit;
+    font-size: 0.86rem;
+    text-align: left;
+}
+
+.gh-modal-message .gst-fid-modal-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 0.84rem;
+    text-align: left;
+}
+
+.gh-modal-message .gst-fid-modal-check input {
+    width: auto;
+    margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .loyalty-wheel-disc {
+        transition: none !important;
+    }
+}
+
+/* === Réorganisation === */
+/* Panel de gestion organisé par usage : 5 onglets (Accueil, Catalogue, Ventes, Clients, Réglages) faits de pages
+   (.gst-page[data-gst-page], script.js : ADMIN_TABS / ADMIN_PAGES / REGLAGES_SECTIONS). Mobile d'abord (360-520 px),
+   variables de la boutique (--bg --card --card-2 --line --text --muted --accent --accent-ink --font-display). */
+
+/* ---------- Pages : une seule visible par onglet ---------- */
+.gst-page {
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+}
+
+.gst-page.active {
+    display: flex;
+    animation: gstPageIn 0.18s ease-out;
+}
+
+@keyframes gstPageIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+}
+
+/* Éléments masqués par l'attribut hidden (script.js) : passent devant les display des classes */
+.gst-nav-badge[hidden],
+.gst-dash-error[hidden] {
+    display: none !important;
+}
+
+/* ---------- Barre des pages (sous le bandeau) ---------- */
+.gst-subtabs-scroll {
+    align-items: center;
+    min-width: 0;
+}
+
+/* Pastille d'une page avec son nombre d'éléments à traiter */
+.gst-subtab-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gst-pill-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 0.66rem;
+    font-weight: 800;
+    line-height: 18px;
+    text-align: center;
+}
+
+.gst-subtab-pill.active .gst-pill-badge {
+    background: var(--accent);
+    color: var(--accent-ink);
+    box-shadow: 0 0 0 2px var(--bg);
+}
+
+/* Accueil et Réglages : titre de la page, « ‹ Réglages » sur la page d'un réglage */
+.gst-subtabs-scroll.gst-pagebar-titled {
+    gap: 8px;
+    overflow: hidden;
+}
+
+.gst-pagebar-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--text);
+}
+
+.gst-pagebar-back {
+    flex-shrink: 0;
+    padding: 6px 11px 6px 8px;
+    border-radius: 9px;
+    border: 1px solid var(--line-strong);
+    background: var(--card);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.gst-pagebar-back:active {
+    transform: scale(0.97);
+}
+
+/* Pastilles des pages (Catalogue, Ventes, Clients) : bord droit estompé = il y en a d'autres en faisant défiler ;
+   l'espace de fin laisse la dernière pastille sortir du dégradé */
+.gst-subtabs-scroll:not(.gst-pagebar-titled) {
+    -webkit-mask-image: linear-gradient(90deg, #000 86%, transparent);
+    mask-image: linear-gradient(90deg, #000 86%, transparent);
+}
+
+.gst-subtabs-scroll:not(.gst-pagebar-titled)::after {
+    content: "";
+    flex: 0 0 22px;
+}
+
+/* Bouton 🔍 Chercher (accès rapide) : « Chercher » à côté d'un titre, loupe seule à côté des pastilles */
+.gst-quick-list-btn {
+    gap: 5px;
+}
+
+.gst-subtabs-scroll:not(.gst-pagebar-titled) + .gst-quick-list-btn {
+    padding: 6px 10px;
+}
+
+.gst-subtabs-scroll:not(.gst-pagebar-titled) + .gst-quick-list-btn .gst-ql-text,
+.gst-subtabs-scroll.gst-pagebar-sub + .gst-quick-list-btn .gst-ql-text {
+    display: none;
+}
+
+.gst-subtabs-scroll.gst-pagebar-sub + .gst-quick-list-btn {
+    padding: 6px 10px;
+}
+
+@media (max-width: 359px) {
+    .gst-ql-text {
+        display: none;
+    }
+}
+
+/* ---------- Barre du bas : 5 onglets par usage ---------- */
+.gst-nav-btn {
+    position: relative;
+    font-size: 0.66rem;
+    letter-spacing: 0;
+}
+
+.gst-nav-badge {
+    position: absolute;
+    top: 4px;
+    left: calc(50% + 6px);
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 0.62rem;
+    font-weight: 800;
+    line-height: 17px;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--bg-soft, var(--bg));
+    pointer-events: none;
+}
+
+@media (max-width: 420px) {
+    .gst-nav-btn {
+        font-size: 0.64rem;
+        letter-spacing: -0.01em;
+    }
+}
+
+/* Titres de carte « icône + titre » (Général, N-ème client…) : le titre suit l'icône au lieu d'être poussé à droite */
+.gst-card-head > .gst-icon-purple + strong,
+.gst-card-head > .gst-icon-warn + strong,
+.gst-card-head > .gst-icon-info + strong {
+    margin-left: 8px;
+    margin-right: auto;
+}
+
+/* ---------- Accueil : tableau de bord ---------- */
+.gst-dash-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 2px 2px 0;
+}
+
+.gst-dash-hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gst-dash-hello {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gst-dash-date {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+.gst-dash-error {
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--gst-danger-rgb, 255, 106, 77), 0.35);
+    background: rgba(var(--gst-danger-rgb, 255, 106, 77), 0.08);
+    color: var(--danger);
+    font-size: 0.8rem;
+}
+
+/* Chiffres du jour : 3 tuiles, la valeur en grand dans la police d'affichage */
+.gst-dash-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.gst-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 12px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--card);
+}
+
+.gst-kpi:first-child {
+    border-color: rgba(var(--accent-rgb), 0.35);
+    background:
+        radial-gradient(120% 90% at 0% 0%, rgba(var(--accent-rgb), 0.16), transparent 70%),
+        var(--card);
+}
+
+.gst-kpi-lbl {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--muted);
+    line-height: 1.2;
+}
+
+/* Taille qui suit la largeur du téléphone ; un grand montant passe à la ligne avant « € » plutôt que d'être coupé */
+.gst-kpi-val {
+    font-family: var(--font-display);
+    font-size: clamp(1.02rem, 4.9vw, 1.35rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.gst-kpi-note {
+    min-height: 1em;
+    font-size: 0.66rem;
+    color: var(--muted);
+    line-height: 1.25;
+}
+
+.gst-kpi-note.is-up {
+    color: var(--gst-success, #98d67f);
+}
+
+.gst-kpi-note.is-down {
+    color: var(--danger);
+}
+
+.gst-dash-totals {
+    margin: -6px 2px 0;
+    text-align: center;
+}
+
+.gst-dash-totals:empty,
+.gst-dash-updated:empty {
+    display: none;
+}
+
+.gst-dash-card {
+    gap: 10px;
+}
+
+.gst-dash-note {
+    font-family: inherit;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+/* Lignes « à traiter » et « état du système » : chaque ligne cliquable mène à sa page */
+.gst-dash-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gst-dash-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--card-2);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+button.gst-dash-row:active {
+    transform: scale(0.99);
+}
+
+button.gst-dash-row:hover {
+    border-color: var(--line-strong);
+}
+
+.gst-dash-row.is-static {
+    cursor: default;
+}
+
+.gst-dash-row.is-alert {
+    border-color: rgba(var(--accent-rgb), 0.45);
+    background:
+        linear-gradient(90deg, rgba(var(--accent-rgb), 0.12), transparent 70%),
+        var(--card-2);
+}
+
+.gst-dash-row.is-done {
+    opacity: 0.72;
+}
+
+.gst-dash-row-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card);
+    font-size: 1rem;
+}
+
+.gst-dash-row-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gst-dash-row-title {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.gst-dash-row-sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.gst-dash-count {
+    flex-shrink: 0;
+    min-width: 28px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    color: var(--muted);
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 22px;
+    text-align: center;
+}
+
+.gst-dash-row.is-alert .gst-dash-count {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+}
+
+.gst-dash-row.is-done .gst-dash-count {
+    color: var(--gst-success, #98d67f);
+}
+
+/* Pastille d'état : ok (vert), warn (jaune), bad (rouge), off (neutre), on (accent) */
+.gst-dot {
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    margin: 0 11px;
+    border-radius: 50%;
+    background: var(--muted);
+}
+
+.gst-dot.is-ok {
+    background: var(--gst-success, #98d67f);
+    box-shadow: 0 0 0 3px rgba(var(--gst-success-rgb, 152, 214, 127), 0.18);
+}
+
+.gst-dot.is-warn {
+    background: var(--gst-warning, #f2c14e);
+    box-shadow: 0 0 0 3px rgba(var(--gst-warning-rgb, 242, 193, 78), 0.18);
+}
+
+.gst-dot.is-bad {
+    background: var(--danger);
+    box-shadow: 0 0 0 3px rgba(var(--gst-danger-rgb, 255, 106, 77), 0.2);
+}
+
+.gst-dot.is-on {
+    background: var(--accent);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
+}
+
+.gst-dot.is-off {
+    background: var(--line-strong);
+}
+
+/* Contrôles d'accès actifs : une puce par contrôle, qui mène à son réglage */
+.gst-dash-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.gst-dash-chip {
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
+    background: rgba(var(--accent-rgb), 0.1);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Raccourcis : 3 boutons carrés, puis le redémarrage en pleine largeur */
+.gst-dash-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.gst-dash-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 78px;
+    padding: 10px 6px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--card-2);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.gst-dash-action:hover {
+    border-color: rgba(var(--accent-rgb), 0.4);
+}
+
+.gst-dash-action:active {
+    transform: scale(0.97);
+}
+
+.gst-dash-action-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--accent-rgb), 0.14);
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--accent);
+}
+
+.gst-dash-action-label {
+    font-size: 0.74rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+}
+
+/* Mode fermé actif : le raccourci propose de rouvrir */
+.gst-dash-action.is-on {
+    border-color: rgba(var(--gst-danger-rgb, 255, 106, 77), 0.5);
+    background: rgba(var(--gst-danger-rgb, 255, 106, 77), 0.1);
+}
+
+.gst-dash-action.is-on .gst-dash-action-icon {
+    background: rgba(var(--gst-danger-rgb, 255, 106, 77), 0.18);
+}
+
+.gst-dash-restart {
+    width: 100%;
+    padding: 13px 16px;
+    font-size: 0.92rem;
+}
+
+.gst-dash-updated {
+    text-align: center;
+    margin-top: -4px;
+}
+
+/* ---------- Réglages : menu en liste (icône, titre, état réel) ---------- */
+.gst-settings-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.gst-menu-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gst-menu-group-title {
+    padding: 0 4px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.gst-menu-list {
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    overflow: hidden;
+}
+
+.gst-menu-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 58px;
+    padding: 10px 14px;
+    border: 0;
+    border-top: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.gst-menu-row:first-child {
+    border-top: 0;
+}
+
+.gst-menu-row:hover,
+.gst-menu-row:active {
+    background: rgba(var(--accent-rgb), 0.06);
+}
+
+.gst-menu-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    font-size: 1.05rem;
+}
+
+.gst-menu-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gst-menu-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.gst-menu-state {
+    font-size: 0.74rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gst-menu-state.is-on {
+    color: var(--gst-success, #98d67f);
+}
+
+.gst-menu-state.is-off {
+    color: var(--gst-text-subtle, var(--muted));
+}
+
+.gst-menu-state.is-warn {
+    color: var(--gst-warning, #f2c14e);
+}
+
+.gst-menu-state.is-bad {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+/* Ligne d'action (Redémarrer le bot) : icône teintée, pas une page */
+.gst-menu-row.is-action .gst-menu-icon {
+    background: rgba(var(--gst-danger-rgb, 255, 106, 77), 0.12);
+    border-color: rgba(var(--gst-danger-rgb, 255, 106, 77), 0.3);
+}
+
+.gst-menu-row.is-action .gst-menu-title {
+    color: var(--danger);
+}
+
+/* ---------- Accès rapide (🔍) : recherche + liste des pages par onglet ---------- */
+/* Hauteur fixe : le champ de recherche ne saute pas quand la liste raccourcit */
+#gst-modal-quick-list .gst-drawer-sheet {
+    height: min(78vh, 640px);
+}
+
+.gst-quick-search {
+    margin: 12px 16px 0;
+    flex-shrink: 0;
+}
+
+#gst-quick-list-links {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-columns: 1fr;
+    align-content: start;
+    gap: 6px;
+}
+
+#gst-quick-list-links .gst-drawer-item-icon {
+    width: 22px;
+    text-align: center;
+}
+
+.gst-ql-group {
+    padding: 8px 4px 2px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.gst-ql-group:first-child {
+    padding-top: 0;
+}
+
+#gst-quick-list-links .gst-drawer-item-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gst-ql-where {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+/* ---------- Écrans larges (au-delà du téléphone) : un peu plus d'air ---------- */
+@media (min-width: 440px) {
+    .gst-kpi {
+        padding: 14px 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gst-page.active {
+        animation: none;
+    }
+}
+
+/* === Intro fluide === */
+/* Au lancement, le téléphone analyse script.js (~0,3 s) : pendant ce temps seules les animations de transform et
+   d'opacity continuent (elles tournent hors du fil principal). Le flou des lettres et la lueur du logo de l'intro ne sont
+   donc plus animés, ce qui supprime le saut de l'animation au démarrage. Les aperçus du panel gardent l'effet complet. */
+.intro-card h1 span {
+    filter: none !important;
+    will-change: transform, opacity;
+}
+
+.intro-logo {
+    will-change: transform, opacity;
+}
+
+.intro-logo[class*="anim-"] {
+    filter: drop-shadow(0 0 18px rgba(var(--accent-rgb), 0.55)) !important;
+}

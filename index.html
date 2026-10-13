@@ -9,7 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20261013_v15">
+    <link rel="stylesheet" href="access.css?v=20261013_v15">
+    <link rel="preload" href="script.js?v=20261013_v15" as="script">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
@@ -24,7 +26,15 @@
         </div>
     </div>
 
+    <!-- Canvas pour le fond animé en direct sur la boutique -->
+    <canvas id="app-animated-bg-canvas" class="app-animated-bg-canvas"></canvas>
+
     <div class="app-shell">
+        <!-- Rappel pour un admin : contrôles d'accès actifs qu'il contourne (access.bypassed de /config) -->
+        <div class="access-staff-note" id="access-staff-note" role="status" hidden>
+            <span class="access-staff-note-text" id="access-staff-note-text"></span>
+            <button class="access-staff-note-close" id="access-staff-note-close" type="button" aria-label="Masquer le rappel">✕</button>
+        </div>
         <div class="top-ticker-banner" id="top-ticker-banner">
             <div class="ticker-track">
                 <span class="ticker-text" id="ticker-text-1">📍 Dispo sur place adresse en pv ✦ 🚚 dispo livraison 68
@@ -69,22 +79,46 @@
                     <div class="card panel" id="cart-items"></div>
 
                     <div class="card panel checkout-panel">
+                        <!-- Commandes coupées dans la gestion : panier fermé avec ce message (script.js) -->
+                        <p class="cart-closed-note" id="cart-closed-note" hidden></p>
                         <div class="service-switch" id="service-switch">
                             <button class="service-btn active" data-service="delivery" id="service-delivery-btn"
                                 type="button">Livraison</button>
                             <button class="service-btn" data-service="pickup" id="service-pickup-btn" type="button">Sur
                                 place</button>
+                            <button class="service-btn" data-service="postal" id="service-postal-btn" type="button"
+                                hidden>Envoi postal</button>
                         </div>
 
                         <div class="field-group" id="delivery-field-group">
                             <label for="delivery-address" id="delivery-label">Adresse de livraison</label>
-                            <textarea id="delivery-address" rows="3"
-                                placeholder="Ex: 10 rue de Paris, 54000 Nancy"></textarea>
+                            <textarea id="delivery-address" rows="3" maxlength="300"
+                                placeholder="Ex: 10 rue de la République, 68000 Colmar"></textarea>
                         </div>
 
+                        <!-- Envoi postal : type d'envoi (frais réglés dans la gestion) et adresse postale -->
+                        <div class="field-group cart-postal-group" id="cart-postal-group" hidden>
+                            <label for="cart-postal-option" id="cart-postal-option-label">Type d'envoi</label>
+                            <select class="cart-select" id="cart-postal-option"></select>
+                            <label for="cart-postal-address" id="cart-postal-address-label">Adresse postale</label>
+                            <textarea id="cart-postal-address" rows="3" maxlength="300"
+                                placeholder="Nom, numéro et rue, code postal, ville"></textarea>
+                        </div>
+
+                        <!-- Option Calendrier : date et heure du créneau, en livraison comme sur place -->
                         <div class="field-group" id="pickup-field-group" style="display: none;">
                             <label for="pickup-time" id="pickup-label">Heure d'arrivee</label>
-                            <input id="pickup-time" type="time">
+                            <div class="cart-slot-row">
+                                <select class="cart-select" id="cart-slot-date" aria-label="Date"></select>
+                                <input id="pickup-time" type="time">
+                            </div>
+                        </div>
+
+                        <!-- Moyen de paiement : espèces, ou crypto avec l'adresse de paiement réglée dans la gestion -->
+                        <div class="field-group cart-pay-group" id="cart-pay-group" hidden>
+                            <span class="cart-pay-label" id="cart-pay-label">Paiement</span>
+                            <div class="cart-pay-options" id="cart-pay-options" role="radiogroup"></div>
+                            <div class="cart-wallet" id="cart-wallet" hidden></div>
                         </div>
                     </div>
 
@@ -92,6 +126,8 @@
                         <div>
                             <p class="muted" id="cart-total-label">Total</p>
                             <p class="checkout-total" id="cart-total">0.00 EUR</p>
+                            <p class="muted cart-promo-line" id="cart-promo-line" hidden></p>
+                            <p class="muted" id="cart-fee-line" style="display: none;"></p>
                         </div>
                         <div class="checkout-actions">
                             <button class="btn ghost" id="clear-cart-btn" type="button">Vider</button>
@@ -116,7 +152,7 @@
                 </div>
 
                 <div class="review-score card panel">
-                    <p class="review-rating" id="review-rating">4.9 / 5</p>
+                    <p class="review-rating" id="review-rating">– / 5</p>
                     <p class="muted" id="review-count">Base sur 0 avis</p>
                 </div>
 
@@ -172,6 +208,15 @@
                         </article>
                     </div>
 
+                    <!-- Multi-ville : ville du client, modifiable ici (script.js) -->
+                    <article class="card panel profile-city-card" id="profile-city-card" hidden>
+                        <div class="profile-section-head">
+                            <h4 id="profile-city-title">Ma ville</h4>
+                            <button class="refresh-chip profile-city-change" id="profile-city-change" type="button">Changer</button>
+                        </div>
+                        <p class="profile-city-name" id="profile-city-name"></p>
+                    </article>
+
                     <article class="card panel profile-language-card">
                         <div class="profile-section-head">
                             <h4 id="profile-language-title">Langue</h4>
@@ -224,15 +269,25 @@
                     <article class="card panel">
                         <h3 id="info-contact-title">Contact</h3>
                         <p id="info-contact-username">Telegram: @GreenHouse682</p>
+                        <!-- Texte libre (contact_text) et autres réseaux réglés dans la gestion (script.js) -->
+                        <p class="contact-note" id="info-contact-text" hidden></p>
                         <div class="inline-actions">
                             <button class="btn primary" id="contact-btn" type="button">Contacter</button>
                             <button class="btn ghost" id="channel-btn" type="button">Canal</button>
                         </div>
+                        <div class="contact-networks" id="info-networks" hidden></div>
                     </article>
 
                     <article class="card panel">
                         <h3 id="info-payment-title">Paiement</h3>
                         <p id="info-payment-desc">Paiement en especes uniquement.</p>
+                    </article>
+
+                    <!-- Support client (tickets SAV) : affiché si tickets_enabled, rendu par script.js (équipe Messages) -->
+                    <article class="card panel support-card" id="support-card" hidden>
+                        <h3 id="support-title">Support</h3>
+                        <p class="support-desc" id="support-desc"></p>
+                        <div class="support-body" id="support-body" aria-live="polite"></div>
                     </article>
                 </div>
             </section>
@@ -291,45 +346,2360 @@
         </div>
     </div>
 
-    <!-- Panel Admin -->
+    <!-- Écran d'accès plein écran : affiché quand /config répond access.allowed = false (le serveur décide seul) ;
+         contenu rendu par script.js selon access.gate.code -->
+    <div class="access-screen" id="access-screen" hidden>
+        <div class="access-card" id="access-card" role="dialog" aria-modal="true" aria-live="polite"></div>
+    </div>
+
+    <!-- Choix de la ville (multi-ville) : au premier lancement, ou depuis « Ma ville » du profil (script.js) -->
+    <div class="access-screen city-screen" id="city-screen" hidden>
+        <div class="access-card city-card" id="city-card" role="dialog" aria-modal="true" aria-live="polite"></div>
+    </div>
+
+    <!-- ==================== PANEL DE GESTION : 5 onglets par usage (Accueil, Catalogue, Ventes, Clients, Réglages) ==================== -->
     <div class="admin-overlay" id="admin-overlay" style="display:none">
-        <div class="admin-panel">
-            <header class="admin-topbar">
-                <button class="top-pill" id="admin-close-btn" type="button">‹ Retour</button>
-                <span class="admin-heading">Gestion</span>
-                <span></span>
+        <div class="gst-app-container">
+            <!-- Header Top Bar -->
+            <header class="gst-topbar">
+                <button class="gst-btn-back" id="admin-close-btn" type="button">Fermer</button>
+                <div class="gst-title-block">
+                    <span class="gst-title-main">SHOP 🛍️</span>
+                    <span class="gst-title-sub">mini-application</span>
+                </div>
+                <button class="gst-btn-more" id="admin-more-btn" type="button" aria-label="Menu options">•••</button>
             </header>
-            <div class="admin-tabs-bar">
-                <button class="admin-tab-btn active" data-admin-tab="reviews" type="button">Avis</button>
-                <button class="admin-tab-btn" data-admin-tab="orders" type="button">Commandes</button>
-                <button class="admin-tab-btn" data-admin-tab="products" type="button">Produits</button>
-                <button class="admin-tab-btn" data-admin-tab="categories" type="button">Catégories</button>
-                <button class="admin-tab-btn" data-admin-tab="settings" type="button">Réglages</button>
-            </div>
-            <div class="admin-tab-pane active" id="admin-tab-reviews">
-                <div id="admin-reviews-pending">
-                    <div class="admin-empty">Chargement...</div>
+
+            <!-- Brand / Shop Status Bar -->
+            <div class="gst-brand-bar">
+                <div class="gst-brand-left">
+                    <span class="gst-shop-name" id="gst-shop-display-name">SHOP GreenHouse 68 🛍️</span>
+                    <span class="gst-support-pill" id="gst-support-pill">@GreenHouse682</span>
+                </div>
+                <div class="gst-brand-right">
+                    <div class="gst-lang-badge">
+                        <span class="gst-lang-flag">🇫🇷</span>
+                        <span class="gst-lang-caret">▼</span>
+                    </div>
                 </div>
             </div>
-            <div class="admin-tab-pane" id="admin-tab-orders">
-                <div id="admin-orders-all">
-                    <div class="admin-empty">Chargement...</div>
+
+            <!-- Barre des pages de l'onglet : pastilles (Catalogue, Ventes, Clients), titre et « ‹ Réglages » (Réglages),
+                 bouton 🔍 = accès rapide à toutes les pages (script.js : renderAdminSubtabs, populateQuickListDrawer) -->
+            <div class="gst-subtabs-wrapper">
+                <div class="gst-subtabs-scroll" id="gst-subtabs-scroll">
+                    <!-- Rempli selon l'onglet et la page actifs -->
+                </div>
+                <button class="gst-quick-list-btn" id="gst-quick-list-btn" type="button" title="Rechercher une page ou un réglage" aria-label="Accès rapide : rechercher une page ou un réglage">
+                    <span class="gst-ql-icon" aria-hidden="true">🔍</span><span class="gst-ql-text">Chercher</span>
+                </button>
+            </div>
+
+            <!-- Scrollable Body Content -->
+            <main class="gst-main-body" id="gst-main-body">
+
+                <!-- ========== ONGLET 1 : ACCUEIL ========== -->
+                <div class="gst-tab-pane active" id="gst-pane-accueil" data-gst-tab="accueil">
+                    <!-- Tableau de bord : chiffres du jour, à traiter, raccourcis, état du système (GET /admin/dashboard, script.js) -->
+                    <div class="gst-page active" data-gst-page="accueil" id="gst-page-accueil">
+                        <section class="gst-dash-hero">
+                            <div class="gst-dash-hero-text">
+                                <span class="gst-dash-hello" id="gst-dash-hello">Bonjour 👋</span>
+                                <span class="gst-dash-date" id="gst-dash-date"></span>
+                            </div>
+                            <button type="button" class="gst-btn-icon-circ" id="gst-dash-refresh-btn" title="Actualiser le tableau de bord" aria-label="Actualiser le tableau de bord">↻</button>
+                        </section>
+                        <p class="gst-caption gst-dash-error" id="gst-dash-error" role="alert" hidden></p>
+
+                        <!-- Chiffres du jour (depuis minuit, commandes annulées exclues) -->
+                        <section class="gst-dash-kpis" aria-label="Chiffres du jour">
+                            <div class="gst-kpi">
+                                <span class="gst-kpi-lbl">Commandes du jour</span>
+                                <span class="gst-kpi-val" id="gst-dash-kpi-orders">—</span>
+                                <span class="gst-kpi-note" id="gst-dash-kpi-orders-note"></span>
+                            </div>
+                            <div class="gst-kpi">
+                                <span class="gst-kpi-lbl">Chiffre d'affaires</span>
+                                <span class="gst-kpi-val" id="gst-dash-kpi-revenue">—</span>
+                                <span class="gst-kpi-note" id="gst-dash-kpi-revenue-note"></span>
+                            </div>
+                            <div class="gst-kpi">
+                                <span class="gst-kpi-lbl">Panier moyen</span>
+                                <span class="gst-kpi-val" id="gst-dash-kpi-avg">—</span>
+                                <span class="gst-kpi-note" id="gst-dash-kpi-avg-note"></span>
+                            </div>
+                        </section>
+                        <p class="gst-caption gst-dash-totals" id="gst-dash-totals"></p>
+
+                        <!-- À traiter : chaque ligne mène à sa page -->
+                        <section class="gst-card gst-dash-card" aria-labelledby="gst-dash-todo-title">
+                            <div class="gst-card-head">
+                                <span id="gst-dash-todo-title">📌 À traiter</span>
+                                <span class="gst-dash-note" id="gst-dash-todo-note"></span>
+                            </div>
+                            <div class="gst-dash-list" id="gst-dash-todo">
+                                <div class="gst-empty-placeholder">Chargement…</div>
+                            </div>
+                        </section>
+
+                        <!-- Raccourcis -->
+                        <section class="gst-card gst-dash-card" aria-labelledby="gst-dash-actions-title">
+                            <div class="gst-card-head"><span id="gst-dash-actions-title">⚡ Raccourcis</span></div>
+                            <div class="gst-dash-actions">
+                                <button type="button" class="gst-dash-action" id="gst-dash-new-product-btn">
+                                    <span class="gst-dash-action-icon" aria-hidden="true">＋</span>
+                                    <span class="gst-dash-action-label">Nouveau produit</span>
+                                </button>
+                                <button type="button" class="gst-dash-action" id="gst-dash-broadcast-btn">
+                                    <span class="gst-dash-action-icon" aria-hidden="true">📢</span>
+                                    <span class="gst-dash-action-label">Broadcast</span>
+                                </button>
+                                <button type="button" class="gst-dash-action" id="gst-dash-closed-btn">
+                                    <span class="gst-dash-action-icon" id="gst-dash-closed-icon" aria-hidden="true">🔒</span>
+                                    <span class="gst-dash-action-label" id="gst-dash-closed-label">Mode fermé</span>
+                                </button>
+                            </div>
+                            <!-- Redémarrage : aussi dans Réglages › Avancé et dans le menu ••• du bandeau -->
+                            <button type="button" class="gst-btn-danger gst-dash-restart" id="gst-dash-restart-btn">🔄 Redémarrer le bot</button>
+                        </section>
+
+                        <!-- État du système -->
+                        <section class="gst-card gst-dash-card" aria-labelledby="gst-dash-system-title">
+                            <div class="gst-card-head"><span id="gst-dash-system-title">🩺 État du système</span></div>
+                            <div class="gst-dash-list" id="gst-dash-system">
+                                <div class="gst-empty-placeholder">Chargement…</div>
+                            </div>
+                        </section>
+                        <p class="gst-caption gst-dash-updated" id="gst-dash-updated" role="status"></p>
+                    </div>
+                </div>
+
+                <!-- ========== ONGLET 2 : CATALOGUE (produits, catégories, villes, promo & likes) ========== -->
+                <div class="gst-tab-pane" id="gst-pane-catalogue" data-gst-tab="catalogue">
+                    <!-- Produits : recherche, filtres, tri, assistant produit, compteurs, liste -->
+                    <div class="gst-page" data-gst-page="produits" id="gst-pane-produits">
+                        <div class="gst-card">
+                            <!-- Search Bar -->
+                            <div class="gst-search-box">
+                                <span class="gst-search-icon">🔍</span>
+                                <input type="text" class="gst-input-search" id="gst-prods-search-input" placeholder="Rechercher un produit…">
+                            </div>
+
+                            <!-- Status Filter Chips -->
+                            <div class="gst-filter-chips-row">
+                                <button type="button" class="gst-filter-chip active" data-filter="all">Tous</button>
+                                <button type="button" class="gst-filter-chip" data-filter="stock">En stock</button>
+                                <button type="button" class="gst-filter-chip" data-filter="rupture">Rupture</button>
+                                <button type="button" class="gst-filter-chip" data-filter="promo">Promo</button>
+                                <button type="button" class="gst-filter-chip" data-filter="new">Nouveaux</button>
+                            </div>
+
+                            <!-- Sort Chips -->
+                            <div class="gst-sort-chips-row">
+                                <button type="button" class="gst-sort-chip active" data-sort="manual">Manuel</button>
+                                <button type="button" class="gst-sort-chip" data-sort="az">A → Z</button>
+                                <button type="button" class="gst-sort-chip" data-sort="za">Z → A</button>
+                                <button type="button" class="gst-sort-chip" data-sort="price-asc">Prix ↑</button>
+                                <button type="button" class="gst-sort-chip" data-sort="price-desc">Prix ↓</button>
+                                <button type="button" class="gst-sort-chip" data-sort="recent">Récent</button>
+                            </div>
+
+                            <!-- Filter by city dropdown -->
+                            <div class="gst-field-group" style="margin-top:8px;">
+                                <label class="gst-field-subtitle">FILTRER PAR VILLE</label>
+                                <!-- Villes de Réglages › Multi-Ville (script.js) -->
+                                <select class="gst-select" id="gst-prods-city-select">
+                                    <option value="all">Toutes les villes</option>
+                                </select>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="gst-actions-grid-3">
+                                <button type="button" class="gst-btn-action" id="gst-prods-reorder-grid-btn">
+                                    <span>=</span> Position dans la grille
+                                </button>
+                                <button type="button" class="gst-btn-action-primary" id="gst-prods-new-btn">
+                                    <span>+</span> Nouveau produit
+                                </button>
+                                <button type="button" class="gst-btn-action" id="gst-prods-written-menu-btn">
+                                    <span>≡</span> Menu écrit
+                                </button>
+                            </div>
+
+                            <!-- 4 Stat Counters -->
+                            <div class="gst-stats-quad">
+                                <div class="gst-stat-box">
+                                    <span class="gst-stat-val" id="gst-prods-count-total">0</span>
+                                    <span class="gst-stat-lbl">Total produits</span>
+                                </div>
+                                <div class="gst-stat-box">
+                                    <span class="gst-stat-val text-green" id="gst-prods-count-stock">0</span>
+                                    <span class="gst-stat-lbl">En stock</span>
+                                </div>
+                                <div class="gst-stat-box">
+                                    <span class="gst-stat-val text-red" id="gst-prods-count-rupture">0</span>
+                                    <span class="gst-stat-lbl">Rupture</span>
+                                </div>
+                                <div class="gst-stat-box">
+                                    <span class="gst-stat-val text-purple" id="gst-prods-count-promo">0</span>
+                                    <span class="gst-stat-lbl">En promo</span>
+                                </div>
+                            </div>
+
+                            <!-- Product Cards List -->
+                            <div class="gst-product-cards-container" id="gst-prods-list-container">
+                                <!-- Dynamic product cards populated by script.js -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Catégories (onglet Catalogue) -->
+                    <div class="gst-page" data-gst-page="categories" id="gst-page-categories">
+                        <!-- Catégories : liste, ajout, modification, suppression -->
+                        <div class="gst-card" id="gst-sec-prod-categories">
+                            <div class="gst-card-row-head">
+                                <strong>📁 Catégories (<span id="gst-cat-count">0</span>)</strong>
+                                <button type="button" class="gst-btn-primary-sm" id="gst-cat-new-btn">+ Nouvelle</button>
+                            </div>
+                            <p class="gst-caption">Supprimer une catégorie supprime aussi tous ses produits.</p>
+                            <div class="gst-cat-form" id="gst-cat-form" style="display:none">
+                                <div class="gst-label-sm" id="gst-cat-form-title">Nouvelle catégorie</div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-cat-name">Nom *</label>
+                                    <input type="text" class="gst-input" id="gst-cat-name" maxlength="50" placeholder="Ex : Hash" autocomplete="off">
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-cat-emoji">Emoji</label>
+                                    <input type="text" class="gst-input" id="gst-cat-emoji" maxlength="8" placeholder="📦" autocomplete="off">
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-cat-desc">Description</label>
+                                    <input type="text" class="gst-input" id="gst-cat-desc" maxlength="200" placeholder="Ex : Nos produits en Hash" autocomplete="off">
+                                </div>
+                                <div class="gst-btn-row-dual">
+                                    <button type="button" class="gst-btn-secondary" id="gst-cat-cancel-btn">Annuler</button>
+                                    <button type="button" class="gst-btn-primary" id="gst-cat-save-btn">Enregistrer</button>
+                                </div>
+                            </div>
+                            <div class="gst-cat-list" id="gst-cat-list">
+                                <!-- Catégories remplies par script.js -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Villes / secteurs (multi-ville) -->
+                    <div class="gst-page" data-gst-page="villes" id="gst-page-villes">
+                        <!-- Section: Multi-Ville / Secteurs -->
+                        <section class="gst-section" id="gst-sec-multiville">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">📍</span>
+                                        <div>
+                                            <div class="gst-row-title">Multi-Ville / Secteurs</div>
+                                            <div class="gst-row-sub">L'utilisateur choisit sa ville avant d'accéder au shop</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-multicity-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <p class="gst-caption">Activé : chaque client choisit sa ville au premier lancement (puis la change depuis son profil). Le catalogue est filtré par ville (Catalogue › Produits : villes de chaque produit) et les frais de livraison suivent la ville.</p>
+                                <!-- Rempli par script.js depuis GET /admin/catalogue (aucune ville factice) -->
+                                <div class="gst-card-callout-warn gst-multicity-warning" id="gst-multicity-warning" hidden>Ajoute au moins une ville active : sans ville, aucun choix n'est proposé aux clients.</div>
+                                <div class="gst-cities-list" id="gst-cities-list">
+                                    <div class="gst-empty-placeholder">Chargement des villes…</div>
+                                </div>
+                                <div class="gst-field-subtitle" style="margin-top:10px;">AJOUTER UNE VILLE / UN SECTEUR</div>
+                                <div class="gst-input-add-row gst-city-add-row">
+                                    <input type="text" class="gst-input" id="gst-new-city-input" maxlength="40" placeholder="Nom de la ville ou du secteur…" autocomplete="off">
+                                    <input type="text" inputmode="decimal" class="gst-input gst-input-num-sm" id="gst-new-city-fee" placeholder="Frais" aria-label="Frais de livraison de la ville" autocomplete="off">
+                                    <button type="button" class="gst-btn-primary-sm" id="gst-add-city-btn">+ Ajouter</button>
+                                </div>
+                                <p class="gst-caption">Frais vides = frais de livraison par défaut (Ventes › Options). Ils s'appliquent quand « Frais de livraison » est activé. Un produit sans ville est proposé partout.</p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Promotion globale et compteur de likes -->
+                    <div class="gst-page" data-gst-page="promo" id="gst-page-promo">
+                        <div class="gst-card">
+                            <div class="gst-card-row-head">
+                                <div class="gst-card-icon-title">
+                                    <span class="gst-circ-icon">🏷️</span>
+                                    <div>
+                                        <div class="gst-row-title">Promotion &amp; likes</div>
+                                        <div class="gst-row-sub">Réduction sur tout le catalogue et cœurs ♥ sur les produits.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Top toggles -->
+                            <div class="gst-toggle-row">
+                                <div>
+                                    <div class="gst-label-sm">Promotion Globale</div>
+                                    <div class="gst-caption">Prix barrés dans la boutique ; la réduction est appliquée par le serveur sur le total de chaque commande</div>
+                                </div>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-prods-global-promo-toggle">
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+                            <div class="gst-two-cols gst-promo-fields">
+                                <div>
+                                    <label class="gst-field-subtitle" for="gst-promo-percent">RÉDUCTION (%)</label>
+                                    <input type="number" class="gst-input" id="gst-promo-percent" min="1" max="90" step="1" inputmode="numeric" placeholder="Ex : 10">
+                                </div>
+                                <div>
+                                    <label class="gst-field-subtitle" for="gst-promo-label">LIBELLÉ</label>
+                                    <input type="text" class="gst-input" id="gst-promo-label" maxlength="30" placeholder="Promo" autocomplete="off">
+                                </div>
+                            </div>
+                            <p class="gst-caption" id="gst-promo-preview"></p>
+                            <div class="gst-toggle-row">
+                                <div>
+                                    <div class="gst-label-sm">Compteur de likes</div>
+                                    <div class="gst-caption">Cœur ♥ sur les produits : un like par client, compteur réel. <span id="gst-likes-total"></span></div>
+                                </div>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-prods-likes-counter-toggle">
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== ONGLET 3 : VENTES (commandes, options, réception, N-ème client) ========== -->
+                <div class="gst-tab-pane" id="gst-pane-ventes" data-gst-tab="ventes">
+                    <!-- Commandes : chiffres et liste (statuts, mode de commande) -->
+                    <div class="gst-page" data-gst-page="commandes" id="gst-pane-commandes">
+                        <!-- CRM Dashboard & Orders List -->
+                        <div class="gst-card">
+                            <div class="gst-card-head">
+                                <strong>Suivi des commandes</strong>
+                                <button type="button" class="gst-btn-icon-circ" id="gst-orders-refresh-btn" title="Actualiser les commandes">↻</button>
+                            </div>
+
+                            <div class="gst-stats-quad">
+                                <div class="gst-stat-box">
+                                    <span class="gst-stat-val text-purple" id="gst-orders-stat-total">0</span>
+                                    <span class="gst-stat-lbl">Total</span>
+                                </div>
+                                <div class="gst-stat-box">
+                                    <span class="gst-stat-val text-green" id="gst-orders-stat-revenue">0.00 €</span>
+                                    <span class="gst-stat-lbl">Revenus</span>
+                                </div>
+                                <div class="gst-stat-box">
+                                    <span class="gst-stat-val text-yellow" id="gst-orders-stat-today">0</span>
+                                    <span class="gst-stat-lbl">Aujourd'hui</span>
+                                </div>
+                                <div class="gst-stat-box">
+                                    <span class="gst-stat-val text-cyan" id="gst-orders-stat-avg">0.00 €</span>
+                                    <span class="gst-stat-lbl">Panier moyen</span>
+                                </div>
+                            </div>
+
+                            <p class="gst-caption" style="text-align:center;">Les 200 commandes les plus récentes</p>
+
+                            <!-- Search -->
+                            <div class="gst-search-box">
+                                <span class="gst-search-icon">🔍</span>
+                                <input type="text" class="gst-input-search" id="gst-orders-search-input" placeholder="Rechercher : ID commande, User…">
+                            </div>
+
+                            <!-- Statut des commandes (boutons du groupe de réception ou de la fiche ci-dessous) -->
+                            <div class="gst-filter-chips-row" id="gst-orders-status-chips">
+                                <button type="button" class="gst-filter-chip active" data-orderstatus="all">Toutes</button>
+                                <button type="button" class="gst-filter-chip" data-orderstatus="new">🆕 Nouvelles</button>
+                                <button type="button" class="gst-filter-chip" data-orderstatus="accepted">✅ Acceptées</button>
+                                <button type="button" class="gst-filter-chip" data-orderstatus="delivering">🚚 En livraison</button>
+                                <button type="button" class="gst-filter-chip" data-orderstatus="delivered">📦 Livrées</button>
+                                <button type="button" class="gst-filter-chip" data-orderstatus="cancelled">❌ Annulées</button>
+                            </div>
+
+                            <!-- Mode de la commande (anciens sous-onglets du haut) -->
+                            <div class="gst-filter-chips-row" id="gst-orders-type-chips">
+                                <button type="button" class="gst-filter-chip active" data-ordertype="all">Tous modes</button>
+                                <button type="button" class="gst-filter-chip" data-ordertype="pickup">Click &amp; Collect</button>
+                                <button type="button" class="gst-filter-chip" data-ordertype="delivery">Livraison</button>
+                                <button type="button" class="gst-filter-chip" data-ordertype="postal">Envoi postal</button>
+                            </div>
+
+                            <!-- Orders Cards List -->
+                            <div class="gst-orders-cards-list" id="gst-orders-cards-list">
+                                <!-- Dynamic order cards populated by script.js -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Options de commande : activation, livraison, meetup, envoi postal, calendrier, paiement crypto -->
+                    <div class="gst-page" data-gst-page="options-commande" id="gst-page-options-commande">
+                        <div class="gst-card">
+                            <div class="gst-card-row-head">
+                                <div class="gst-card-icon-title">
+                                    <span class="gst-circ-icon">✓</span>
+                                    <div>
+                                        <div class="gst-row-title">Commandes activées</div>
+                                        <div class="gst-row-sub">Les clients peuvent commander via la mini app</div>
+                                    </div>
+                                </div>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-orders-enabled-toggle" checked>
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+                            <p class="gst-caption">Désactivé : le panier affiche « Commandes fermées » et le serveur refuse toute nouvelle commande.</p>
+
+                            <div class="gst-toggle-row">
+                                <div>
+                                    <div class="gst-label-sm">Option Meetup</div>
+                                    <div class="gst-caption">Permet au client de choisir livraison ou meetup. (⚠️ Tu dois le contacter pour lui donner l'adresse)</div>
+                                </div>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-orders-meetup-toggle" checked>
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="gst-toggle-row">
+                                <div>
+                                    <div class="gst-label-sm">Envoi postal</div>
+                                    <div class="gst-caption">Le client choisit un type d'envoi (frais ajoutés au total) et donne son adresse postale. Sans type d'envoi, l'option n'apparaît pas.</div>
+                                </div>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-orders-postal-toggle">
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+                            <!-- Types d'envoi postal enregistrés (postal_options), rendus par script.js -->
+                            <div class="gst-list-editor" id="gst-postal-editor">
+                                <div class="gst-list-editor-items" id="gst-postal-options-list"></div>
+                                <div class="gst-input-add-row">
+                                    <input type="text" class="gst-input" id="gst-postal-new-label" maxlength="40" placeholder="Ex : Lettre suivie" autocomplete="off">
+                                    <input type="text" inputmode="decimal" class="gst-input gst-input-num-sm" id="gst-postal-new-fee" placeholder="Frais" aria-label="Frais d'envoi" autocomplete="off">
+                                    <button type="button" class="gst-btn-primary-sm" id="gst-postal-add-btn">+ Ajouter</button>
+                                </div>
+                            </div>
+
+                            <div class="gst-toggle-row">
+                                <div>
+                                    <div class="gst-label-sm">Option Calendrier</div>
+                                    <div class="gst-caption">Le client choisit la date et l'heure de son créneau (livraison ou meetup) avant de commander. Les heures passées sont grisées et refusées par le serveur.</div>
+                                </div>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-orders-calendar-toggle" checked>
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+                            <div class="gst-input-with-label gst-calendar-days-row">
+                                <input type="number" class="gst-input-sm" id="gst-orders-calendar-days" min="0" max="30" step="1" inputmode="numeric" placeholder="7" aria-label="Jours à l'avance">
+                                <span>jour(s) à l'avance proposés (0 = aujourd'hui seulement)</span>
+                            </div>
+
+                            <div class="gst-toggle-row">
+                                <div>
+                                    <div class="gst-label-sm">Frais de livraison</div>
+                                    <div class="gst-caption">Montant appliqué par défaut à la livraison</div>
+                                </div>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-orders-fee-toggle">
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="gst-two-cols" style="margin-top:6px;">
+                                <div>
+                                    <label class="gst-field-subtitle">MONTANT (€)</label>
+                                    <input type="number" class="gst-input" id="gst-orders-fee-amount" value="0" min="0" step="0.01">
+                                </div>
+                                <div>
+                                    <label class="gst-field-subtitle">LIVRAISON GRATUITE DÈS (€)</label>
+                                    <input type="number" class="gst-input" id="gst-orders-free-shipping" value="0" min="0" step="0.01" placeholder="0 = jamais">
+                                </div>
+                            </div>
+
+                            <div class="gst-toggle-row">
+                                <div>
+                                    <div class="gst-label-sm">Paiement par Crypto</div>
+                                    <div class="gst-caption">Au panier, le client choisit espèces ou une crypto et voit l'adresse de paiement (aussi envoyée par le bot avec sa commande).</div>
+                                </div>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-orders-crypto-toggle">
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+                            <!-- Adresses de paiement enregistrées (crypto_wallets), rendues par script.js -->
+                            <div class="gst-list-editor" id="gst-wallets-editor">
+                                <div class="gst-list-editor-items" id="gst-wallets-list"></div>
+                                <div class="gst-input-add-row gst-wallet-add-row">
+                                    <input type="text" class="gst-input gst-wallet-coin-input" id="gst-wallet-new-coin" list="gst-wallet-coins" maxlength="24" placeholder="Monnaie" aria-label="Monnaie" autocomplete="off">
+                                    <input type="text" class="gst-input" id="gst-wallet-new-address" maxlength="128" placeholder="Adresse du wallet" aria-label="Adresse du wallet" autocomplete="off" spellcheck="false">
+                                    <button type="button" class="gst-btn-primary-sm" id="gst-wallet-add-btn">+ Ajouter</button>
+                                </div>
+                                <datalist id="gst-wallet-coins">
+                                    <option value="BTC"></option>
+                                    <option value="ETH"></option>
+                                    <option value="USDT (TRC20)"></option>
+                                    <option value="USDT (ERC20)"></option>
+                                    <option value="LTC"></option>
+                                    <option value="SOL"></option>
+                                    <option value="XMR"></option>
+                                </datalist>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Groupe de réception des commandes -->
+                    <div class="gst-page" data-gst-page="reception" id="gst-page-reception">
+                        <div class="gst-card">
+                            <div class="gst-card-row-head">
+                                <div class="gst-card-icon-title">
+                                    <span class="gst-circ-icon">📥</span>
+                                    <div>
+                                        <div class="gst-row-title">Réception des commandes</div>
+                                        <div class="gst-row-sub">Où arrivent les nouvelles commandes, avec leurs boutons de statut qui préviennent le client.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="gst-field-group">
+                                <label class="gst-field-subtitle">GROUPE DE RÉCEPTION DES COMMANDES</label>
+                                <!-- Groupes réellement enregistrés par /commandes (GET /admin/catalogue), jamais leur identifiant -->
+                                <div class="gst-order-chats" id="gst-order-chats">
+                                    <div class="gst-empty-placeholder">Chargement…</div>
+                                </div>
+                                <p class="gst-caption">Ajoute le bot au groupe, puis un admin tape <code>/commandes</code> dans le groupe : chaque commande y arrive avec ses boutons de statut (acceptée, en livraison, livrée, annulée) qui préviennent le client. Multi-ville : <code>/commandes nom-de-la-ville</code> dans le groupe d'une ville. Sans groupe, les commandes arrivent en privé aux admins.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Messages N-ème client -->
+                    <div class="gst-page" data-gst-page="neme-client" id="gst-page-neme-client">
+                        <!-- Section: Messages Nème client -->
+                        <section class="gst-section" id="gst-sec-neme-client">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-head"><span class="gst-icon-purple">🎯</span> <strong>Messages Nème client</strong></div>
+                                    <button type="button" class="gst-btn-help-tags" id="gst-milestones-help-btn" data-help-target="gst-milestones-help-box">ℹ Aide balises</button>
+                                </div>
+                                <p class="gst-caption">• Se déclenche pile à la N-ième commande de chaque client (pas toutes les N).<br>• Plusieurs jalons possibles (5, 10, 50…), chacun avec son message, envoyé par le bot au client.<br>• Compteur par client : ses commandes enregistrées, hors commandes annulées. Un jalon n'est envoyé qu'une fois par client.</p>
+                                <div class="gst-card-callout-info" id="gst-milestones-help-box" style="display:none">
+                                    Mise en forme (HTML Telegram) : <code>&lt;b&gt;gras&lt;/b&gt;</code> · <code>&lt;i&gt;italique&lt;/i&gt;</code> · <code>&lt;u&gt;souligné&lt;/u&gt;</code> · <code>&lt;s&gt;barré&lt;/s&gt;</code> · <code>&lt;code&gt;code&lt;/code&gt;</code> · <code>&lt;a href="https://…"&gt;lien&lt;/a&gt;</code><br>
+                                    Variables : <code>{prenom}</code> (prénom du client), <code>{n}</code> (numéro du jalon), <code>{commande}</code> (numéro de la commande). Une balise mal fermée : le message part sans mise en forme.
+                                </div>
+                                <!-- Jalons lus dans GET /admin/catalogue (script.js) -->
+                                <div class="gst-milestones-list" id="gst-milestones-list">
+                                    <div class="gst-empty-placeholder">Chargement des jalons…</div>
+                                </div>
+                                <div class="gst-card-bottom-row">
+                                    <button type="button" class="gst-btn-secondary-sm" id="gst-milestones-add-btn">+ Ajouter un jalon</button>
+                                    <span class="gst-save-status-indicator" id="gst-milestones-status"></span>
+                                    <button type="button" class="gst-btn-primary-sm" id="gst-milestones-save-btn" disabled>💾 Enregistrer</button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- ========== ONGLET 4 : CLIENTS (fiches, vérifications, fidélité, jeux, avis, SAV) ========== -->
+                <div class="gst-tab-pane" id="gst-pane-clients" data-gst-tab="clients">
+                    <!-- Fiches clients (CRM) : masquées quand le CRM est coupé -->
+                    <div class="gst-page" data-gst-page="utilisateurs" id="gst-pane-utilisateurs">
+                        <div class="gst-card">
+                            <div class="gst-card-head">
+                                <strong>CRM Utilisateurs</strong>
+                                <span class="gst-counter" id="gst-users-total-count">—</span>
+                            </div>
+
+                            <!-- Filtre (ancien sous-onglet du haut) : « Actifs » = /start ou boutique ouverte ces 7 derniers jours -->
+                            <div class="gst-filter-chips-row" id="gst-users-filter-chips">
+                                <button type="button" class="gst-filter-chip active" data-usersfilter="all">Tous</button>
+                                <button type="button" class="gst-filter-chip" data-usersfilter="active">Actifs (7 j)</button>
+                            </div>
+
+                            <!-- Search Box -->
+                            <div class="gst-search-box">
+                                <span class="gst-search-icon">🔍</span>
+                                <input type="text" class="gst-input-search" id="gst-users-search-input" placeholder="Rechercher par pseudo, nom, ID Telegram…">
+                            </div>
+
+                            <!-- Users List -->
+                            <div class="gst-users-list-container" id="gst-users-list-container">
+                                <!-- Dynamic user rows populated by script.js -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vérification CNI + selfie et approbation manuelle -->
+                    <div class="gst-page" data-gst-page="verifications" id="gst-page-verifications">
+                        <!-- Section: CNI + Selfie -->
+                        <section class="gst-section" id="gst-sec-cni">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">🪪</span>
+                                        <div>
+                                            <div class="gst-row-title">Vérification CNI + Selfie <span class="gst-badge-new" id="gst-cni-pending-badge" style="display:none"></span></div>
+                                            <div class="gst-row-sub">Avant d'accéder à la boutique, le client envoie au bot UNE photo de lui avec sa pièce d'identité. Un admin la valide ou la refuse.</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-cni-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-field-group">
+                                    <span class="gst-field-subtitle">IMAGE D'EXEMPLE ENVOYÉE AU CLIENT</span>
+                                    <div class="gst-cni-preview-box">
+                                        <img alt="Image d'exemple de la vérification" class="gst-cni-sample-img" id="gst-cni-sample-img" style="display:none">
+                                        <div class="gst-empty-placeholder" id="gst-cni-sample-empty">Aucune image d'exemple : le bot envoie seulement les instructions.</div>
+                                    </div>
+                                    <div class="gst-btn-row-dual">
+                                        <label class="gst-btn-secondary gst-upload-btn" for="gst-cni-sample-upload-input">
+                                            ☁ Choisir une image
+                                            <input type="file" id="gst-cni-sample-upload-input" accept="image/*" style="display:none">
+                                        </label>
+                                        <button type="button" class="gst-btn-secondary" id="gst-cni-sample-clear-btn">✕ Retirer l'image</button>
+                                    </div>
+                                </div>
+                                <div class="gst-field-group">
+                                    <div class="gst-label-with-count">
+                                        <label class="gst-field-subtitle" for="gst-cni-instructions">INSTRUCTIONS (OPTIONNEL)</label>
+                                        <span class="gst-counter" id="gst-cni-instructions-count">0/500</span>
+                                    </div>
+                                    <textarea class="gst-textarea" id="gst-cni-instructions" rows="2" maxlength="500" placeholder="Ex : Photo de toi avec ta CNI en main, bien lisible."></textarea>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-cni-target-select">ENVOYER LES DEMANDES DANS</label>
+                                    <select class="gst-select" id="gst-cni-target-select">
+                                        <option value="dm" selected>Message privé avec le bot (admins)</option>
+                                        <option value="group">Groupe de modération</option>
+                                    </select>
+                                    <p class="gst-caption">Même réglage que l'approbation manuelle : les deux listes restent synchronisées.</p>
+                                </div>
+                                <div class="gst-field-group">
+                                    <div class="gst-card-row-head">
+                                        <span class="gst-field-subtitle">DEMANDES EN ATTENTE</span>
+                                        <button type="button" class="gst-btn-icon-circ" id="gst-verif-refresh-btn" title="Actualiser les demandes">↻</button>
+                                    </div>
+                                    <div class="gst-stats-trio">
+                                        <div class="gst-stat-box"><span class="gst-stat-number" id="gst-verif-count-pending">—</span><span class="gst-stat-label">En attente</span></div>
+                                        <div class="gst-stat-box"><span class="gst-stat-number" id="gst-verif-count-approved">—</span><span class="gst-stat-label">Validés</span></div>
+                                        <div class="gst-stat-box"><span class="gst-stat-number" id="gst-verif-count-rejected">—</span><span class="gst-stat-label">Refusés</span></div>
+                                    </div>
+                                    <div class="gst-cat-list" id="gst-cni-pending-list">
+                                        <div class="gst-empty-placeholder">Chargement des demandes…</div>
+                                    </div>
+                                    <p class="gst-caption">Les photos ne sont jamais publiées : elles s'affichent ici pour les admins seulement et sont effacées après la décision.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Section: Approbation manuelle -->
+                        <section class="gst-section" id="gst-sec-approbation">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">🛡️</span>
+                                        <div>
+                                            <div class="gst-row-title">Approbation manuelle</div>
+                                            <div class="gst-row-sub">Chaque nouveau client doit être approuvé par un admin avant d'accéder à la boutique.</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-manual-approval-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <p class="gst-caption">À sa première ouverture de la boutique, le client voit « Vérification en cours » et une demande part dans le chat choisi (boutons Approuver / Refuser). Il accède à la boutique dès qu'un admin l'a validé. Les admins sont exemptés.</p>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-approval-target-select">ENVOYER LES DEMANDES DANS</label>
+                                    <select class="gst-select" id="gst-approval-target-select">
+                                        <option value="dm" selected>Message privé avec le bot (admins)</option>
+                                        <option value="group">Groupe de modération</option>
+                                    </select>
+                                    <!-- Groupe réellement enregistré (/moderation tapé dans le groupe) ou marche à suivre -->
+                                    <div class="gst-chat-selected-pill" id="gst-moderation-chat-pill" style="display:none"></div>
+                                    <div class="gst-card-callout-warn" id="gst-moderation-chat-help" style="display:none">
+                                        ⚠️ Aucun groupe de modération enregistré : ajoute le bot au groupe, puis tape <code>/moderation</code> dans le groupe depuis ton compte admin.
+                                    </div>
+                                    <p class="gst-caption" id="gst-moderation-dm-help"></p>
+                                    <div class="gst-btn-row-dual" style="margin-top:10px;">
+                                        <button type="button" class="gst-btn-danger-sm" id="gst-approval-reset-all">Réinitialiser toutes les approbations</button>
+                                        <button type="button" class="gst-btn-success-sm" id="gst-approval-approve-all">Approuver tous</button>
+                                    </div>
+                                    <button type="button" class="gst-btn-secondary" id="gst-approval-resend-btn" style="margin-top:8px;">▲ Ré-envoyer les demandes en attente</button>
+                                    <button type="button" class="gst-btn-secondary" id="gst-approval-waitlist-btn" style="margin-top:8px;">📋 Liste d'attente <span id="gst-approval-waitlist-count"></span></button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Rang & parrainage -->
+                    <div class="gst-page" data-gst-page="fidelite" id="gst-page-fidelite">
+                        <!-- Section: Rang & Parrainage (fidélité) : tout est lu et enregistré sur le serveur
+                             (réglages rank_enabled, referral_points, rank_tiers, rank_rewards ; routes /admin/fidelite/…) -->
+                        <section class="gst-section" id="gst-sec-rang">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">⭐</span>
+                                        <div>
+                                            <div class="gst-row-title">Rang & Parrainage</div>
+                                            <div class="gst-row-sub">Chaque client a un code unique. Un nouveau compte qui l'utilise rapporte des points au parrain, qui les dépense en réductions dans son panier.</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-rank-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-stats-trio">
+                                    <div class="gst-stat-box"><span class="gst-stat-number" id="gst-rank-stat-accounts">—</span><span class="gst-stat-label">Comptes</span></div>
+                                    <div class="gst-stat-box"><span class="gst-stat-number" id="gst-rank-stat-referrals">—</span><span class="gst-stat-label">Parrainages</span></div>
+                                    <div class="gst-stat-box"><span class="gst-stat-number" id="gst-rank-stat-points">—</span><span class="gst-stat-label">Points à dépenser</span></div>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-referral-points-input">POINTS PAR PARRAINAGE</label>
+                                    <input type="number" class="gst-input" id="gst-referral-points-input" min="1" max="100" step="1" value="1" inputmode="numeric">
+                                    <p class="gst-caption">Gagnés par le parrain quand un nouveau compte (moins de 7 jours, sans commande) utilise son code : lien <code>t.me/bot?start=ref_CODE</code>, saisie dans le profil de la boutique ou /parrainage dans le bot.</p>
+                                </div>
+                            </div>
+
+                            <div class="gst-card">
+                                <div class="gst-card-head"><span class="gst-icon-purple">👑</span> <strong>Rangs</strong></div>
+                                <p class="gst-caption">Paliers de points cumulés (les points dépensés comptent toujours pour le rang). Le rang et le prochain palier s'affichent dans le profil du client.</p>
+                                <div class="gst-fid-rows" id="gst-rank-tiers-list"></div>
+                                <div class="gst-btn-row-dual">
+                                    <button type="button" class="gst-btn-secondary-sm" id="gst-rank-tier-add-btn">+ Ajouter un rang</button>
+                                    <button type="button" class="gst-btn-primary-sm" id="gst-rank-tiers-save-btn">Enregistrer les rangs</button>
+                                </div>
+                            </div>
+
+                            <div class="gst-card">
+                                <div class="gst-card-head"><span class="gst-icon-purple">🎁</span> <strong>Barème des réductions</strong></div>
+                                <p class="gst-caption">Le client choisit un palier dans son panier : le serveur vérifie son solde, débite les points et applique la réduction à la commande enregistrée.</p>
+                                <div class="gst-fid-rows" id="gst-rank-rewards-list"></div>
+                                <div class="gst-btn-row-dual">
+                                    <button type="button" class="gst-btn-secondary-sm" id="gst-rank-reward-add-btn">+ Ajouter un palier</button>
+                                    <button type="button" class="gst-btn-primary-sm" id="gst-rank-rewards-save-btn">Enregistrer le barème</button>
+                                </div>
+                            </div>
+
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">🏆</span>
+                                        <div>
+                                            <div class="gst-row-title">Classement</div>
+                                            <div class="gst-row-sub">Points cumulés, solde et filleuls ; ± pour ajuster les points d'un client</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="gst-btn-icon-circ" id="gst-rank-refresh-btn" title="Actualiser le classement">↻</button>
+                                </div>
+                                <input type="search" class="gst-input" id="gst-rank-search-input" maxlength="64" placeholder="Rechercher : @pseudo, nom, code ou ID Telegram" autocomplete="off">
+                                <div class="gst-cat-list" id="gst-rank-leaderboard"></div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Roue de la fortune et jeu concours -->
+                    <div class="gst-page" data-gst-page="jeux" id="gst-page-jeux">
+                        <!-- Section: Roue de la fortune : tirage côté serveur (route /fidelite/wheel/spin), lots et réglages
+                             wheel_enabled, wheel_prizes, wheel_cooldown_hours, wheel_notify_target -->
+                        <section class="gst-section" id="gst-sec-roue">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">🎡</span>
+                                        <div>
+                                            <div class="gst-row-title">Roue de la fortune</div>
+                                            <div class="gst-row-sub">Dans le profil de la boutique : le serveur tire le lot, le bot l'envoie au client</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-wheel-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-wheel-notify-select">NOTIFICATION DES GAINS ET DES CONCOURS</label>
+                                    <select class="gst-select" id="gst-wheel-notify-select">
+                                        <option value="dm" selected>Admins en message privé</option>
+                                        <option value="group">Groupe enregistré avec /fidelite</option>
+                                        <option value="none">Aucune notification</option>
+                                    </select>
+                                    <p class="gst-caption" id="gst-wheel-notify-status"></p>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-wheel-custom-hours">DÉLAI ENTRE DEUX TOURS (PAR CLIENT)</label>
+                                    <div class="gst-btn-row-trio" id="gst-wheel-cooldown-chips">
+                                        <button type="button" class="gst-btn-choice" data-hours="24">1 jour</button>
+                                        <button type="button" class="gst-btn-choice" data-hours="72">3 jours</button>
+                                        <button type="button" class="gst-btn-choice" data-hours="168">1 semaine</button>
+                                    </div>
+                                    <div class="gst-input-with-label" style="margin-top:6px;">
+                                        <input type="number" class="gst-input-sm" id="gst-wheel-custom-hours" min="1" max="8760" step="1" value="168" inputmode="numeric">
+                                        <span>heures</span>
+                                    </div>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle">LOTS</label>
+                                    <p class="gst-caption">Perdu · Lot à remettre (le bot prévient le client, un admin le remet) · Réduction % ou € (code valable 30 jours, à choisir dans le panier) · Points de fidélité (crédités tout de suite).</p>
+                                    <div class="gst-wheel-prizes-list" id="gst-wheel-prizes-list"></div>
+                                    <div class="gst-btn-row-dual">
+                                        <button type="button" class="gst-btn-secondary-sm" id="gst-wheel-add-prize-btn">+ Ajouter un lot</button>
+                                        <button type="button" class="gst-btn-primary-sm" id="gst-wheel-save-prizes-btn">Enregistrer les lots</button>
+                                    </div>
+                                    <div class="gst-wheel-total-sum" id="gst-wheel-total-sum"></div>
+                                </div>
+                            </div>
+
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">📜</span>
+                                        <div>
+                                            <div class="gst-row-title">Historique des tours</div>
+                                            <div class="gst-row-sub">100 derniers tours, code gagné et utilisation</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="gst-btn-icon-circ" id="gst-wheel-history-refresh-btn" title="Actualiser l'historique">↻</button>
+                                </div>
+                                <div class="gst-cat-list" id="gst-wheel-history-list"></div>
+                            </div>
+                        </section>
+
+                        <!-- Section: Jeu Concours : un concours à la fois, participation boutique (profil) ou bot (/concours),
+                             tirage au sort côté serveur (routes /admin/fidelite/contest…) -->
+                        <section class="gst-section" id="gst-sec-concours">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">🎁</span>
+                                        <div>
+                                            <div class="gst-row-title">Jeu Concours</div>
+                                            <div class="gst-row-sub">Participation depuis le profil de la boutique ou /concours dans le bot (accès à la boutique requis), une par client</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="gst-btn-icon-circ" id="gst-contest-refresh-btn" title="Actualiser les concours">↻</button>
+                                </div>
+                                <div id="gst-contest-active"></div>
+                                <details class="gst-details-accordion" id="gst-contest-form-box">
+                                    <summary class="gst-summary" id="gst-contest-form-title">➕ <strong>Nouveau concours</strong></summary>
+                                    <div class="gst-details-body gst-fid-form">
+                                        <label class="gst-field-subtitle" for="gst-contest-title">TITRE</label>
+                                        <input type="text" class="gst-input" id="gst-contest-title" maxlength="80" placeholder="Ex : Concours de la rentrée">
+                                        <label class="gst-field-subtitle" for="gst-contest-desc">DESCRIPTION</label>
+                                        <textarea class="gst-textarea" id="gst-contest-desc" rows="3" maxlength="500" placeholder="Règles, conditions…"></textarea>
+                                        <label class="gst-field-subtitle" for="gst-contest-prize">LOT</label>
+                                        <input type="text" class="gst-input" id="gst-contest-prize" maxlength="120" placeholder="Ex : 10 G offerts">
+                                        <label class="gst-field-subtitle" for="gst-contest-ends">DATE DE FIN</label>
+                                        <input type="datetime-local" class="gst-input" id="gst-contest-ends">
+                                        <div class="gst-toggle-row">
+                                            <span class="gst-label-sm">Tirage automatique à la date de fin</span>
+                                            <label class="gst-switch">
+                                                <input type="checkbox" id="gst-contest-auto">
+                                                <span class="gst-slider"></span>
+                                            </label>
+                                        </div>
+                                        <label class="gst-field-subtitle" for="gst-contest-announce">ANNONCE DU RÉSULTAT</label>
+                                        <select class="gst-select" id="gst-contest-announce">
+                                            <option value="participants" selected>Gagnant + tous les participants</option>
+                                            <option value="all">Gagnant + tous les clients du bot</option>
+                                            <option value="none">Gagnant seulement</option>
+                                        </select>
+                                        <div class="gst-btn-row-dual">
+                                            <button type="button" class="gst-btn-secondary-sm" id="gst-contest-cancel-edit-btn">Annuler</button>
+                                            <button type="button" class="gst-btn-primary-sm" id="gst-contest-save-btn">Créer le concours</button>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+
+                            <div class="gst-card">
+                                <div class="gst-card-head"><span class="gst-icon-purple">📚</span> <strong>Concours passés</strong></div>
+                                <div class="gst-cat-list" id="gst-contest-history"></div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Avis clients -->
+                    <div class="gst-page" data-gst-page="avis" id="gst-page-avis">
+                        <!-- Section: Avis clients -->
+                        <section class="gst-section" id="gst-sec-avis">
+                            <!-- Modération : un avis client n'apparaît dans la boutique qu'une fois publié -->
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">📝</span>
+                                        <div>
+                                            <div class="gst-row-title">Modération des avis <span class="gst-badge-new" id="gst-reviews-pending-badge" style="display:none"></span></div>
+                                            <div class="gst-row-sub">Les nouveaux avis n'apparaissent dans la boutique qu'une fois publiés.</div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="gst-btn-icon-circ" id="gst-reviews-refresh-btn" title="Actualiser les avis">↻</button>
+                                </div>
+                                <div class="gst-field-subtitle">EN ATTENTE</div>
+                                <div class="gst-cat-list" id="gst-reviews-pending-list">
+                                    <div class="gst-empty-placeholder">Chargement des avis…</div>
+                                </div>
+                                <div class="gst-field-subtitle" style="margin-top:6px;">PUBLIÉS DANS LA BOUTIQUE</div>
+                                <div class="gst-cat-list" id="gst-reviews-approved-list"></div>
+                            </div>
+
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">⭐</span>
+                                        <div>
+                                            <div class="gst-row-title">Avis clients</div>
+                                            <div class="gst-row-sub">Formulaire d'avis de la boutique : coupé, il disparaît et le serveur refuse tout nouvel avis</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-reviews-toggle" checked>
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-toggle-row">
+                                    <span class="gst-label-sm">Commande requise (seuls les clients ayant déjà commandé peuvent laisser un avis)</span>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-reviews-order-req-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-field-group" id="gst-reviews-delay-group">
+                                    <label class="gst-field-subtitle" for="gst-reviews-delay-input">DÉLAI APRÈS LA DERNIÈRE COMMANDE (HEURES)</label>
+                                    <input type="number" class="gst-input" id="gst-reviews-delay-input" min="0" max="720" step="1" value="0" inputmode="numeric">
+                                    <p class="gst-caption">0 = tout de suite. 24 = le lendemain de la commande. Appliqué quand « Commande requise » est activé.</p>
+                                </div>
+                                <div class="gst-toggle-row">
+                                    <span class="gst-label-sm">Photos jointes aux avis (JPEG, PNG ou WebP, 5 Mo max, publiées seulement avec l'avis validé)</span>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-reviews-photos-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-toggle-row">
+                                    <span class="gst-label-sm">Onglet Avis dans la boutique (masqué : le formulaire reste accessible depuis le profil)</span>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-reviews-tab-toggle" checked>
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Tickets SAV -->
+                    <div class="gst-page" data-gst-page="tickets" id="gst-pane-tickets">
+                        <div class="gst-card">
+                            <div class="gst-card-row-head">
+                                <div class="gst-card-icon-title">
+                                    <span class="gst-circ-icon">🎫</span>
+                                    <div>
+                                        <div class="gst-row-title">Tickets SAV</div>
+                                        <div class="gst-row-sub">Les clients ouvrent un ticket depuis la boutique (Infos › Support) ou avec /sav dans le bot</div>
+                                    </div>
+                                </div>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-tickets-toggle">
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="gst-field-group">
+                                <label class="gst-field-subtitle" for="gst-tickets-target-select">NOTIFICATION DES NOUVEAUX MESSAGES</label>
+                                <select class="gst-select" id="gst-tickets-target-select">
+                                    <option value="dm" selected>Message privé avec le bot (admins)</option>
+                                    <option value="group">Groupe Support SAV</option>
+                                </select>
+                                <p class="gst-caption" id="gst-tickets-group-state" role="status"></p>
+                            </div>
+
+                            <!-- Status filter pills -->
+                            <div class="gst-filter-chips-row" style="margin-top:12px;">
+                                <button type="button" class="gst-filter-chip" data-ticketfilter="open">Ouverts (<span id="gst-tickets-count-open">—</span>)</button>
+                                <button type="button" class="gst-filter-chip" data-ticketfilter="closed">Fermés (<span id="gst-tickets-count-closed">—</span>)</button>
+                                <button type="button" class="gst-filter-chip active" data-ticketfilter="all">Tous (<span id="gst-tickets-count-all">—</span>)</button>
+                                <button type="button" class="gst-btn-icon-circ" id="gst-tickets-refresh-btn" title="Actualiser">↻</button>
+                            </div>
+
+                            <div class="gst-tickets-list-container" id="gst-tickets-list-container">
+                                <div class="gst-empty-placeholder">Chargement des tickets…</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== ONGLET 5 : RÉGLAGES (menu en liste, une page par réglage) ========== -->
+                <div class="gst-tab-pane" id="gst-pane-reglages" data-gst-tab="reglages">
+                    <!-- Menu des Réglages : groupes et lignes (icône, titre, état réel) rendus par script.js (REGLAGES_SECTIONS) ;
+                         chaque ligne ouvre la page de son réglage, avec « ‹ Réglages » pour revenir -->
+                    <div class="gst-page" data-gst-page="reglages" id="gst-page-reglages">
+                        <nav class="gst-settings-menu" id="gst-settings-menu" aria-label="Réglages">
+                            <div class="gst-empty-placeholder">Chargement des réglages…</div>
+                        </nav>
+                    </div>
+
+                    <!-- Général : logo, nom, slogan, banderole, thème, loader, fond animé -->
+                    <div class="gst-page" data-gst-page="general" id="gst-page-general">
+                        <!-- Section: Général -->
+                        <section class="gst-section" id="gst-sec-general">
+                            <div class="gst-card">
+                                <div class="gst-card-head"><span class="gst-icon-purple">📝</span> <strong>Général</strong></div>
+
+                                <!-- Logo -->
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle">LOGO</label>
+                                    <div class="gst-logo-preview-box">
+                                        <img src="logo.png" id="gst-logo-img" alt="Logo de la boutique" class="gst-logo-preview">
+                                    </div>
+                                    <label class="gst-btn-secondary gst-upload-btn" for="gst-logo-upload-input">
+                                        <span class="gst-icon-up">☁</span> Changer le logo (en-tête et intro de la boutique)<br><small>PNG, JPG ou WEBP</small>
+                                        <input type="file" id="gst-logo-upload-input" accept="image/*" style="display:none">
+                                    </label>
+                                </div>
+
+                                <!-- Nom de la boutique -->
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle">NOM DE LA BOUTIQUE</label>
+                                    <input type="text" class="gst-input" id="gst-shop-name-input" value="GreenHouse 68 🛍️">
+                                </div>
+
+                                <!-- Slogan (sous le nom, en haut de la boutique) -->
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-shop-slogan-input">SLOGAN</label>
+                                    <input type="text" class="gst-input" id="gst-shop-slogan-input" maxlength="200" placeholder="Vide = slogan par défaut de la boutique" autocomplete="off">
+                                </div>
+
+                                <!-- Banderole défilante (ticker_text) -->
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-ticker-text-input">BANDEROLE DÉFILANTE</label>
+                                    <textarea class="gst-textarea" id="gst-ticker-text-input" rows="2" maxlength="300" placeholder="Vide = texte par défaut de la boutique"></textarea>
+                                    <p class="gst-caption">Texte qui défile en haut de la boutique. Emojis acceptés, sépare les infos avec ✦. Vide = texte par défaut.</p>
+                                </div>
+
+                                <!-- Thème -->
+                                <div class="gst-field-group" id="gst-sec-theme">
+                                    <label class="gst-field-subtitle">THÈME</label>
+                                    <div class="gst-theme-grid">
+                                        <button type="button" class="gst-theme-btn" data-theme="violet"><span class="gst-color-dot" style="background:#8b5cf6;"></span><span>VIOLET</span></button>
+                                        <button type="button" class="gst-theme-btn" data-theme="bleu"><span class="gst-color-dot" style="background:#3b82f6;"></span><span>BLEU</span></button>
+                                        <button type="button" class="gst-theme-btn" data-theme="vert"><span class="gst-color-dot" style="background:#10b981;"></span><span>VERT</span></button>
+                                        <button type="button" class="gst-theme-btn" data-theme="rouge"><span class="gst-color-dot" style="background:#ef4444;"></span><span>ROUGE</span></button>
+                                        <button type="button" class="gst-theme-btn" data-theme="orange"><span class="gst-color-dot" style="background:#f97316;"></span><span>ORANGE</span></button>
+                                        <button type="button" class="gst-theme-btn" data-theme="rose"><span class="gst-color-dot" style="background:#ec4899;"></span><span>ROSE</span></button>
+                                        <button type="button" class="gst-theme-btn" data-theme="jaune"><span class="gst-color-dot" style="background:#eab308;"></span><span>JAUNE</span></button>
+                                        <button type="button" class="gst-theme-btn" data-theme="cyan"><span class="gst-color-dot" style="background:#06b6d4;"></span><span>CYAN</span></button>
+                                        <button type="button" class="gst-theme-btn" data-theme="gris"><span class="gst-color-dot" style="background:#6b7280;"></span><span>GRIS</span></button>
+                                        <button type="button" class="gst-theme-btn active" data-theme="custom"><span class="gst-color-dot" style="background:#6fbf73;" id="gst-custom-color-preview"></span><span>CUSTOM</span></button>
+                                    </div>
+                                    <div class="gst-custom-color-row" id="gst-custom-color-row" style="margin-top:8px;">
+                                        <label class="gst-caption">Couleur personnalisée HEX :</label>
+                                        <input type="color" id="gst-custom-color-picker" value="#6fbf73" class="gst-color-picker-input">
+                                    </div>
+                                </div>
+
+                                <!-- Intro Loader & Fond Animé Triggers -->
+                                <div class="gst-two-cols">
+                                    <button type="button" class="gst-card-nav-btn" id="gst-open-loader-modal-btn">
+                                        <span class="gst-nav-spark">✦</span>
+                                        <div class="gst-card-nav-text">
+                                            <span class="gst-cn-title">Loader d'intro</span>
+                                            <span class="gst-cn-sub" id="gst-current-loader-label">Projecteur</span>
+                                        </div>
+                                        <span class="gst-cn-arrow">›</span>
+                                    </button>
+                                    <button type="button" class="gst-card-nav-btn" id="gst-open-animated-bg-btn">
+                                        <span class="gst-nav-spark">✦</span>
+                                        <div class="gst-card-nav-text">
+                                            <span class="gst-cn-title">Fond animé</span>
+                                            <span class="gst-cn-sub" id="gst-current-bg-label">Fumée</span>
+                                        </div>
+                                        <span class="gst-cn-arrow">›</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Image de fond de la boutique -->
+                    <div class="gst-page" data-gst-page="image-fond" id="gst-page-image-fond">
+                        <!-- Section: Image de fond BOUTIQUE -->
+                        <section class="gst-section" id="gst-sec-image-fond">
+                            <div class="gst-card">
+                                <div class="gst-card-head"><span class="gst-icon-purple">🖼️</span> <strong>Image de fond BOUTIQUE</strong></div>
+                                <!-- Aperçu rempli par script.js avec l'image enregistrée (sinon le fond d'origine) -->
+                                <div class="gst-bg-preview-box" id="gst-bg-preview-box">
+                                    <img alt="Image de fond de la boutique" class="gst-bg-preview-img" id="gst-bg-preview-img">
+                                </div>
+                                <div class="gst-btn-row-dual" style="margin-top:10px;">
+                                    <label class="gst-btn-secondary gst-upload-btn" for="gst-bg-upload-input">
+                                        ☁ Changer l'image de fond
+                                        <input type="file" id="gst-bg-upload-input" accept="image/*" style="display:none">
+                                    </label>
+                                    <button type="button" class="gst-btn-secondary" id="gst-bg-reset-btn">↺ Fond d'origine</button>
+                                </div>
+                                <div class="gst-toggle-row" style="margin-top:14px;">
+                                    <div>
+                                        <div class="gst-label-sm">Masquer sur ordinateur</div>
+                                        <div class="gst-caption">Telegram Desktop, macOS et Telegram Web : la boutique s'affiche sur un fond uni, sans image. Téléphones : inchangé.</div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-bg-hide-pc-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <details class="gst-details-accordion">
+                                    <summary class="gst-summary">› Image différente selon la source du client</summary>
+                                    <div class="gst-details-body">
+                                        <p class="gst-caption">Partage un lien par source (canal, réseau, partenaire…) : le client qui ouvre la boutique par ce lien voit l'image de cette source, aussi lors de ses visites suivantes.</p>
+                                        <div class="gst-cat-list gst-bg-targets-list" id="gst-bg-targets-list">
+                                            <!-- Sources réglées (GET /admin/bot/status) -->
+                                        </div>
+                                        <div class="gst-field-group" style="margin-top:10px;">
+                                            <label class="gst-field-subtitle" for="gst-bg-target-source">NOUVELLE SOURCE</label>
+                                            <input type="text" class="gst-input" id="gst-bg-target-source" maxlength="64" placeholder="Ex : instagram, canal_promo" autocomplete="off" autocapitalize="off" spellcheck="false">
+                                            <label class="gst-btn-secondary gst-upload-btn" for="gst-bg-target-upload-input" style="margin-top:8px;">
+                                                ☁ Choisir l'image et ajouter la source
+                                                <input type="file" id="gst-bg-target-upload-input" accept="image/*" style="display:none">
+                                            </label>
+                                            <p class="gst-caption">Lettres sans accent, chiffres, _ ou - (64 max). Le lien t.me/…?startapp=… ouvre directement la boutique : la Mini App principale du bot doit être réglée une fois dans @BotFather (Bot Settings › Configure Mini App).</p>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Musique -->
+                    <div class="gst-page" data-gst-page="musique" id="gst-page-musique">
+                        <!-- Section: Musique -->
+                        <section class="gst-section" id="gst-sec-musique">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">🎵</span>
+                                        <div>
+                                            <div class="gst-row-title">Musique</div>
+                                            <div class="gst-row-sub">Joue une playlist en boucle dans la boutique</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-music-toggle" checked>
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <!-- Effet réel dans la boutique (interrupteur music_enabled + playlist) -->
+                                <div class="gst-state-line" id="gst-music-state" role="status" style="display:none"></div>
+                                <div class="gst-field-group">
+                                    <div class="gst-field-subtitle">Playlist (<span id="gst-music-count">0 musique</span>)</div>
+                                    <div class="gst-music-playlist-list gst-cat-list" id="gst-music-playlist-list">
+                                        <!-- Dynamic music rows -->
+                                    </div>
+                                    <input type="text" class="gst-input" id="gst-music-title-input" maxlength="80" placeholder="Titre du prochain son (optionnel, sinon nom du fichier)" autocomplete="off" style="margin-top:10px;">
+                                    <label class="gst-upload-dropzone" id="gst-music-dropzone" for="gst-music-upload-input">
+                                        <span class="gst-icon-audio">🎵</span>
+                                        <strong>Clique pour ajouter une musique</strong>
+                                        <small>MP3, M4A, WAV, OGG · 95 Mo max</small>
+                                        <input type="file" id="gst-music-upload-input" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg" style="display:none">
+                                    </label>
+                                    <div class="gst-card-callout-info" style="margin-top:10px;">
+                                        ℹ <strong>Information</strong><br>Les musiques seront jouées en boucle dans la boutique. Les utilisateurs peuvent contrôler le volume ou désactiver la musique.
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Devise -->
+                    <div class="gst-page" data-gst-page="devise" id="gst-page-devise">
+                        <!-- Section: Devise -->
+                        <section class="gst-section" id="gst-sec-devise">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">💶</span>
+                                        <div>
+                                            <div class="gst-row-title">Devise</div>
+                                            <div class="gst-row-sub">Symbole affiché dans la boutique et les messages</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="gst-currency-grid">
+                                    <button type="button" class="gst-btn-cur active" data-cur="€">€ Euro</button>
+                                    <button type="button" class="gst-btn-cur" data-cur="$">$ Dollar</button>
+                                    <button type="button" class="gst-btn-cur" data-cur="CHF">Fr. Franc CH</button>
+                                    <button type="button" class="gst-btn-cur" data-cur="£">£ Livre</button>
+                                    <button type="button" class="gst-btn-cur" data-cur="CAD">$ CAD</button>
+                                    <button type="button" class="gst-btn-cur" data-cur="DH">DH Dirham</button>
+                                    <button type="button" class="gst-btn-cur" data-cur="฿">฿ Baht</button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Réseaux sociaux et carte Contact -->
+                    <div class="gst-page" data-gst-page="reseaux" id="gst-page-reseaux">
+                        <!-- Section: Réseaux sociaux -->
+                        <section class="gst-section" id="gst-sec-reseaux">
+                            <div class="gst-card">
+                                <div class="gst-card-head"><span class="gst-icon-purple">🔗</span> <strong>Réseaux sociaux</strong></div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle">✈ Telegram *</label>
+                                    <input type="text" class="gst-input" id="gst-social-tg" placeholder="monusername" value="GreenHouse682">
+                                    <p class="gst-caption">Entre le username sans @ (exemple: monusername)</p>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-social-wa">💬 WhatsApp</label>
+                                    <input type="text" class="gst-input" id="gst-social-wa" placeholder="+33612345678" inputmode="tel" autocomplete="off">
+                                    <p class="gst-caption">Numéro international avec l'indicatif du pays (8 à 15 chiffres), ex : +33612345678. Vide = pas de bouton.</p>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-social-signal">🔒 Signal</label>
+                                    <input type="url" class="gst-input" id="gst-social-signal" placeholder="https://signal.me/#..." inputmode="url" autocomplete="off">
+                                    <p class="gst-caption">Doit commencer par https://signal.me/</p>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-social-snap">👻 Snapchat</label>
+                                    <input type="url" class="gst-input" id="gst-social-snap" placeholder="https://snapchat.com/add/..." inputmode="url" autocomplete="off">
+                                    <p class="gst-caption">https://snapchat.com/…, https://www.snapchat.com/… ou https://t.snapchat.com/…</p>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-social-insta">📸 INSTAGRAM</label>
+                                    <input type="url" class="gst-input" id="gst-social-insta" placeholder="https://www.instagram.com/..." inputmode="url" autocomplete="off">
+                                    <p class="gst-caption">https://instagram.com/… ou https://www.instagram.com/…</p>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-social-potato">🥔 POTATO (PATATO)</label>
+                                    <input type="url" class="gst-input" id="gst-social-potato" placeholder="https://dlj.bz/... ou lien Potato" inputmode="url" autocomplete="off">
+                                    <p class="gst-caption">Lien Potato Chat (https://)</p>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-social-luffa">🧽 LUFFA</label>
+                                    <input type="url" class="gst-input" id="gst-social-luffa" placeholder="https://luffa.im/..." inputmode="url" autocomplete="off">
+                                    <p class="gst-caption">Lien Luffa (https://)</p>
+                                </div>
+
+                                <!-- Aperçu dans la boutique : boutons de la fiche produit, d'après les champs ci-dessus (script.js) -->
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle">Aperçu dans la boutique :</label>
+                                    <div class="gst-store-btns-preview" id="gst-social-preview" aria-hidden="true"></div>
+                                    <p class="gst-caption" id="gst-social-preview-note"></p>
+                                </div>
+
+                                <!-- Onglet Infos (contact) de la boutique -->
+                                <div class="gst-toggle-row" style="margin-top:14px;">
+                                    <div>
+                                        <div class="gst-label-sm">Afficher l'onglet Infos (contact)</div>
+                                        <div class="gst-caption">Désactivé : l'onglet « Infos » disparaît de la barre du bas de la boutique (il reste affiché tant que le support client est activé : la carte Support s'y trouve).</div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-contact-tab-toggle" checked>
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-field-group" style="margin-top:10px;">
+                                    <div class="gst-label-with-count">
+                                        <label class="gst-field-subtitle" for="gst-contact-text">Texte de la carte Contact</label>
+                                        <span class="gst-counter" id="gst-contact-text-count">0/2000</span>
+                                    </div>
+                                    <textarea class="gst-textarea" id="gst-contact-text" rows="3" maxlength="2000" placeholder="Ex : Dispo de 10h à 22h, réponse sous 5 min..."></textarea>
+                                    <p class="gst-caption">Affiché dans la carte Contact de l'onglet Infos, au-dessus des boutons des réseaux.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Mode fermé et fermeture programmée -->
+                    <div class="gst-page" data-gst-page="mode-ferme" id="gst-page-mode-ferme">
+                        <!-- Section: Mode Fermé -->
+                        <section class="gst-section" id="gst-sec-mode-ferme">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">🔒</span>
+                                        <div>
+                                            <div class="gst-row-title">Mode Fermé</div>
+                                            <div class="gst-row-sub">Ferme la boutique tout de suite : les clients voient un écran de fermeture à la place du catalogue.</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-closed-mode-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <!-- État calculé par le serveur (closed_now de /admin/config), relu après chaque enregistrement -->
+                                <div class="gst-state-line" id="gst-closed-status" role="status" style="display:none"></div>
+                                <div class="gst-field-group">
+                                    <div class="gst-label-with-count">
+                                        <label class="gst-field-subtitle" for="gst-closed-title-input">TITRE</label>
+                                        <span class="gst-counter" id="gst-closed-title-count">0/80</span>
+                                    </div>
+                                    <input type="text" class="gst-input" id="gst-closed-title-input" maxlength="80" placeholder="Ex : Nous sommes fermés" autocomplete="off">
+                                </div>
+                                <div class="gst-field-group">
+                                    <div class="gst-label-with-count">
+                                        <label class="gst-field-subtitle" for="gst-closed-msg-input">MESSAGE</label>
+                                        <span class="gst-counter" id="gst-closed-msg-count">0/500</span>
+                                    </div>
+                                    <textarea class="gst-textarea" id="gst-closed-msg-input" rows="2" maxlength="500" placeholder="Ex : On revient demain à 12h — bientôt de retour !"></textarea>
+                                </div>
+                                <div class="gst-toggle-row">
+                                    <div>
+                                        <div class="gst-label-sm">FERMETURE PROGRAMMÉE (optionnel)</div>
+                                        <div class="gst-caption">Ouvre et ferme la boutique tout seul, chaque jour, aux heures choisies.</div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-closed-scheduled-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-field-group" id="gst-closed-schedule-fields" style="display:none">
+                                    <div class="gst-two-cols">
+                                        <div class="gst-field-group">
+                                            <label class="gst-field-subtitle" for="gst-closed-open-time">OUVERTURE</label>
+                                            <input type="time" class="gst-input" id="gst-closed-open-time" value="12:00" step="60">
+                                        </div>
+                                        <div class="gst-field-group">
+                                            <label class="gst-field-subtitle" for="gst-closed-close-time">FERMETURE</label>
+                                            <input type="time" class="gst-input" id="gst-closed-close-time" value="02:00" step="60">
+                                        </div>
+                                    </div>
+                                    <p class="gst-caption">Heure du PC où tourne le bot. La plage peut passer minuit (ex : 12:00 → 02:00). En dehors, les clients voient l'écran de fermeture avec l'heure de réouverture.</p>
+                                </div>
+                                <div class="gst-card-callout-info">
+                                    ℹ Les admins voient quand même la boutique, avec un petit bandeau qui rappelle qu'elle est fermée pour les clients. Le bot reste joignable.
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Message /start : texte, photo et boutons, envoyés au bot par « Enregistrer » -->
+                    <div class="gst-page" data-gst-page="start" id="gst-pane-start">
+                        <div class="gst-subtabs-inner">
+                            <button type="button" class="gst-subtab-pill active" id="gst-start-tab-msg-btn">💬 Message</button>
+                            <button type="button" class="gst-subtab-pill" id="gst-start-tab-btns-btn">⚡ Boutons</button>
+                        </div>
+
+                        <!-- Sous-pane Message /start : texte et photo réellement envoyés par le bot (lus dans /admin/config) -->
+                        <div class="gst-subpane active" id="gst-start-subpane-msg">
+                            <div class="gst-card">
+                                <div class="gst-label-with-count">
+                                    <label class="gst-field-subtitle" for="gst-start-welcome-textarea">Message de bienvenue</label>
+                                    <button type="button" class="gst-btn-help-tags" id="gst-start-help-tags-btn" data-help-target="gst-start-help-box">ℹ Aide balises</button>
+                                </div>
+                                <div class="gst-card-callout-info" id="gst-start-help-box" style="display:none">
+                                    Mise en forme du /start (Markdown Telegram) : <code>*gras*</code> · <code>_italique_</code> · <code>`code`</code> · <code>[texte](https://lien)</code><br>
+                                    Un * _ ` ou [ isolé casse la mise en forme : le bot envoie alors le message sans mise en forme.
+                                </div>
+                                <div class="gst-format-toolbar">
+                                    <button type="button" class="gst-btn-chip-action" data-format-cmd="b"><b>G</b> Gras</button>
+                                    <button type="button" class="gst-btn-chip-action" data-format-cmd="i"><i>I</i> Italique</button>
+                                    <button type="button" class="gst-btn-chip-action" data-format-cmd="code">Code</button>
+                                    <button type="button" class="gst-btn-chip-action" data-format-cmd="link">🔗 Lien</button>
+                                </div>
+                                <textarea class="gst-textarea" id="gst-start-welcome-textarea" rows="8" maxlength="1000" placeholder="Vide = message d'accueil par défaut du bot"></textarea>
+                                <p class="gst-caption" id="gst-start-msg-status">Chargement du message actuel du bot…</p>
+                                <div class="gst-start-preview" id="gst-start-preview-box" style="display:none"></div>
+                                <div class="gst-card-bottom-row">
+                                    <span class="gst-counter" id="gst-start-msg-count">0/1000</span>
+                                    <button type="button" class="gst-btn-icon-circ" id="gst-start-preview-btn" title="Aperçu Telegram">👁</button>
+                                </div>
+                            </div>
+
+                            <div class="gst-card">
+                                <label class="gst-field-subtitle">Photo de bienvenue</label>
+                                <div class="gst-media-preview-container">
+                                    <img id="gst-start-photo-preview" alt="Photo de bienvenue" style="display:none;">
+                                    <div class="gst-empty-placeholder" id="gst-start-photo-empty">Photo par défaut du bot</div>
+                                </div>
+                                <div class="gst-input-btn-row">
+                                    <label class="gst-btn-secondary-sm" for="gst-start-photo-input">
+                                        📁 Changer la photo…
+                                        <input type="file" id="gst-start-photo-input" accept="image/*" style="display:none">
+                                    </label>
+                                    <button type="button" class="gst-btn-remove-sm" id="gst-start-photo-clear-btn">✕ Retirer</button>
+                                </div>
+                                <p class="gst-caption">JPG, PNG ou WEBP. Retirer = le bot reprend sa photo par défaut.</p>
+                            </div>
+                        </div>
+
+                        <!-- Sous-pane Boutons /start : boutons-liens ajoutés sous ceux du bot (start_buttons) -->
+                        <div class="gst-subpane" id="gst-start-subpane-btns">
+                            <div class="gst-card">
+                                <div class="gst-card-head">
+                                    <strong>Boutons-liens sous /start</strong>
+                                    <button type="button" class="gst-btn-primary-sm" id="gst-add-start-row-btn">+ Nouvelle ligne</button>
+                                </div>
+                                <p class="gst-caption">Chaque bouton a sa propre ligne, sous les boutons du bot (Canal Officiel, Nous contacter, Voir la carte). 6 boutons maximum, liens https:// ou tg://.</p>
+                                <div class="gst-kb-builder-list" id="gst-kb-builder-list">
+                                    <!-- Dynamic rows of buttons -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enregistrement explicite du message, de la photo et des boutons -->
+                        <div class="gst-card-bottom-row gst-start-save-row">
+                            <span class="gst-save-status-indicator" id="gst-start-save-status"></span>
+                            <button type="button" class="gst-btn-primary" id="gst-btn-save-start" disabled>💾 Enregistrer</button>
+                        </div>
+                    </div>
+
+                    <!-- Tout est lu et enregistré sur le serveur (équipe Messages, script.js) : rien de figé ici -->
+                    <div class="gst-page" data-gst-page="diffusion" id="gst-pane-messages">
+                        <!-- Diffusion : texte, image ou vidéo, destinataires filtrés par le serveur, envoi en tâche de fond -->
+                        <div class="gst-card" id="gst-sec-msg-broadcast">
+                            <div class="gst-card-row-head">
+                                <strong>📢 Message global (Broadcast)</strong>
+                                <button type="button" class="gst-btn-secondary-sm" id="gst-msg-save-template-btn">💾 Enregistrer l'actuel</button>
+                            </div>
+
+                            <!-- Enregistrer le message en cours comme modèle (même nom = modèle remplacé) -->
+                            <div class="gst-field-group gst-msg-template-save" id="gst-msg-template-save-row" hidden>
+                                <label class="gst-field-subtitle" for="gst-msg-template-name">Nom du modèle</label>
+                                <div class="gst-input-btn-row">
+                                    <input type="text" class="gst-input" id="gst-msg-template-name" maxlength="60" placeholder="Ex : Promo du week-end">
+                                    <button type="button" class="gst-btn-primary-sm" id="gst-msg-template-confirm-btn">Enregistrer</button>
+                                </div>
+                                <p class="gst-caption">Le texte, le type et le média actuels sont gardés. Même nom qu'un modèle existant = il est remplacé.</p>
+                            </div>
+
+                            <div class="gst-field-group">
+                                <div class="gst-label-with-count">
+                                    <span class="gst-field-subtitle">📚 Modèles</span>
+                                    <span class="gst-counter" id="gst-msg-templates-count">—</span>
+                                </div>
+                                <div class="gst-msg-templates-list" id="gst-msg-templates-list">
+                                    <div class="gst-empty-placeholder">Chargement des modèles…</div>
+                                </div>
+                            </div>
+
+                            <div class="gst-field-group">
+                                <span class="gst-field-subtitle">Type de message</span>
+                                <div class="gst-btn-row-trio" id="gst-msg-type-row">
+                                    <button type="button" class="gst-btn-choice active" data-msgtype="text">📝 Texte</button>
+                                    <button type="button" class="gst-btn-choice" data-msgtype="image">🖼 Image</button>
+                                    <button type="button" class="gst-btn-choice" data-msgtype="video">🎬 Vidéo</button>
+                                </div>
+                            </div>
+
+                            <!-- Image ou vidéo : envoyée au serveur (/admin/upload), puis par le bot avec la légende -->
+                            <div class="gst-field-group" id="gst-msg-media-group" hidden>
+                                <span class="gst-field-subtitle" id="gst-msg-media-label">Image</span>
+                                <div class="gst-media-preview-container gst-msg-media-box" id="gst-msg-media-preview"></div>
+                                <div class="gst-input-btn-row">
+                                    <label class="gst-btn-secondary-sm" for="gst-msg-media-input">
+                                        📁 Choisir…
+                                        <input type="file" id="gst-msg-media-input" accept="image/*" style="display:none">
+                                    </label>
+                                    <button type="button" class="gst-btn-remove-sm" id="gst-msg-media-clear-btn">✕ Retirer</button>
+                                </div>
+                                <p class="gst-caption" id="gst-msg-media-hint"></p>
+                            </div>
+
+                            <div class="gst-field-group">
+                                <div class="gst-label-with-count">
+                                    <label class="gst-field-subtitle" for="gst-broadcast-msg-textarea" id="gst-msg-text-label">Message</label>
+                                    <button type="button" class="gst-btn-help-tags" id="gst-broadcast-tags-btn" data-help-target="gst-broadcast-help-box">ℹ Aide balises</button>
+                                </div>
+                                <div class="gst-card-callout-info" id="gst-broadcast-help-box" style="display:none">
+                                    Mise en forme (HTML Telegram) : sélectionne un mot puis touche un bouton.<br>
+                                    &lt;b&gt;gras&lt;/b&gt; · &lt;i&gt;italique&lt;/i&gt; · &lt;u&gt;souligné&lt;/u&gt; · &lt;s&gt;barré&lt;/s&gt; · &lt;a href="https://…"&gt;lien&lt;/a&gt; · &lt;code&gt;code&lt;/code&gt; · &lt;tg-spoiler&gt;spoiler&lt;/tg-spoiler&gt;<br>
+                                    Un « &lt; » seul s'écrit &amp;lt; : sinon Telegram refuse la mise en forme.
+                                </div>
+                                <div class="gst-format-toolbar" data-msg-format-target="gst-broadcast-msg-textarea">
+                                    <button type="button" class="gst-btn-chip-action" data-msg-format="b"><b>G</b> Gras</button>
+                                    <button type="button" class="gst-btn-chip-action" data-msg-format="i"><i>I</i> Italique</button>
+                                    <button type="button" class="gst-btn-chip-action" data-msg-format="u"><u>S</u> Souligné</button>
+                                    <button type="button" class="gst-btn-chip-action" data-msg-format="s"><s>B</s> Barré</button>
+                                    <button type="button" class="gst-btn-chip-action" data-msg-format="link">🔗 Lien</button>
+                                    <button type="button" class="gst-btn-chip-action" data-msg-format="code">Code</button>
+                                    <button type="button" class="gst-btn-chip-action" data-msg-format="spoiler">▒ Spoiler</button>
+                                </div>
+                                <textarea class="gst-textarea" id="gst-broadcast-msg-textarea" rows="5" maxlength="4000" placeholder="Entre ton message…"></textarea>
+                                <div class="gst-card-bottom-row">
+                                    <span class="gst-msg-html-state" id="gst-msg-html-state" role="status"></span>
+                                    <span class="gst-counter" id="gst-msg-char-count">0/4000</span>
+                                </div>
+                                <span class="gst-field-subtitle">Aperçu</span>
+                                <div class="gst-msg-preview" id="gst-msg-preview"></div>
+                            </div>
+
+                            <div class="gst-field-group">
+                                <span class="gst-field-subtitle">Destinataires</span>
+                                <div class="gst-msg-target-grid" id="gst-msg-target-row">
+                                    <button type="button" class="gst-btn-choice active" data-msgtarget="all">Tous</button>
+                                    <button type="button" class="gst-btn-choice" data-msgtarget="active">Actifs (7 j)</button>
+                                    <button type="button" class="gst-btn-choice" data-msgtarget="inactive">Inactifs</button>
+                                    <button type="button" class="gst-btn-choice" data-msgtarget="city">Par ville</button>
+                                    <button type="button" class="gst-btn-choice" data-msgtarget="verified">Vérifiés</button>
+                                </div>
+                                <div class="gst-msg-target-extra" id="gst-msg-inactive-box" hidden>
+                                    <label class="gst-field-subtitle" for="gst-msg-inactive-days">Sans activité depuis plus de (jours)</label>
+                                    <input type="number" class="gst-input" id="gst-msg-inactive-days" min="1" max="365" step="1" inputmode="numeric">
+                                </div>
+                                <div class="gst-msg-target-extra" id="gst-msg-city-box" hidden>
+                                    <label class="gst-field-subtitle" for="gst-msg-city-select">Ville</label>
+                                    <select class="gst-select" id="gst-msg-city-select"></select>
+                                </div>
+                            </div>
+
+                            <div class="gst-toggle-row">
+                                <span class="gst-label-sm">Envoyer aussi via le Bot backup <span class="gst-msg-backup-state" id="gst-msg-backup-state"></span></span>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-broadcast-backup-toggle">
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+
+                            <p class="gst-caption gst-msg-count-line" id="gst-broadcast-recipients-count" role="status"></p>
+                            <div class="gst-msg-actions">
+                                <button type="button" class="gst-btn-secondary" id="gst-msg-test-btn">🧪 M'envoyer un test</button>
+                                <button type="button" class="gst-btn-primary" id="gst-broadcast-send-btn">📢 Envoyer</button>
+                            </div>
+                            <p class="gst-caption gst-msg-status-line" id="gst-msg-status-line" role="status"></p>
+                        </div>
+
+                        <!-- Messages automatiques : créneaux enregistrés dans auto_messages, envoyés par le planificateur de willy.py -->
+                        <div class="gst-card" id="gst-sec-msg-scheduled" style="margin-top:12px;">
+                            <div class="gst-card-row-head">
+                                <div class="gst-card-icon-title">
+                                    <span class="gst-circ-icon">⏰</span>
+                                    <div>
+                                        <div class="gst-row-title">Messages automatiques</div>
+                                        <div class="gst-row-sub">Envoyés aux jours et à l'heure choisis, une fois par créneau (heure du serveur).</div>
+                                    </div>
+                                </div>
+                                <label class="gst-switch">
+                                    <input type="checkbox" id="gst-auto-msgs-toggle">
+                                    <span class="gst-slider"></span>
+                                </label>
+                            </div>
+                            <p class="gst-caption" id="gst-auto-msgs-state" role="status"></p>
+
+                            <div class="gst-auto-slots-list" id="gst-auto-slots-list">
+                                <div class="gst-empty-placeholder">Chargement des messages automatiques…</div>
+                            </div>
+                            <!-- Formulaire d'ajout / modification d'un créneau (rendu par script.js) -->
+                            <div class="gst-auto-editor" id="gst-auto-editor" hidden></div>
+                            <button type="button" class="gst-btn-secondary" id="gst-auto-add-slot-btn" style="margin-top:10px;">+ Ajouter un créneau</button>
+                        </div>
+                    </div>
+
+                    <!-- Nettoyage auto des messages -->
+                    <div class="gst-page" data-gst-page="autoclean" id="gst-page-autoclean">
+                        <!-- Section: Nettoyage auto des messages (autoclean) : réglages lus dans /admin/config, appliqués par willy.py -->
+                        <section class="gst-section" id="gst-sec-autoclean">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">🧹</span>
+                                        <div>
+                                            <div class="gst-row-title">Nettoyage auto des messages</div>
+                                            <div class="gst-row-sub">Garde les conversations bot-client discrètes en supprimant les anciens messages</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-autoclean-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-toggle-row">
+                                    <span class="gst-label-sm">Supprimer les messages du client</span>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-autoclean-client-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-autoclean-client-delay">DÉLAI AVANT SUPPRESSION CLIENT (MS)</label>
+                                    <input type="number" class="gst-input" id="gst-autoclean-client-delay" min="0" max="60000" step="100" inputmode="numeric">
+                                    <p class="gst-caption">Textes et commandes envoyés au bot par le client (jamais ses photos). 0 = immédiatement, 1200 = 1,2 s (recommandé), max 60000 (60 s).</p>
+                                </div>
+                                <div class="gst-toggle-row">
+                                    <span class="gst-label-sm">Supprimer les anciens messages du bot</span>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-autoclean-bot-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-autoclean-bot-keep">NOMBRE DE MESSAGES DU BOT À GARDER</label>
+                                    <input type="number" class="gst-input" id="gst-autoclean-bot-keep" min="1" max="20" step="1" inputmode="numeric">
+                                    <p class="gst-caption">Recommandé : 3. Min 1, max 20. Les messages de broadcast sont conservés 24h indépendamment. Telegram ne permet plus de supprimer un message de plus de 48 h.</p>
+                                </div>
+                                <p class="gst-caption gst-autoclean-stats" id="gst-autoclean-stats" role="status"></p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Profil du bot -->
+                    <div class="gst-page" data-gst-page="profil-bot" id="gst-page-profil-bot">
+                        <!-- Section: Profil Bot -->
+                        <section class="gst-section" id="gst-sec-profil-bot">
+                            <div class="gst-card">
+                                <div class="gst-card-head"><span class="gst-icon-purple">👤</span> <strong>Profil du bot</strong></div>
+                                <div class="gst-card-callout-warn">
+                                    ⚠️ Le nom, photo et descriptions sont publics. Pas de contenu illicite sous peine de <strong>suppression du bot par Telegram</strong>.
+                                </div>
+                                <!-- Profil réel lu sur Telegram (GET /admin/bot/profile) : rien n'est écrit en dur ici -->
+                                <div class="gst-status-bot-card" id="gst-bot-profile-card">
+                                    <div class="gst-user-avatar">🤖</div>
+                                    <div class="gst-user-info-col">
+                                        <span class="gst-user-handle" id="gst-bot-profile-handle">Chargement…</span>
+                                        <span class="gst-user-id" id="gst-bot-profile-meta"></span>
+                                    </div>
+                                    <button type="button" class="gst-btn-secondary-sm" id="gst-bot-profile-reload-btn" title="Relire le profil sur Telegram">↻</button>
+                                </div>
+                                <div class="gst-field-group">
+                                    <div class="gst-label-with-count">
+                                        <label class="gst-field-subtitle" for="gst-bot-name-input">Nom du bot</label>
+                                        <span class="gst-counter" id="gst-bot-name-count">—</span>
+                                    </div>
+                                    <input type="text" class="gst-input" id="gst-bot-name-input" maxlength="64" autocomplete="off" disabled>
+                                </div>
+                                <div class="gst-field-group">
+                                    <div class="gst-label-with-count">
+                                        <label class="gst-field-subtitle" for="gst-bot-username-input">Username</label>
+                                        <span class="gst-counter">lecture seule</span>
+                                    </div>
+                                    <input type="text" class="gst-input gst-input-readonly" id="gst-bot-username-input" placeholder="—" readonly>
+                                </div>
+                                <div class="gst-field-group">
+                                    <div class="gst-label-with-count">
+                                        <label class="gst-field-subtitle" for="gst-bot-profile-desc">Description du profil du bot</label>
+                                        <span class="gst-counter" id="gst-bot-profile-desc-count">—</span>
+                                    </div>
+                                    <textarea class="gst-textarea" id="gst-bot-profile-desc" rows="2" maxlength="120" placeholder="Visible sur le profil du bot et quand on partage son lien" disabled></textarea>
+                                </div>
+                                <div class="gst-field-group">
+                                    <div class="gst-label-with-count">
+                                        <label class="gst-field-subtitle" for="gst-bot-start-desc">Description au démarrage du bot</label>
+                                        <span class="gst-counter" id="gst-bot-start-desc-count">—</span>
+                                    </div>
+                                    <textarea class="gst-textarea" id="gst-bot-start-desc" rows="3" maxlength="512" placeholder="Texte affiché dans la discussion vide, avant le bouton Démarrer" disabled></textarea>
+                                </div>
+                                <button type="button" class="gst-btn-primary" id="gst-bot-profile-save-btn" disabled>Enregistrer sur Telegram</button>
+                                <p class="gst-caption" id="gst-bot-profile-note" role="status">Telegram limite le nombre de changements : enregistre une fois tout prêt.</p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Logs Telegram -->
+                    <div class="gst-page" data-gst-page="logs" id="gst-page-logs">
+                        <!-- Section: Logs Telegram -->
+                        <section class="gst-section" id="gst-sec-logs">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">📜</span>
+                                        <div>
+                                            <div class="gst-row-title">Logs Telegram</div>
+                                            <div class="gst-row-sub">Le bot publie dans ton canal (ou groupe) de logs ce qui se passe dans la boutique et la gestion.</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-tg-logs-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <!-- État réel (GET /admin/bot/status) : canal enregistré par /logs, dernier envoi -->
+                                <div class="gst-state-line" id="gst-tg-logs-state" role="status" style="display:none"></div>
+                                <div class="gst-status-bot-card" id="gst-tg-logs-chat-card">
+                                    <div class="gst-user-avatar">📜</div>
+                                    <div class="gst-user-info-col">
+                                        <span class="gst-user-handle" id="gst-tg-logs-chat-title">Chargement…</span>
+                                        <span class="gst-user-id" id="gst-tg-logs-chat-meta"></span>
+                                    </div>
+                                    <button type="button" class="gst-btn-remove-sm" id="gst-tg-logs-unlink-btn" disabled>Retirer</button>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-tg-logs-code">ENREGISTRER LE CANAL DE LOGS</label>
+                                    <ol class="gst-steps">
+                                        <li>Crée un canal (ou un groupe) privé pour les logs.</li>
+                                        <li>Ajoute <strong id="gst-tg-logs-bot-name">le bot</strong> comme administrateur (droit de publier).</li>
+                                        <li>Génère un code et tape la commande dans le canal. Dans un groupe, un admin peut aussi taper /logs seul.</li>
+                                    </ol>
+                                    <div class="gst-input-btn-row">
+                                        <input type="text" class="gst-input gst-input-readonly" id="gst-tg-logs-code" placeholder="/logs CODE" readonly>
+                                        <button type="button" class="gst-btn-primary-sm" id="gst-tg-logs-code-btn">Générer un code</button>
+                                        <button type="button" class="gst-btn-secondary-sm" id="gst-tg-logs-copy-btn" disabled>Copier</button>
+                                    </div>
+                                    <p class="gst-caption" id="gst-tg-logs-code-note">Code à usage unique, valable 15 minutes.</p>
+                                </div>
+                                <button type="button" class="gst-btn-secondary" id="gst-tg-logs-test-btn" disabled>🧪 Envoyer un message de test</button>
+                                <div class="gst-card-callout-info" style="margin-top:10px;">
+                                    <strong>Ce qui est publié :</strong> nouveaux clients (/start), demandes et décisions de vérification, commandes, réglages et actions de la gestion (avec l'admin qui les a faits), bascule du bot backup.
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Mobile uniquement -->
+                    <div class="gst-page" data-gst-page="mobile" id="gst-page-mobile">
+                        <!-- Section: Mobile uniquement -->
+                        <section class="gst-section" id="gst-sec-mobile">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">📱</span>
+                                        <div>
+                                            <div class="gst-row-title">Mobile uniquement</div>
+                                            <div class="gst-row-sub">La boutique ne s'ouvre que dans l'app Telegram d'un téléphone (Android ou iPhone). Sur ordinateur ou Telegram Web, le client voit un écran « Mobile uniquement ».</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-mobile-only-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <p class="gst-caption">C'est le serveur qui vérifie l'appareil (plateforme envoyée par Telegram). Les admins sont exemptés : tu peux toujours ouvrir la boutique et la gestion depuis ton PC.</p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Bloquer VPN / Proxy -->
+                    <div class="gst-page" data-gst-page="vpn" id="gst-page-vpn">
+                        <!-- Section: Bloquer VPN / Proxy -->
+                        <section class="gst-section" id="gst-sec-vpn">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">🚫</span>
+                                        <div>
+                                            <div class="gst-row-title">Bloquer VPN / Proxy</div>
+                                            <div class="gst-row-sub">À l'ouverture de la boutique, un client connecté via un VPN, un proxy ou un hébergeur voit un écran « VPN détecté » (désactivé par défaut).</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-block-vpn-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <p class="gst-caption">Détection par l'adresse IP du client (service ip-api.com, résultat gardé 6 h). Si le service ne répond pas, le client passe. Les admins sont exemptés.</p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Canal officiel et canal obligatoire -->
+                    <div class="gst-page" data-gst-page="canal" id="gst-page-canal">
+                        <!-- Section: Canal obligatoire -->
+                        <section class="gst-section" id="gst-sec-canal">
+                            <!-- Lien du canal officiel (channel_link) -->
+                            <div class="gst-card">
+                                <div class="gst-card-icon-title">
+                                    <span class="gst-circ-icon">📢</span>
+                                    <div>
+                                        <div class="gst-row-title">Canal officiel</div>
+                                        <div class="gst-row-sub">Bouton « 📢 Canal Officiel » du /start et bouton « Canal » de la boutique</div>
+                                    </div>
+                                </div>
+                                <div class="gst-field-group">
+                                    <input type="url" class="gst-input" id="gst-channel-link-input" placeholder="https://t.me/..." inputmode="url" autocomplete="off">
+                                    <p class="gst-caption">Lien https:// complet. Vide = aucun bouton canal.</p>
+                                </div>
+                            </div>
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">📢</span>
+                                        <div>
+                                            <div class="gst-row-title">Canal obligatoire</div>
+                                            <div class="gst-row-sub">Le client doit rejoindre ce canal avant d'accéder au bot et à la boutique (écran « Rejoins notre canal » avec un bouton pour le rejoindre).</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-channel-mandatory-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-mandatory-channel-link">CANAL À REJOINDRE</label>
+                                    <input type="text" class="gst-input" id="gst-mandatory-channel-link" placeholder="https://t.me/moncanal, @moncanal ou -100…" autocomplete="off" autocapitalize="off" spellcheck="false">
+                                    <p class="gst-caption">Ajoute d'abord le bot comme <strong>administrateur du canal</strong> : sans ça, l'activation est refusée (le bot doit pouvoir vérifier qui est membre). Les admins sont exemptés.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Bot backup -->
+                    <div class="gst-page" data-gst-page="backup" id="gst-page-backup">
+                        <!-- Section: Bot Backup -->
+                        <section class="gst-section" id="gst-sec-backup">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">🛡️</span>
+                                        <div>
+                                            <div class="gst-row-title">Bot backup obligatoire</div>
+                                            <div class="gst-row-sub">Les clients doivent démarrer ton bot backup avant d'accéder au bot principal et à la boutique. Si le principal saute, tu bascules sur le backup.</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-backup-bot-toggle">
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+
+                                <!-- État réel du bot backup (GET /admin/config) : jamais de valeur codée en dur -->
+                                <div class="gst-status-bot-card" id="gst-backup-status-card">
+                                    <div class="gst-user-avatar">🤖</div>
+                                    <div class="gst-user-info-col">
+                                        <span class="gst-user-handle" id="gst-backup-bot-username">Chargement…</span>
+                                        <span class="gst-user-id" id="gst-backup-bot-id"></span>
+                                    </div>
+                                    <span class="gst-badge-active" id="gst-backup-bot-state" style="display:none"></span>
+                                </div>
+                                <p class="gst-caption" id="gst-backup-active-note"></p>
+
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-backup-token-input">TOKEN DU BOT BACKUP</label>
+                                    <div class="gst-input-btn-row">
+                                        <input type="password" class="gst-input" id="gst-backup-token-input" placeholder="123456789:ABCdefGHIjkl..." autocomplete="off" autocapitalize="off" spellcheck="false">
+                                        <button type="button" class="gst-btn-primary-sm" id="gst-backup-verify-btn">Vérifier</button>
+                                        <button type="button" class="gst-btn-remove-sm" id="gst-backup-remove-btn">Retirer</button>
+                                    </div>
+                                    <p class="gst-caption">Le token est vérifié auprès de Telegram puis gardé sur le serveur : il n'est jamais réaffiché. Colle un nouveau token pour changer de bot backup.</p>
+                                </div>
+
+                                <div class="gst-card-callout-info">
+                                    <strong>Comment créer ton bot backup :</strong><br>
+                                    1. Va sur <strong>@BotFather</strong> sur Telegram<br>
+                                    2. Envoie <code>/newbot</code><br>
+                                    3. Pour le nom (le pseudo affiché) met le même nom que ton bot principal + Backup<br>
+                                    4. Pour le @username met un vrai nom comme ton bot, ex: maboutique2_bot<br>
+                                    5. Copie le <strong>token</strong> et colle-le au-dessus, puis « Vérifier »
+                                </div>
+
+                                <div class="gst-card-callout-warn">
+                                    ⚠️ <strong>Si ton bot principal se fait supprimer</strong>, tu peux basculer vers ton backup. Avec l'interrupteur activé, tes clients sont obligés de démarrer le bot backup avant d'accéder au principal : ils l'ont tous dans leur Telegram — tu bascules et tu repars direct.
+                                </div>
+
+                                <div class="gst-field-group">
+                                    <div class="gst-label-with-count">
+                                        <span class="gst-field-subtitle">👥 UTILISATEURS DU BACKUP</span>
+                                        <span class="gst-counter" id="gst-backup-users-count">—</span>
+                                    </div>
+                                    <button type="button" class="gst-btn-secondary" id="gst-backup-view-users-btn">👁 Voir les utilisateurs</button>
+                                </div>
+
+                                <div class="gst-field-group">
+                                    <label class="gst-field-subtitle" for="gst-backup-broadcast-msg">📢 BROADCAST AUX UTILISATEURS DU BACKUP</label>
+                                    <textarea class="gst-textarea" id="gst-backup-broadcast-msg" rows="3" maxlength="4000" placeholder="Message envoyé par le bot backup à tous ses utilisateurs… &lt;b&gt;gras&lt;/b&gt; &lt;i&gt;italique&lt;/i&gt;"></textarea>
+                                    <button type="button" class="gst-btn-primary" id="gst-backup-broadcast-send-btn">🚀 Envoyer à tous les users backup</button>
+                                    <p class="gst-caption">Mise en forme HTML Telegram, comme le Broadcast (Réglages › Broadcast &amp; messages auto).</p>
+                                </div>
+
+                                <div class="gst-field-group">
+                                    <span class="gst-field-subtitle">🔁 BASCULE</span>
+                                    <div class="gst-toggle-row">
+                                        <div>
+                                            <div class="gst-label-sm">Annoncer la bascule</div>
+                                            <div class="gst-caption">Le bot backup prévient tous ses utilisateurs au moment de la bascule.</div>
+                                        </div>
+                                        <label class="gst-switch">
+                                            <input type="checkbox" id="gst-backup-announce-toggle" checked>
+                                            <span class="gst-slider"></span>
+                                        </label>
+                                    </div>
+                                    <button type="button" class="gst-btn-danger" id="gst-backup-switch-btn" disabled>Basculer vers le backup</button>
+                                    <p class="gst-caption" id="gst-backup-switch-caption" style="text-align:center;">Le bot principal saute → le backup prend le relais (bouton de la boutique posé sur le backup).</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Admins du panel -->
+                    <div class="gst-page" data-gst-page="admins" id="gst-page-admins">
+                        <!-- Section: Admins -->
+                        <section class="gst-section" id="gst-sec-admins">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">👥</span>
+                                        <div>
+                                            <div class="gst-row-title">Accès panel admin</div>
+                                            <div class="gst-row-sub">Donne l'accès au panel à d'autres comptes Telegram, par pseudo. Chaque admin peut ajouter ou retirer les autres.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="gst-field-group">
+                                    <div class="gst-field-subtitle">TON COMPTE</div>
+                                    <div class="gst-admin-card-lead">
+                                        <div class="gst-user-avatar">👤</div>
+                                        <div class="gst-user-info-col">
+                                            <span class="gst-user-handle" id="gst-main-admin-handle">—</span>
+                                            <span class="gst-user-id" id="gst-main-admin-id"></span>
+                                        </div>
+                                        <span class="gst-badge-principal">Connecté</span>
+                                    </div>
+
+                                    <div class="gst-field-subtitle" style="margin-top:14px;">ADMINS AVEC ACCÈS</div>
+                                    <div class="gst-admins-whitelist-list" id="gst-admins-whitelist-list">
+                                        <!-- Dynamic whitelist list -->
+                                    </div>
+
+                                    <div class="gst-field-subtitle" style="margin-top:14px;">AJOUTER UN ACCÈS</div>
+                                    <div class="gst-tab-toggle-group">
+                                        <button type="button" class="gst-pill-tab active" id="gst-admin-add-by-list-btn">Depuis la liste d'utilisateurs</button>
+                                        <button type="button" class="gst-pill-tab" id="gst-admin-add-by-id-btn">Par ID Telegram</button>
+                                    </div>
+                                    <div class="gst-search-box">
+                                        <span class="gst-search-icon">🔍</span>
+                                        <input type="text" class="gst-input-search" id="gst-admin-search-input" placeholder="Pseudo, nom ou @pseudo…" autocomplete="off">
+                                    </div>
+                                    <div class="gst-admins-whitelist-list" id="gst-admin-search-results">
+                                        <!-- Résultats de la recherche (script.js) -->
+                                    </div>
+                                    <p class="gst-caption" id="gst-admin-add-caption">L'accès se donne par pseudo Telegram : il est lié au compte dès que la personne ouvre la gestion pour la première fois.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- CRM -->
+                    <div class="gst-page" data-gst-page="crm" id="gst-page-crm">
+                        <!-- Section: CRM -->
+                        <section class="gst-section" id="gst-sec-crm">
+                            <div class="gst-card">
+                                <div class="gst-card-row-head">
+                                    <div class="gst-card-icon-title">
+                                        <span class="gst-circ-icon">📊</span>
+                                        <div>
+                                            <div class="gst-row-title">CRM</div>
+                                            <div class="gst-row-sub">Fiches clients (onglet Clients) et compteurs des pages Produits et Commandes. Désactivé : ils disparaissent de la gestion et la liste des clients n'est plus servie.</div>
+                                        </div>
+                                    </div>
+                                    <label class="gst-switch">
+                                        <input type="checkbox" id="gst-crm-toggle" checked>
+                                        <span class="gst-slider"></span>
+                                    </label>
+                                </div>
+                                <!-- État réel (GET /admin/bot/status), relu après chaque enregistrement -->
+                                <div class="gst-state-line" id="gst-crm-state" role="status" style="display:none"></div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Important : redémarrage du bot et conseils -->
+                    <div class="gst-page" data-gst-page="important" id="gst-page-important">
+                        <!-- Section: Important & Parrainage -->
+                        <section class="gst-section" id="gst-sec-important">
+                            <!-- Redémarrage du bot, aussi sur l'Accueil, dans le menu des Réglages et dans le menu ••• -->
+                            <button type="button" class="gst-btn-secondary" id="gst-restart-bot-inline-btn">🔄 Redémarrer le bot</button>
+                            <div class="gst-card gst-card-warning">
+                                <div class="gst-card-head"><span class="gst-icon-warn">⚠️</span> <strong>IMPORTANT</strong></div>
+                                <p class="gst-card-text">Ne jamais spam le lien du bot à plusieurs personnes en même temps (conseil : mets-le que sur tes autres réseaux et ton canal Telegram) Telegram bannit automatiquement les spam.</p>
+                                <p class="gst-card-text">Ne jamais mettre un logo bizarre (cannabis, herbe, arme ou autre visuel ou même des mots dans le logo comme coffee, farmz, hash et plein de trucs comme ça, il y a une IA sur Telegram qui détecte et bannit automatiquement).</p>
+                                <p class="gst-card-text">Prends ton temps, applique-toi.</p>
+                                <p class="gst-card-text">Pseudo, description, description de démarrage du bot pareil que le logo, pas de mots bizarres.</p>
+                                <p class="gst-card-highlight">Tout ce qui est profil public, fais attention et ton bot ne sautera jamais 😊</p>
+                            </div>
+
+                            <div class="gst-card gst-card-info">
+                                <div class="gst-card-head"><span class="gst-icon-info">ℹ</span> <strong>PARRAINAGE PLUG</strong></div>
+                                <p class="gst-card-text">Ramène-moi des acheteurs pour le bot ! Deux options : soit on s'arrange sur les mois de ton bot, soit tu prends ton pourcentage sur le prix. Intéressé ? Écris-moi en DM 📩</p>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- Barre du bas : 5 onglets par usage (script.js : ADMIN_TABS), pastille = éléments à traiter -->
+            <nav class="gst-bottom-nav" aria-label="Sections de la gestion">
+                <button type="button" class="gst-nav-btn active" data-gst-nav="accueil" aria-current="page">
+                    <span class="gst-nav-icon" aria-hidden="true">🏠</span>
+                    <span class="gst-nav-label">Accueil</span>
+                </button>
+                <button type="button" class="gst-nav-btn" data-gst-nav="catalogue">
+                    <span class="gst-nav-icon" aria-hidden="true">📦</span>
+                    <span class="gst-nav-label">Catalogue</span>
+                </button>
+                <button type="button" class="gst-nav-btn" data-gst-nav="ventes">
+                    <span class="gst-nav-icon" aria-hidden="true">🧾</span>
+                    <span class="gst-nav-label">Ventes</span>
+                    <span class="gst-nav-badge" id="gst-nav-badge-ventes" hidden></span>
+                </button>
+                <button type="button" class="gst-nav-btn" data-gst-nav="clients">
+                    <span class="gst-nav-icon" aria-hidden="true">👥</span>
+                    <span class="gst-nav-label">Clients</span>
+                    <span class="gst-nav-badge" id="gst-nav-badge-clients" hidden></span>
+                </button>
+                <button type="button" class="gst-nav-btn" data-gst-nav="reglages">
+                    <span class="gst-nav-icon" aria-hidden="true">⚙️</span>
+                    <span class="gst-nav-label">Réglages</span>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- ==================== MODALES SPÉCIALISÉES PANEL ADMIN ==================== -->
+
+    <!-- Modale Accès rapide (bouton 🔍) : recherche dans toutes les pages et réglages de la gestion -->
+    <div class="gst-modal-backdrop" id="gst-modal-quick-list" style="display:none">
+        <div class="gst-drawer-sheet" role="dialog" aria-modal="true" aria-labelledby="gst-quick-list-title">
+            <div class="gst-drawer-head">
+                <strong id="gst-quick-list-title">Accès rapide</strong>
+                <button type="button" class="gst-btn-close-modal" id="gst-close-quick-list-btn" aria-label="Fermer">×</button>
+            </div>
+            <div class="gst-search-box gst-quick-search">
+                <span class="gst-search-icon" aria-hidden="true">🔍</span>
+                <input type="search" class="gst-input-search" id="gst-quick-search-input" placeholder="Rechercher : produit, CNI, backup, thème…" autocomplete="off" enterkeyhint="go" aria-label="Rechercher une page ou un réglage">
+            </div>
+            <div class="gst-drawer-content" id="gst-quick-list-links">
+                <!-- Pages et réglages (script.js : populateQuickListDrawer) -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu ••• du panel : actions sur le bot -->
+    <div class="gst-modal-backdrop" id="gst-modal-more-menu" style="display:none">
+        <div class="gst-drawer-sheet">
+            <div class="gst-drawer-head">
+                <strong>Options</strong>
+                <button type="button" class="gst-btn-close-modal" id="gst-close-more-menu-btn">×</button>
+            </div>
+            <div class="gst-drawer-content gst-drawer-list">
+                <button type="button" class="gst-drawer-item" id="gst-btn-restart-bot">
+                    <span class="gst-drawer-item-icon">🔄</span>
+                    <span class="gst-drawer-item-label">Redémarrer le bot</span>
+                    <span class="gst-chevron">›</span>
+                </button>
+                <p class="gst-caption">Si le bot ne répond plus. Le lien de la mini-app change à chaque redémarrage.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Loader d'intro (13 animations + smartphone preview) -->
+    <div class="gst-modal-backdrop" id="gst-modal-intro-loader" style="display:none">
+        <div class="gst-modal-dialog">
+            <div class="gst-modal-head">
+                <strong>Loader d'intro</strong>
+                <button type="button" class="gst-btn-close-modal" id="gst-close-loader-modal-btn">×</button>
+            </div>
+            <div class="gst-modal-body">
+                <!-- Phone Preview Screen -->
+                <div class="gst-phone-mockup">
+                    <div class="gst-phone-screen" id="gst-loader-preview-stage">
+                        <div class="gst-loader-anim-target" id="gst-loader-anim-target">
+                            <img src="logo.png" alt="Logo preview" class="gst-loader-logo-img">
+                        </div>
+                    </div>
+                    <button type="button" class="gst-btn-replay" id="gst-loader-replay-btn">↻ Rejouer</button>
+                </div>
+
+                <!-- 13 Loader Choices -->
+                <div class="gst-choices-grid">
+                    <button type="button" class="gst-choice-btn" data-loader="mosaique">Mosaïque</button>
+                    <button type="button" class="gst-choice-btn" data-loader="hyperespace">Hyperespace</button>
+                    <button type="button" class="gst-choice-btn" data-loader="piece3d">Pièce 3D</button>
+                    <button type="button" class="gst-choice-btn" data-loader="orbite">Orbite</button>
+                    <button type="button" class="gst-choice-btn" data-loader="portail">Portail</button>
+                    <button type="button" class="gst-choice-btn" data-loader="hologramme">Hologramme</button>
+                    <button type="button" class="gst-choice-btn" data-loader="eventail">Éventail</button>
+                    <button type="button" class="gst-choice-btn" data-loader="diaphragme">Diaphragme</button>
+                    <button type="button" class="gst-choice-btn" data-loader="portes">Portes</button>
+                    <button type="button" class="gst-choice-btn" data-loader="pulsation">Pulsation</button>
+                    <button type="button" class="gst-choice-btn" data-loader="goutte">Goutte d'huile</button>
+                    <button type="button" class="gst-choice-btn" data-loader="glitch">Glitch</button>
+                    <button type="button" class="gst-choice-btn active" data-loader="projecteur">Projecteur</button>
                 </div>
             </div>
-            <div class="admin-tab-pane" id="admin-tab-products">
-                <div id="admin-products-content">
-                    <div class="admin-empty">Chargement...</div>
+            <div class="gst-modal-foot">
+                <button type="button" class="gst-btn-secondary" id="gst-cancel-loader-btn">Annuler</button>
+                <button type="button" class="gst-btn-primary" id="gst-confirm-loader-btn">Utiliser ce loader</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Fond animé (10 animations + smartphone preview) -->
+    <div class="gst-modal-backdrop" id="gst-modal-animated-bg" style="display:none">
+        <div class="gst-modal-dialog">
+            <div class="gst-modal-head">
+                <strong>Fond animé</strong>
+                <button type="button" class="gst-btn-close-modal" id="gst-close-bg-modal-btn">×</button>
+            </div>
+            <div class="gst-modal-body">
+                <!-- Phone Preview Screen -->
+                <div class="gst-phone-mockup">
+                    <div class="gst-phone-screen" id="gst-bg-preview-stage">
+                        <canvas id="gst-bg-canvas" width="240" height="380"></canvas>
+                        <div class="gst-mini-store-mock">
+                            <span class="gst-ms-header">SHOP GreenHouse 68 🛍️</span>
+                            <div class="gst-ms-grid">
+                                <div class="gst-ms-card"></div>
+                                <div class="gst-ms-card"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 10 Choices -->
+                <div class="gst-choices-grid">
+                    <button type="button" class="gst-choice-btn" data-bg="feuilles">Feuilles</button>
+                    <button type="button" class="gst-choice-btn" data-bg="galaxie">Galaxie</button>
+                    <button type="button" class="gst-choice-btn" data-bg="meduses">Méduses</button>
+                    <button type="button" class="gst-choice-btn" data-bg="orbes">Orbes de verre</button>
+                    <button type="button" class="gst-choice-btn" data-bg="particules3d">Particules 3D</button>
+                    <button type="button" class="gst-choice-btn" data-bg="constellations">Constellations</button>
+                    <button type="button" class="gst-choice-btn active" data-bg="fumee">Fumée</button>
+                    <button type="button" class="gst-choice-btn" data-bg="soie">Vagues de soie</button>
+                    <button type="button" class="gst-choice-btn" data-bg="points">Petits points</button>
+                    <button type="button" class="gst-choice-btn" data-bg="bulles">Bulles</button>
                 </div>
             </div>
-            <div class="admin-tab-pane" id="admin-tab-categories">
-                <div id="admin-categories-content">
-                    <div class="admin-empty">Chargement...</div>
+            <div class="gst-modal-foot">
+                <button type="button" class="gst-btn-secondary" id="gst-cancel-bg-btn">Annuler</button>
+                <button type="button" class="gst-btn-primary" id="gst-confirm-bg-btn">Utiliser ce fond</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Assistant Produit en 3 Étapes (Wizard) -->
+    <div class="gst-modal-backdrop" id="gst-modal-product-wizard" style="display:none">
+        <div class="gst-modal-dialog gst-modal-wide">
+            <div class="gst-modal-head">
+                <strong id="gst-wizard-modal-title">Nouveau produit</strong>
+                <button type="button" class="gst-btn-close-modal" id="gst-close-wizard-btn">×</button>
+            </div>
+
+            <!-- Progress Bar / Wizard Steps -->
+            <div class="gst-wizard-steps-header">
+                <div class="gst-step-pill active" id="gst-step-pill-1">1. Informations</div>
+                <div class="gst-step-pill" id="gst-step-pill-2">2. Prix & Types</div>
+                <div class="gst-step-pill" id="gst-step-pill-3">3. Médias & Options</div>
+            </div>
+
+            <div class="gst-modal-body">
+                <!-- Étape 1 : Informations -->
+                <div class="gst-wizard-step-pane active" id="gst-wizard-step-1">
+                    <div class="gst-field-group">
+                        <label class="gst-field-subtitle">Nom du produit *</label>
+                        <input type="text" class="gst-input" id="pw-name" placeholder="Ex: POPEYE STATIC GROWER">
+                    </div>
+                    <div class="gst-field-group">
+                        <label class="gst-field-subtitle">Catégorie *</label>
+                        <select class="gst-select" id="pw-category">
+                            <!-- Dynamic categories -->
+                        </select>
+                    </div>
+                    <div class="gst-field-group">
+                        <label class="gst-field-subtitle" for="pw-emoji">Emoji</label>
+                        <input type="text" class="gst-input" id="pw-emoji" maxlength="8" placeholder="📦">
+                    </div>
+                    <div class="gst-field-group">
+                        <label class="gst-field-subtitle">Description</label>
+                        <textarea class="gst-textarea" id="pw-description" rows="3" maxlength="500" placeholder="Description détaillée du produit..."></textarea>
+                    </div>
+                    <!-- Multi-ville : villes où le produit est proposé (aucune cochée = toutes), rendu par script.js -->
+                    <div class="gst-field-group">
+                        <label class="gst-field-subtitle">Villes</label>
+                        <div class="gst-city-chips" id="pw-cities" role="group" aria-label="Villes du produit"></div>
+                        <p class="gst-caption" id="pw-cities-caption"></p>
+                    </div>
+                    <!-- Champs que le serveur n'enregistre pas encore : affichés mais désactivés -->
+                    <div class="gst-field-group gst-field-unsaved">
+                        <label class="gst-field-subtitle">Sous-catégorie <span class="gst-unsaved-tag">bientôt</span></label>
+                        <input type="text" class="gst-input" id="pw-subcategory" placeholder="Ex: SIROP, EXTRACTION..." disabled>
+                    </div>
+                    <div class="gst-field-group gst-field-unsaved">
+                        <label class="gst-field-subtitle">Strain / Génétique <span class="gst-unsaved-tag">bientôt</span></label>
+                        <input type="text" class="gst-input" id="pw-strain" placeholder="Ex: Fraise 🍓, Citron 🍋" disabled>
+                    </div>
+                </div>
+
+                <!-- Étape 2 : Prix & Types -->
+                <div class="gst-wizard-step-pane" id="gst-wizard-step-2">
+                    <div class="gst-field-group">
+                        <label class="gst-field-subtitle" for="pw-price">Prix (<span id="pw-currency">€</span>) *</label>
+                        <input type="text" inputmode="decimal" class="gst-input" id="pw-price" placeholder="Ex : 20">
+                        <p class="gst-caption">Prix « À l'unité ». Avec des paliers, ce sont les prix des paliers qui s'affichent.</p>
+                    </div>
+
+                    <div class="gst-card-row-head" style="margin-top:12px;">
+                        <label class="gst-field-subtitle">Paliers de quantité (optionnel)</label>
+                        <button type="button" class="gst-btn-primary-sm" id="pw-add-price-row-btn">+ Ajouter</button>
+                    </div>
+                    <p class="gst-caption">Ex : 5 g à 50 en livraison, 45 sur place. Prix sur place vide = même prix qu'en livraison.</p>
+                    <div class="gst-price-row gst-price-row-head" id="pw-prices-head" style="display:none">
+                        <span class="gst-input-qty">Qté</span>
+                        <span class="gst-select-unit">Unité</span>
+                        <span class="gst-price-input-eur">Livraison</span>
+                        <span class="gst-price-input-eur">Sur place</span>
+                        <span class="gst-btn-remove-price" aria-hidden="true"></span>
+                    </div>
+                    <div class="gst-prices-table" id="pw-prices-table">
+                        <!-- Lignes de paliers : [Qté] [Unité] [Livraison] [Sur place] [✕] -->
+                    </div>
+
+                    <div class="gst-field-group" style="margin-top:12px;">
+                        <label class="gst-field-subtitle">Aperçu dans la boutique :</label>
+                        <pre class="gst-db-preview-box" id="pw-db-format-preview"></pre>
+                    </div>
+
+                    <div class="gst-field-group gst-field-unsaved" style="margin-top:12px;">
+                        <label class="gst-field-subtitle">Types / Variantes <span class="gst-unsaved-tag">bientôt</span></label>
+                        <input type="text" class="gst-input" id="pw-variants" placeholder="Ex: Fraise 🍓, Citron 🍋" disabled>
+                    </div>
+                </div>
+
+                <!-- Étape 3 : Médias & Options -->
+                <div class="gst-wizard-step-pane" id="gst-wizard-step-3">
+                    <p class="gst-caption">Photo et vidéo s'envoient depuis le téléphone avec 📁 (les liens externes sont refusés par le serveur). ✕ retire le média.</p>
+                    <div class="gst-field-group">
+                        <label class="gst-field-subtitle">Photo (carte et page produit)</label>
+                        <div class="gst-media-preview-container">
+                            <img id="pw-preview-image" alt="Aperçu de la photo" style="display:none;">
+                            <div class="gst-empty-placeholder" id="pw-image-empty">Aucune photo</div>
+                        </div>
+                        <div class="gst-input-btn-row">
+                            <input type="text" class="gst-input" id="pw-image-url" placeholder="/uploads/… (envoie un fichier)" autocomplete="off">
+                            <label class="gst-btn-secondary-sm" for="pw-image-file-input">
+                                📁 Photo…
+                                <input type="file" id="pw-image-file-input" accept="image/*" style="display:none">
+                            </label>
+                            <button type="button" class="gst-btn-remove-sm" id="pw-image-clear-btn" aria-label="Retirer la photo">✕</button>
+                        </div>
+                    </div>
+
+                    <div class="gst-field-group">
+                        <label class="gst-field-subtitle">Vidéo (page produit, optionnel)</label>
+                        <div class="gst-media-preview-container">
+                            <video id="pw-preview-video" controls muted playsinline webkit-playsinline preload="metadata" style="display:none;"></video>
+                            <div class="gst-empty-placeholder" id="pw-video-empty">Aucune vidéo</div>
+                        </div>
+                        <div class="gst-input-btn-row">
+                            <input type="text" class="gst-input" id="pw-video-url" placeholder="/uploads/… (envoie un fichier)" autocomplete="off">
+                            <label class="gst-btn-secondary-sm" for="pw-video-file-input">
+                                📁 Vidéo…
+                                <input type="file" id="pw-video-file-input" accept="video/*" style="display:none">
+                            </label>
+                            <button type="button" class="gst-btn-remove-sm" id="pw-video-clear-btn" aria-label="Retirer la vidéo">✕</button>
+                        </div>
+                    </div>
+
+                    <div class="gst-toggle-row">
+                        <div>
+                            <div class="gst-label-sm">En stock</div>
+                            <div class="gst-caption">Désactivé : badge « Épuisé », impossible à ajouter au panier</div>
+                        </div>
+                        <label class="gst-switch">
+                            <input type="checkbox" id="pw-stock-toggle" checked>
+                            <span class="gst-slider"></span>
+                        </label>
+                    </div>
+                    <div class="gst-toggle-row">
+                        <div>
+                            <div class="gst-label-sm">Badge « Nouveau »</div>
+                        </div>
+                        <label class="gst-switch">
+                            <input type="checkbox" id="pw-new-toggle">
+                            <span class="gst-slider"></span>
+                        </label>
+                    </div>
+                    <div class="gst-toggle-row">
+                        <div>
+                            <div class="gst-label-sm">Badge « Promo »</div>
+                        </div>
+                        <label class="gst-switch">
+                            <input type="checkbox" id="pw-promo-toggle">
+                            <span class="gst-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Likes : compteur réel des clients (Produits › Compteur de likes), affiché ici en lecture seule -->
+                    <p class="gst-caption" id="pw-likes-info"></p>
+
+                    <!-- Option que le serveur n'enregistre pas encore : affichée mais désactivée -->
+                    <div class="gst-field-group gst-field-unsaved">
+                        <label class="gst-field-subtitle">RÉDUCTION RANG (CE PRODUIT) <span class="gst-unsaved-tag">bientôt</span></label>
+                        <div class="gst-input-with-label">
+                            <input type="number" class="gst-input" id="pw-rank-discount-override" value="0" disabled>
+                            <span>%</span>
+                        </div>
+                        <p class="gst-caption">0 = utilise la réduction globale du rang</p>
+                    </div>
                 </div>
             </div>
-            <div class="admin-tab-pane" id="admin-tab-settings">
-                <div id="admin-settings-content">
-                    <div class="admin-empty">Chargement...</div>
-                </div>
+
+            <!-- Wizard Footer Navigation -->
+            <div class="gst-modal-foot">
+                <button type="button" class="gst-btn-secondary" id="pw-prev-btn" style="visibility:hidden">Précédent</button>
+                <button type="button" class="gst-btn-primary" id="pw-next-btn">Suivant</button>
+                <button type="button" class="gst-btn-primary" id="pw-save-btn" style="display:none">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Menu Écrit (Telegram Formatted Menu) -->
+    <div class="gst-modal-backdrop" id="gst-modal-written-menu" style="display:none">
+        <div class="gst-modal-dialog">
+            <div class="gst-modal-head">
+                <strong>≡ Menu écrit Telegram</strong>
+                <button type="button" class="gst-btn-close-modal" id="gst-close-written-menu-btn">×</button>
+            </div>
+            <div class="gst-modal-body">
+                <p class="gst-caption">Voici le menu prêt à être copié et posté dans tes canaux Telegram :</p>
+                <textarea class="gst-textarea" id="gst-written-menu-text" rows="12" readonly></textarea>
+            </div>
+            <div class="gst-modal-foot">
+                <button type="button" class="gst-btn-secondary" id="gst-close-written-menu-foot-btn">Fermer</button>
+                <button type="button" class="gst-btn-primary" id="gst-copy-written-menu-btn">📋 Copier le menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Fiche Utilisateur CRM -->
+    <div class="gst-modal-backdrop" id="gst-modal-user-profile" style="display:none">
+        <div class="gst-modal-dialog">
+            <div class="gst-modal-head">
+                <strong>Profil Utilisateur CRM</strong>
+                <button type="button" class="gst-btn-close-modal" id="gst-close-user-modal-btn">×</button>
+            </div>
+            <div class="gst-modal-body" id="gst-user-modal-body">
+                <!-- User CRM details filled dynamically -->
+            </div>
+            <div class="gst-modal-foot">
+                <button type="button" class="gst-btn-secondary" id="gst-close-user-modal-foot-btn">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Utilisateurs du bot backup (GET /admin/backup/users) -->
+    <div class="gst-modal-backdrop" id="gst-modal-backup-users" style="display:none">
+        <div class="gst-modal-dialog">
+            <div class="gst-modal-head">
+                <strong>🤖 Utilisateurs du backup <span class="gst-counter" id="gst-backup-users-modal-count"></span></strong>
+                <button type="button" class="gst-btn-close-modal" id="gst-close-backup-users-btn">×</button>
+            </div>
+            <div class="gst-modal-body">
+                <p class="gst-caption">Clients qui ont démarré le bot backup : ce sont eux qui suivront la bascule.</p>
+                <div class="gst-admins-whitelist-list" id="gst-backup-users-list"></div>
+            </div>
+            <div class="gst-modal-foot">
+                <button type="button" class="gst-btn-secondary" id="gst-close-backup-users-foot-btn">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Liste d'attente : vérifications CNI et approbations en attente (GET /admin/verifications) -->
+    <div class="gst-modal-backdrop" id="gst-modal-verifications" style="display:none">
+        <div class="gst-modal-dialog">
+            <div class="gst-modal-head">
+                <strong>📋 Liste d'attente</strong>
+                <button type="button" class="gst-btn-close-modal" id="gst-close-verif-modal-btn">×</button>
+            </div>
+            <div class="gst-modal-body">
+                <p class="gst-caption">Clients qui attendent la validation d'un admin (vérification CNI ou approbation manuelle).</p>
+                <div class="gst-cat-list" id="gst-verif-modal-list"></div>
+            </div>
+            <div class="gst-modal-foot">
+                <button type="button" class="gst-btn-secondary" id="gst-close-verif-modal-foot-btn">Fermer</button>
+                <button type="button" class="gst-btn-primary" id="gst-verif-modal-refresh-btn">↻ Actualiser</button>
             </div>
         </div>
     </div>
@@ -358,12 +2728,17 @@
 
                 <h2 class="detail-product-title" id="detail-name">Produit</h2>
                 <div class="detail-subline" id="detail-category-chip">Categorie</div>
+                <!-- Like du produit (Produits › Compteur de likes) : compteur réel, un like par client -->
+                <button class="detail-like-btn" id="detail-like-btn" type="button" aria-pressed="false" hidden></button>
                 <p class="detail-desc-box" id="detail-description">Description</p>
 
                 <article class="detail-quantity-card">
                     <h3 id="detail-qty-title">Selectionner la Quantite</h3>
                     <div class="qty-grid" id="detail-qty-grid"></div>
                 </article>
+
+                <!-- « Commander sur … » : un bouton par réseau réglé (le bouton Telegram ✈ reste en bas) -->
+                <div class="detail-order-links" id="detail-order-links" hidden></div>
             </section>
 
             <footer class="detail-bottom-bar">
@@ -376,7 +2751,22 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // script.js (~700 Ko) lancé après les deux premières images : l'animation du logo de l'intro démarre d'abord et
+        // continue pendant que le téléphone analyse le script, au lieu de rester figée jusqu'à la fin de cette analyse
+        (function () {
+            var started = false;
+            function load() {
+                if (started) return;
+                started = true;
+                var s = document.createElement("script");
+                s.src = "script.js?v=20261013_v15";
+                document.body.appendChild(s);
+            }
+            requestAnimationFrame(function () { requestAnimationFrame(load); });
+            setTimeout(load, 400); // onglet caché : requestAnimationFrame ne tourne pas
+        })();
+    </script>
 </body>
 
 </html>
