@@ -1,64 +1,53 @@
 {
   "restaurant": {
-    "description": "Mini-App Telegram pour commandes en ligne",
-    "delivery_fee": 2.5,
-    "min_order": 15.0,
-    "name": "GreenHouse 68",
-    "slogan": "Menu GreenHouse 68",
+    "name": "French 54",
+    "slogan": "Menu premium 2026",
     "currency": "€",
     "minOrder": 0,
-    "deliveryFee": 0
+    "deliveryFee": 10
   },
   "admin": {
-    "channel_link": "https://t.me/+Hi2aQ4aYPn85ZTQ0",
-    "telegram_username": "GreenHouse682",
-    "music_playlist": "[{\"title\":\"Heuss Lenfoiré - Tetik (Clip Officiel)\",\"url\":\"https://wieldable-blah-fineness.ngrok-free.dev/uploads/up_1791508471335_66685d36.mp3\"}]",
-    "api_base": "https://officer-tampa-detroit-flame.trycloudflare.com"
+    "channel_link": "https://t.me/+Et2806rK2dw0MDA0",
+    "free_shipping": "50",
+    "orders_enabled": "true",
+    "meetup_enabled": "true",
+    "postal_enabled": "false",
+    "calendar_enabled": "true",
+    "crypto_enabled": "true",
+    "crm_enabled": "true",
+    "background_image": "",
+    "bot_profile_name": "French 54 🛍️",
+    "bot_description": "",
+    "bot_start_description": "",
+    "telegram_channel": "LaFrenchOfficiel54",
+    "telegram_username": "LaFrenchOfficiel54",
+    "whatsapp": "",
+    "signal": "",
+    "snapchat": "",
+    "instagram": "",
+    "potato": "",
+    "luffa": "",
+    "closed_mode_enabled": "false",
+    "closed_mode_title": "Nous sommes fermé",
+    "closed_mode_reason": "On revient demain à 12h — bientôt de retour !",
+    "mobile_only": "true",
+    "vpn_required": "false",
+    "channel_mandatory": "false",
+    "mandatory_channel_link": "",
+    "rank_enabled": "true",
+    "backup_bot_enabled": "true",
+    "multicity_enabled": "true",
+    "wheel_enabled": "false",
+    "autoclean_client_delay": "1200",
+    "autoclean_bot_keep": "3",
+    "api_base": "https://theatre-tsunami-went-gains.trycloudflare.com",
+    "cni_instructions": "Photo de toi avec ta CNI visible.",
+    "cni_required": "false",
+    "approval_required": "false",
+    "loader_style": "piece3d",
+    "animated_bg": "fumee",
+    "theme_color": "#ef4444"
   },
-  "categories": {
-    "pizza": {
-      "name": "Hash",
-      "emoji": "🍫",
-      "description": "Nos produits en Hash"
-    }
-  },
-  "products": {
-    "pizza": [
-      {
-        "id": 33,
-        "name": "DOUBLE STATIC SIFT 🥭",
-        "description": "Un static sift au rendez vous pour vous régalez. Odeur et défonce garantie certifier ✅ Gout très terpy et prononcée saveurs légèrement fruitée,citronée\n⭐️⭐️⭐️⭐️⭐️",
-        "price": 20.0,
-        "emoji": "🥇",
-        "image": "/uploads/up_1791445626474_4d4079ea.jpeg",
-        "video": "/uploads/up_1791469483374_6eabfa26.mp4",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "customPrices": {
-          "3": 40,
-          "5": 70,
-          "10": 130,
-          "1.5": 20,
-          "2.2": 30
-        }
-      },
-      {
-        "id": 34,
-        "name": "Eggs Frozen 🇲🇦🥇",
-        "description": "Ancelott Tropi 🍦🌴\nVoici notre gamme dolive du maroc🇲🇦🥇\nSec pétante comme vous les aimez avec un curage d'exception ! ✅ Niveau défonce je vous en parle pas, pour une saveur très gustative en bouche qui sera vous laissez bouche bé 😉\n\n⭐️⭐️⭐️⭐️",
-        "price": 60.0,
-        "emoji": "📦",
-        "image": "/uploads/up_1791469648637_64edd50f.jpeg",
-        "video": "/uploads/up_1791469668870_fc1da3c8.mp4",
-        "category": "pizza",
-        "isNew": true,
-        "isPromo": false,
-        "customPrices": {
-          "5": 60,
-          "10": 110
-        }
-      }
-    ]
-  }
+  "categories": {},
+  "products": {}
 }
