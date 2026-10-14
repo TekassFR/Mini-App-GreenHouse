@@ -291,28 +291,21 @@
         profileStatOrders: document.getElementById("profile-stat-orders"),
         profileStatSpent: document.getElementById("profile-stat-spent"),
         profileStatMember: document.getElementById("profile-stat-member"),
-        profileLanguageTitle: document.getElementById("profile-language-title"),
         profileOrdersTitle: document.getElementById("profile-orders-title"),
-        languageGrid: document.getElementById("language-grid"),
+        shopLang: document.getElementById("shop-lang"),
+        shopLangBtn: document.getElementById("shop-lang-btn"),
+        shopLangFlag: document.getElementById("shop-lang-flag"),
+        shopLangMenu: document.getElementById("shop-lang-menu"),
         profileAdminCard: document.getElementById("profile-admin-card"),
         adminPanelBtn: document.getElementById("admin-panel-btn"),
         adminOverlay: document.getElementById("admin-overlay"),
         adminCloseBtn: document.getElementById("admin-close-btn"),
 
-        infoTitle: document.getElementById("info-title"),
-        infoDesc: document.getElementById("info-desc"),
-        infoDeliveryTitle: document.getElementById("info-delivery-title"),
-        infoHoursLabel: document.getElementById("info-hours-label"),
-        infoDelayLabel: document.getElementById("info-delay-label"),
-        infoZoneLabel: document.getElementById("info-zone-label"),
-        infoContactTitle: document.getElementById("info-contact-title"),
-        infoContactUsername: document.getElementById("info-contact-username"),
-        infoPaymentTitle: document.getElementById("info-payment-title"),
-        infoPaymentDesc: document.getElementById("info-payment-desc"),
-        contactBtn: document.getElementById("contact-btn"),
+        // Onglet Contact (page « info ») : bouton du canal, tuiles des réseaux, infos & conditions, « Signaler un problème »
         channelBtn: document.getElementById("channel-btn"),
-        infoContactText: document.getElementById("info-contact-text"),
-        infoNetworks: document.getElementById("info-networks"),
+        contactNetGrid: document.getElementById("contact-net-grid"),
+        contactInfoList: document.getElementById("contact-info-list"),
+        contactReportBtn: document.getElementById("contact-report-btn"),
         bottomNav: document.getElementById("bottom-nav"),
 
         accessScreen: document.getElementById("access-screen"),
@@ -369,7 +362,7 @@
             navHistory: "Historique",
             navReviews: "Avis",
             navProfile: "Profil",
-            navInfo: "Infos",
+            navInfo: "Contact",
             categoryAll: "Tous",
             categoryKeyLabel: "Categorie",
             categoryTypeLabel: "Type",
@@ -378,6 +371,8 @@
             badgeSoldOut: "Épuisé",
             soldOutToast: "Ce produit est épuisé pour le moment.",
             soldOutCartToast: "{name} est épuisé : retire-le du panier pour commander.",
+            cardAddAria: "Ajouter {name} au panier",
+            cartAdded: "{name} ajouté au panier ! 🛒",
             fromPrice: "Des {price}",
             view: "Voir",
             cartTitle: "Panier",
@@ -409,12 +404,25 @@
             yourName: "Ton nom",
             yourFeedback: "Ton retour",
             profileLanguage: "Langue",
+            langFr: "Français",
+            langEn: "Anglais",
+            langDe: "Allemand",
             profileOrders: "Mes Commandes",
             statOrders: "Commandes",
             statSpent: "Depense",
             statMember: "Membre depuis",
             memberSincePhrase: "Membre depuis {month} {year}",
             profileNoOrders: "Aucune commande pour le moment.",
+            watchTitle: "Notifications",
+            watchSubtitle: "Sois alerté en temps réel",
+            watchNewTitle: "Nouveaux produits",
+            watchNewDesc: "Quand un produit est ajouté",
+            watchPromoTitle: "Promotions",
+            watchPromoDesc: "Nouvelles promos et réductions",
+            watchHint: "Les alertes arrivent en message privé du bot.",
+            watchOn: "Alerte activée 🔔",
+            watchOff: "Alerte désactivée",
+            watchNeedBot: "Autorise le bot à t'écrire pour recevoir les alertes.",
             infoTitle: "Infos",
             infoDesc: "Horaires, contact et paiement.",
             deliveryTitle: "Livraison",
@@ -423,7 +431,7 @@
             zone: "Zone:",
             contact: "Contact",
             contactBtn: "Contacter",
-            channelBtn: "Canal",
+            channelBtn: "Rejoindre le canal",
             payment: "Paiement",
             cashOnly: "Paiement en especes uniquement.",
             detailBack: "← Retour",
@@ -450,6 +458,22 @@
             orderText: "Nouvelle commande #{id}\nType: {type}\nDetails: {summary}\nTotal: {total}",
             orderOn: "Commander sur {name}",
             contactAlso: "Aussi sur",
+            contactHeroTitle: "Contactez-nous",
+            contactBubbleAsk: "Une question ?",
+            contactBubbleReply: "Notre équipe te répond rapidement sur le réseau de ton choix.",
+            contactWriteUs: "Nous écrire",
+            contactReport: "Signaler un problème",
+            contactInfoTitle: "Infos & conditions",
+            contactMeetup: "Meetup possible",
+            contactFree: "Gratuit",
+            contactDeliveryFree: "Offerte",
+            contactDelay: "Délai : {delay}",
+            contactPostal: "Envoi postal sécurisé",
+            contactMinOrder: "Commande min. : {amount}",
+            contactCitiesOne: "1 ville desservie",
+            contactCitiesMany: "{n} villes desservies",
+            contactHours: "Horaires",
+            contactZone: "Zone",
             gateRetry: "Réessayer",
             gateDone: "C'est fait, vérifier",
             gateClose: "Fermer",
@@ -494,7 +518,7 @@
             navHistory: "History",
             navReviews: "Reviews",
             navProfile: "Profile",
-            navInfo: "Info",
+            navInfo: "Contact",
             categoryAll: "All",
             categoryKeyLabel: "Category",
             categoryTypeLabel: "Type",
@@ -503,6 +527,8 @@
             badgeSoldOut: "Sold out",
             soldOutToast: "This product is sold out for now.",
             soldOutCartToast: "{name} is sold out: remove it from your cart to order.",
+            cardAddAria: "Add {name} to cart",
+            cartAdded: "{name} added to cart! 🛒",
             fromPrice: "From {price}",
             view: "View",
             cartTitle: "Cart",
@@ -534,12 +560,25 @@
             yourName: "Your name",
             yourFeedback: "Your feedback",
             profileLanguage: "Language",
+            langFr: "French",
+            langEn: "English",
+            langDe: "German",
             profileOrders: "My Orders",
             statOrders: "Orders",
             statSpent: "Spent",
             statMember: "Member since",
             memberSincePhrase: "Member since {month} {year}",
             profileNoOrders: "No order yet.",
+            watchTitle: "Notifications",
+            watchSubtitle: "Get alerted in real time",
+            watchNewTitle: "New products",
+            watchNewDesc: "When a product is added",
+            watchPromoTitle: "Promotions",
+            watchPromoDesc: "New deals and discounts",
+            watchHint: "Alerts arrive as a private message from the bot.",
+            watchOn: "Alert enabled 🔔",
+            watchOff: "Alert disabled",
+            watchNeedBot: "Allow the bot to message you to receive alerts.",
             infoTitle: "Info",
             infoDesc: "Schedule, contact and payment.",
             deliveryTitle: "Delivery",
@@ -548,7 +587,7 @@
             zone: "Area:",
             contact: "Contact",
             contactBtn: "Contact",
-            channelBtn: "Channel",
+            channelBtn: "Join the channel",
             payment: "Payment",
             cashOnly: "Cash payment only.",
             detailBack: "← Back",
@@ -575,6 +614,22 @@
             orderText: "New order #{id}\nType: {type}\nDetails: {summary}\nTotal: {total}",
             orderOn: "Order on {name}",
             contactAlso: "Also on",
+            contactHeroTitle: "Contact us",
+            contactBubbleAsk: "A question?",
+            contactBubbleReply: "Our team replies quickly on the network of your choice.",
+            contactWriteUs: "Write to us",
+            contactReport: "Report a problem",
+            contactInfoTitle: "Info & terms",
+            contactMeetup: "Meetup available",
+            contactFree: "Free",
+            contactDeliveryFree: "Free",
+            contactDelay: "Delay: {delay}",
+            contactPostal: "Secure postal shipping",
+            contactMinOrder: "Min. order: {amount}",
+            contactCitiesOne: "1 city served",
+            contactCitiesMany: "{n} cities served",
+            contactHours: "Opening hours",
+            contactZone: "Area",
             gateRetry: "Try again",
             gateDone: "Done, check again",
             gateClose: "Close",
@@ -619,7 +674,7 @@
             navHistory: "Historie",
             navReviews: "Bewertungen",
             navProfile: "Profil",
-            navInfo: "Infos",
+            navInfo: "Kontakt",
             categoryAll: "Alle",
             categoryKeyLabel: "Kategorie",
             categoryTypeLabel: "Typ",
@@ -628,6 +683,8 @@
             badgeSoldOut: "Ausverkauft",
             soldOutToast: "Dieses Produkt ist derzeit ausverkauft.",
             soldOutCartToast: "{name} ist ausverkauft: entferne es aus dem Warenkorb, um zu bestellen.",
+            cardAddAria: "{name} in den Warenkorb legen",
+            cartAdded: "{name} in den Warenkorb gelegt! 🛒",
             fromPrice: "Ab {price}",
             view: "Ansehen",
             cartTitle: "Warenkorb",
@@ -659,12 +716,25 @@
             yourName: "Dein Name",
             yourFeedback: "Dein Feedback",
             profileLanguage: "Sprache",
+            langFr: "Französisch",
+            langEn: "Englisch",
+            langDe: "Deutsch",
             profileOrders: "Meine Bestellungen",
             statOrders: "Bestellungen",
             statSpent: "Ausgaben",
             statMember: "Mitglied seit",
             memberSincePhrase: "Mitglied seit {month} {year}",
             profileNoOrders: "Noch keine Bestellung.",
+            watchTitle: "Benachrichtigungen",
+            watchSubtitle: "In Echtzeit informiert werden",
+            watchNewTitle: "Neue Produkte",
+            watchNewDesc: "Wenn ein Produkt hinzugefügt wird",
+            watchPromoTitle: "Aktionen",
+            watchPromoDesc: "Neue Aktionen und Rabatte",
+            watchHint: "Benachrichtigungen kommen als private Nachricht vom Bot.",
+            watchOn: "Benachrichtigung aktiviert 🔔",
+            watchOff: "Benachrichtigung deaktiviert",
+            watchNeedBot: "Erlaube dem Bot, dir zu schreiben, um Benachrichtigungen zu erhalten.",
             infoTitle: "Infos",
             infoDesc: "Zeiten, Kontakt und Zahlung.",
             deliveryTitle: "Lieferung",
@@ -673,7 +743,7 @@
             zone: "Gebiet:",
             contact: "Kontakt",
             contactBtn: "Kontakt",
-            channelBtn: "Kanal",
+            channelBtn: "Kanal beitreten",
             payment: "Zahlung",
             cashOnly: "Nur Barzahlung.",
             detailBack: "← Zurueck",
@@ -700,6 +770,22 @@
             orderText: "Neue Bestellung #{id}\nTyp: {type}\nDetails: {summary}\nGesamt: {total}",
             orderOn: "Über {name} bestellen",
             contactAlso: "Auch auf",
+            contactHeroTitle: "Kontaktiere uns",
+            contactBubbleAsk: "Eine Frage?",
+            contactBubbleReply: "Unser Team antwortet dir schnell auf dem Netzwerk deiner Wahl.",
+            contactWriteUs: "Schreib uns",
+            contactReport: "Problem melden",
+            contactInfoTitle: "Infos & Bedingungen",
+            contactMeetup: "Meetup möglich",
+            contactFree: "Kostenlos",
+            contactDeliveryFree: "Gratis",
+            contactDelay: "Dauer: {delay}",
+            contactPostal: "Sicherer Postversand",
+            contactMinOrder: "Mindestbestellwert: {amount}",
+            contactCitiesOne: "1 Stadt beliefert",
+            contactCitiesMany: "{n} Städte beliefert",
+            contactHours: "Öffnungszeiten",
+            contactZone: "Gebiet",
             gateRetry: "Erneut versuchen",
             gateDone: "Erledigt, erneut prüfen",
             gateClose: "Schließen",
@@ -813,7 +899,7 @@
         const template = dict[key] || fallback;
         if (!params) return template;
         return Object.keys(params).reduce((acc, paramKey) => {
-            return acc.replace(new RegExp(`\\{${paramKey}\\}`, "g"), String(params[paramKey]));
+            return acc.replace(new RegExp(`\\{${paramKey}\\}`, "g"), () => String(params[paramKey]));
         }, template);
     }
 
@@ -1284,10 +1370,7 @@
 
         els.profileMemberFull.textContent = t("memberSincePhrase", { month: monthData.monthLong, year });
         els.profileMemberShort.textContent = `${monthData.monthShort}. ${String(year).slice(-2)}`;
-
-        const adminUserRaw = String((state.config && state.config.admin && state.config.admin.telegram_username) || "GreenHouse682");
-        const formattedAdmins = adminUserRaw.split(/[\s,]+/).map((u) => `@${u}`).join(" / ");
-        els.infoContactUsername.textContent = `Telegram: ${formattedAdmins}`;
+        // Pseudos Telegram de l'admin : tuiles « Telegram » de l'onglet Contact (renderContactCard)
 
         // Afficher le bouton admin si l'utilisateur est dans la whitelist
         if (els.profileAdminCard) {
@@ -1371,7 +1454,7 @@
 
         return `
             <article class="product-card${soldOut ? " is-sold-out" : ""}" data-product-id="${escapeHtml(String(product.id))}">
-                <div class="product-media">
+                <div class="product-media${likesEnabled() ? " has-like" : ""}">
                     ${mediaHtml}
                     ${badge}
                     ${videoBadge}
@@ -1380,7 +1463,10 @@
                 <div class="product-body">
                     <h3 class="product-title">${name}</h3>
                     <p class="product-desc">${shortDesc}</p>
-                    ${cataloguePriceChip(start)}
+                    <div class="card-foot">
+                        ${cataloguePriceChip(start)}
+                        ${cardCartButtonHtml(product, soldOut)}
+                    </div>
                 </div>
             </article>
         `;
@@ -1430,6 +1516,7 @@
         if (pageName === "history") renderHistory();
         if (pageName === "reviews") renderReviews();
         if (pageName === "profile") renderProfileStats();
+        if (pageName === "info") supportPreload(); // onglet Contact : ticket en cours chargé (fil affiché s'il est ouvert)
     }
 
     function attachNavigation() {
@@ -1638,6 +1725,58 @@
         return true;
     }
 
+    // Carte produit : bouton rond « ajouter au panier » (sans ouvrir la fiche). Produit épuisé : grisé (aria-disabled,
+    // pas disabled : le clic reste sur le bouton et affiche le toast « épuisé » comme le bouton Ajouter de la fiche)
+    const CARD_CART_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.3 10.3a1.6 1.6 0 0 0 1.6 1.2h8.4a1.6 1.6 0 0 0 1.6-1.2L21 7.5H6"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg>`;
+
+    function cardCartButtonHtml(product, soldOut) {
+        const label = soldOut ? t("badgeSoldOut") : t("cardAddAria", { name: plainText(product.name || "") });
+        return `<button class="card-cart-btn${soldOut ? " is-disabled" : ""}" data-cart-pid="${escapeHtml(String(product.id))}" type="button" aria-label="${escapeHtml(label)}"${soldOut ? ' aria-disabled="true"' : ""}>${CARD_CART_SVG}</button>`;
+    }
+
+    // Rejoue une petite animation CSS (classe retirée à la fin) : cœur aimé, bouton panier, pastille du panier.
+    // Animations coupées (prefers-reduced-motion) : pas d'animationend, la classe est retirée tout de suite
+    function replayAnimationClass(el, cls) {
+        if (!el) return;
+        el.classList.remove(cls);
+        void el.offsetWidth; // reflow : l'animation repart de zéro
+        el.classList.add(cls);
+        if (getComputedStyle(el).animationName === "none") {
+            el.classList.remove(cls);
+            return;
+        }
+        el.addEventListener("animationend", () => el.classList.remove(cls), { once: true });
+    }
+
+    // Ajout direct depuis la carte : plus petit palier du mode de commande en cours (celui que la fiche présélectionne),
+    // mêmes garde-fous que « Ajouter » de la fiche (épuisé → toast, prix manquant → fiche ouverte pour choisir).
+    // Accès bloqué (mode fermé, vérification…) ou produit hors de la ville du client : rien n'est ajouté
+    function addFromProductCard(rawPid, btn) {
+        if (accessLocked()) return;
+        if (state.access && state.access.allowed === false) {
+            applyAccessState(); // accès retiré depuis le dernier rechargement : écran d'accès, comme au paiement
+            return;
+        }
+        const product = state.products.find((p) => String(p.id) === String(rawPid));
+        if (!product || !catalogueProductVisible(product)) return;
+        if (isSoldOut(product)) {
+            showToast(t("soldOutToast"), "error");
+            return;
+        }
+        const entry = getQtyEntries(product)[0];
+        if (!entry || !(entry.price > 0)) {
+            openProductDetail(product);
+            return;
+        }
+        const weight = entry.tier ? entry.qty : null;
+        if (!addToCart(product, weight, entry.price)) return;
+        // même libellé que la ligne du panier : « Produit (5G) » pour un palier, « Produit » sans palier
+        showToast(t("cartAdded", { name: plainText(cartLineName(product, weight)) }));
+        replayAnimationClass(btn, "is-added");
+        replayAnimationClass(document.getElementById("cart-badge"), "is-bumping");
+        if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+    }
+
     // Avant le champ weight, un palier gardait son poids comme quantité : « 5G — 70 € » devenait
     // {quantity: 5, unitPrice: 70}, compté 350 €. Une ancienne ligne n'est gardée que si un seul poids
     // du produit a encore ce prix et divise la quantité (sans palier : poids 1, quantité = unités) ;
@@ -1777,11 +1916,42 @@
             .join("");
     }
 
+    // Langues de la boutique. Drapeaux en SVG : les émojis drapeaux s'affichent « FR » sous Windows / Telegram Desktop
+    const SHOP_LANGUAGES = [
+        { code: "fr", key: "langFr", flag: '<svg viewBox="0 0 3 2" preserveAspectRatio="none"><rect width="1" height="2" fill="#002395"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#ed2939"/></svg>' },
+        { code: "en", key: "langEn", flag: '<svg viewBox="0 0 60 30" preserveAspectRatio="none"><rect width="60" height="30" fill="#012169"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 L60,30 M60,0 L0,30" stroke="#c8102e" stroke-width="2"/><path d="M30,0 v30 M0,15 h60" stroke="#fff" stroke-width="10"/><path d="M30,0 v30 M0,15 h60" stroke="#c8102e" stroke-width="6"/></svg>' },
+        { code: "de", key: "langDe", flag: '<svg viewBox="0 0 5 3" preserveAspectRatio="none"><rect width="5" height="1" fill="#000"/><rect y="1" width="5" height="1" fill="#dd0000"/><rect y="2" width="5" height="1" fill="#ffce00"/></svg>' }
+    ];
+
+    function shopLanguage(code) {
+        return SHOP_LANGUAGES.find((l) => l.code === code) || SHOP_LANGUAGES[0];
+    }
+
+    // Sélecteur de langue en haut à droite (drapeau + ▾) : bouton et menu redessinés dans la langue de l'interface
     function renderLanguageSelection() {
-        if (!els.languageGrid) return;
-        els.languageGrid.querySelectorAll(".lang-option").forEach((btn) => {
-            btn.classList.toggle("active", btn.dataset.lang === state.language);
-        });
+        if (!els.shopLangBtn || !els.shopLangMenu) return;
+        const current = shopLanguage(state.language);
+        if (els.shopLangFlag) els.shopLangFlag.innerHTML = current.flag;
+        const label = `${t("profileLanguage")} · ${t(current.key)}`;
+        els.shopLangBtn.setAttribute("aria-label", label);
+        els.shopLangBtn.title = label;
+        els.shopLangMenu.setAttribute("aria-label", t("profileLanguage"));
+        els.shopLangMenu.innerHTML = SHOP_LANGUAGES.map((l) => {
+            const active = l.code === current.code;
+            return `<button class="shop-lang-option${active ? " active" : ""}" data-lang="${l.code}" type="button" role="menuitemradio" aria-checked="${active}">
+                <span class="shop-lang-flag" aria-hidden="true">${l.flag}</span>
+                <span class="shop-lang-name">${escapeHtml(t(l.key))}</span>
+                <span class="shop-lang-check" aria-hidden="true">${active ? "✓" : ""}</span>
+            </button>`;
+        }).join("");
+    }
+
+    // Ouvre / ferme le menu des langues
+    function setShopLangMenu(open) {
+        if (!els.shopLangMenu || !els.shopLangBtn) return;
+        els.shopLangMenu.hidden = !open;
+        els.shopLangBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        if (els.shopLang) els.shopLang.classList.toggle("open", open);
     }
 
     // Lien du bouton « Canal » : seulement http(s) (même règle que start_links dans willy.py), sinon ""
@@ -1806,6 +1976,7 @@
         renderContactCard();
         applyCatalogueShop(); // catalogue : ville du client (profil, écran de choix au premier lancement)
         fideliteApplyConfig(); // fidelite : onglet / formulaire d'avis et cartes fidélité du profil selon les réglages
+        watchApplyConfig(); // alertes : carte Notifications du profil (textes, visibilité)
         // Réglages Commandes relus (commandes coupées, meetup, calendrier, frais de livraison) : panier à jour
         renderCart();
     }
@@ -1868,23 +2039,130 @@
         return `${url}?text=${encodeURIComponent(t("askProduct", { name: productName }))}`;
     }
 
-    // Carte Contact (page Infos) : texte libre et un bouton par réseau réglé ; onglet Infos masqué si contact_tab_enabled vaut "false"
+    // ===== ONGLET CONTACT (ancienne page Infos, data-page="info") =====
+    // Carte d'accueil (logo, pastille « en ligne » de renderShopHeader, bulles, texte contact_text), « Nous écrire » (un
+    // bouton par réseau réglé), « Signaler un problème » (tickets SAV), « Infos & conditions » tirées des réglages
+    // Horaires, délai et zone repris tels quels de l'ancienne page Infos (aucun réglage dans la gestion)
+    const CONTACT_FIXED_INFO = { hours: "10H-22H Lun-Dim", delay: "30-45mn", zone: "68 (et ses Alentours)" };
+    // Icônes au trait 24×24 : contenu fixe, jamais de donnée de la config
+    const CONTACT_ICONS = {
+        meetup: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+        delivery: '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',
+        postal: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>',
+        bag: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/>',
+        cities: '<path d="M14.1 4.6 9.9 2.4a2 2 0 0 0-1.8 0L3.6 4.7A1 1 0 0 0 3 5.6v14.2a1 1 0 0 0 1.4.9l3.7-1.9a2 2 0 0 1 1.8 0l4.2 2.2a2 2 0 0 0 1.8 0l4.5-2.3a1 1 0 0 0 .6-.9V4.2a1 1 0 0 0-1.4-.9l-3.7 1.9a2 2 0 0 1-1.8 0z"/><path d="M15 5.8v15M9 3.2v15"/>',
+        hours: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+        zone: '<path d="M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+        payment: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>'
+    };
+    // Icônes des réseaux (couleurs de marque dans access.css) ; Potato et Luffa gardent l'emoji de SOCIAL_NETWORKS
+    const CONTACT_NET_ICONS = {
+        telegram: '<path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>',
+        whatsapp: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/>',
+        signal: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" stroke-dasharray="3 2.4"/><path d="M8 12h.01M12 12h.01M16 12h.01"/>',
+        snapchat: '<path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/>',
+        instagram: '<rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/>'
+    };
+    // HTML posé : rien n'est redessiné si rien ne change (config relue toutes les 45 s) ; reportBusy : un seul appui à la fois
+    const contactUi = { grid: null, list: null, reportBusy: false };
+
+    function contactSvg(paths) {
+        return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
+    }
+
+    // Pseudos Telegram valides de telegram_username (un ou plusieurs, séparés par une espace ou une virgule)
+    function contactTelegramHandles() {
+        const raw = String((state.config && state.config.admin && state.config.admin.telegram_username) || "GreenHouse682");
+        return [...new Set(raw.split(/[\s,]+/).map(telegramHandle).filter(Boolean))].slice(0, 4);
+    }
+
+    // Conversation Telegram avec un admin (premier pseudo réglé par défaut), comme l'ancien bouton « Contacter »
+    function openTelegramContact(username) {
+        const handle = telegramHandle(username) || telegramHandle(getPrimaryTelegramUsername()) || "GreenHouse682";
+        const url = `https://t.me/${handle}`;
+        if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
+        else window.open(url, "_blank");
+    }
+
+    // « Nous écrire » : Telegram (toujours, un bouton par pseudo), puis chaque réseau réglé dans la gestion
+    function contactNetGridHtml() {
+        const handles = contactTelegramHandles();
+        const tiles = (handles.length ? handles : [""]).map((h) => `<button class="contact-net-tile" data-net="telegram" data-tg="${escapeHtml(h)}" type="button">`
+            + `<span class="contact-net-icon" aria-hidden="true">${contactSvg(CONTACT_NET_ICONS.telegram)}</span>`
+            + `<span class="contact-net-text"><span class="contact-net-name">Telegram</span>${h ? `<span class="contact-net-sub">@${escapeHtml(h)}</span>` : ""}</span></button>`);
+        configuredSocialNetworks().forEach((n) => {
+            const icon = CONTACT_NET_ICONS[n.key] ? contactSvg(CONTACT_NET_ICONS[n.key]) : `<span class="contact-net-emoji">${n.icon}</span>`;
+            tiles.push(`<button class="contact-net-tile" data-net="${n.key}" type="button"><span class="contact-net-icon" aria-hidden="true">${icon}</span>`
+                + `<span class="contact-net-text"><span class="contact-net-name">${escapeHtml(n.name)}</span></span></button>`);
+        });
+        return tiles.join("");
+    }
+
+    function contactInfoRow(icon, title, sub) {
+        return `<div class="contact-info-row"><span class="contact-info-icon" aria-hidden="true">${contactSvg(CONTACT_ICONS[icon])}</span>`
+            + `<span class="contact-info-text"><span class="contact-info-name">${escapeHtml(title)}</span>${sub ? `<span class="contact-info-sub">${escapeHtml(sub)}</span>` : ""}</span></div>`;
+    }
+
+    // « Infos & conditions » : réglages réels (Commandes, villes, paiement), puis horaires et zone d'origine
+    function contactInfoRowsHtml() {
+        const s = orderSettings();
+        const rest = (state.config && state.config.restaurant) || {};
+        const rows = [];
+        if (s.meetup) rows.push(contactInfoRow("meetup", t("contactMeetup"), t("contactFree")));
+        // Livraison : frais de la ville du client (sinon ceux par défaut) et « offerte dès », comme le panier
+        const fee = s.feeEnabled ? catalogueCityFee(s.fee) : 0;
+        const feeText = fee > 0
+            ? `${formatPrice(fee)}${s.freeFrom > 0 ? ` · ${t("deliveryFreeFrom", { amount: formatPrice(s.freeFrom) })}` : ""}`
+            : t("contactDeliveryFree");
+        rows.push(contactInfoRow("delivery", t("deliveryTitle"), `${feeText} · ${t("contactDelay", { delay: CONTACT_FIXED_INFO.delay })}`));
+        if (s.postal) {
+            rows.push(contactInfoRow("postal", t("contactPostal"), s.postalOptions.map((o) => `${o.label} ${o.fee > 0 ? formatPrice(o.fee) : ct("postalFree")}`).join(" · ")));
+        }
+        // Commande minimum : restaurant.minOrder (même portée que deliveryFee) ; 0 ou absent = pas de ligne
+        const minOrder = Math.max(0, toPrice(rest.minOrder));
+        if (minOrder > 0) rows.push(contactInfoRow("bag", t("contactMinOrder", { amount: formatPrice(minOrder) }), ""));
+        if (multicityActive()) {
+            const names = catalogue.cities.map((c) => plainText(String(c.name || ""))).filter(Boolean);
+            rows.push(contactInfoRow("cities", names.length > 1 ? t("contactCitiesMany", { n: names.length }) : t("contactCitiesOne"), names.join(", ")));
+        }
+        rows.push(contactInfoRow("hours", t("contactHours"), CONTACT_FIXED_INFO.hours));
+        rows.push(contactInfoRow("zone", t("contactZone"), CONTACT_FIXED_INFO.zone));
+        rows.push(contactInfoRow("payment", t("payment"), s.crypto ? ct("paymentInfoCrypto", { coins: s.wallets.map((w) => w.coin).join(", ") }) : t("cashOnly")));
+        return rows.join("");
+    }
+
+    // Onglet Contact : textes, bulle contact_text, réseaux et infos ; onglet masqué si contact_tab_enabled vaut "false"
     function renderContactCard() {
         const adminCfg = (state.config && state.config.admin) || {};
-        if (els.infoContactText) {
+        const texts = {
+            "contact-hero-title": "contactHeroTitle", "contact-bubble-ask": "contactBubbleAsk", "contact-bubble-reply": "contactBubbleReply",
+            "contact-write-title": "contactWriteUs", "contact-report-label": "contactReport", "contact-info-title": "contactInfoTitle"
+        };
+        Object.keys(texts).forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = t(texts[id]);
+        });
+        const note = document.getElementById("contact-text");
+        if (note) {
             const text = plainText(String(adminCfg.contact_text || ""));
-            els.infoContactText.textContent = text;
-            els.infoContactText.hidden = !text;
+            note.textContent = text;
+            note.hidden = !text;
         }
-        if (els.infoNetworks) {
-            const networks = configuredSocialNetworks();
-            els.infoNetworks.innerHTML = networks.length
-                ? `<span class="contact-networks-label">${escapeHtml(t("contactAlso"))}</span>` + networks.map((n) => `
-                    <button class="btn ghost contact-net-btn" data-net="${n.key}" type="button"><span aria-hidden="true">${n.icon}</span> ${escapeHtml(n.name)}</button>`).join("")
-                : "";
-            els.infoNetworks.hidden = !networks.length;
+        if (els.contactNetGrid) {
+            const html = contactNetGridHtml();
+            if (html !== contactUi.grid) {
+                contactUi.grid = html;
+                els.contactNetGrid.innerHTML = html;
+            }
         }
-        // messages : la carte Support (tickets SAV) est dans la page Infos : l'onglet reste tant que le support est ouvert
+        if (els.contactInfoList) {
+            const html = contactInfoRowsHtml();
+            if (html !== contactUi.list) {
+                contactUi.list = html;
+                els.contactInfoList.innerHTML = html;
+            }
+        }
+        // messages : « Signaler un problème » (tickets SAV) est dans l'onglet Contact : il reste tant que le support est ouvert
         const tabOff = (adminCfg.contact_tab_enabled === "false" || adminCfg.contact_tab_enabled === false)
             && !isOn(adminCfg.tickets_enabled);
         if (els.bottomNav) els.bottomNav.classList.toggle("contact-tab-off", tabOff);
@@ -2159,20 +2437,11 @@
         if (els.profileStatOrders) els.profileStatOrders.textContent = t("statOrders");
         if (els.profileStatSpent) els.profileStatSpent.textContent = t("statSpent");
         if (els.profileStatMember) els.profileStatMember.textContent = t("statMember");
-        if (els.profileLanguageTitle) els.profileLanguageTitle.textContent = t("profileLanguage");
         if (els.profileOrdersTitle) els.profileOrdersTitle.textContent = t("profileOrders");
 
-        if (els.infoTitle) els.infoTitle.textContent = t("infoTitle");
-        if (els.infoDesc) els.infoDesc.textContent = t("infoDesc");
-        if (els.infoDeliveryTitle) els.infoDeliveryTitle.textContent = t("deliveryTitle");
-        if (els.infoHoursLabel) els.infoHoursLabel.textContent = t("hours");
-        if (els.infoDelayLabel) els.infoDelayLabel.textContent = t("delay");
-        if (els.infoZoneLabel) els.infoZoneLabel.textContent = t("zone");
-        if (els.infoContactTitle) els.infoContactTitle.textContent = t("contact");
-        if (els.contactBtn) els.contactBtn.textContent = t("contactBtn");
-        if (els.channelBtn) els.channelBtn.textContent = t("channelBtn");
-        if (els.infoPaymentTitle) els.infoPaymentTitle.textContent = t("payment");
-        if (els.infoPaymentDesc) els.infoPaymentDesc.textContent = t("cashOnly");
+        // Onglet Contact : textes posés par renderContactCard (applyShopTexts ci-dessus) ; libellé du bouton du canal
+        const channelLabel = document.getElementById("channel-btn-label");
+        if (channelLabel) channelLabel.textContent = t("channelBtn");
 
         if (els.detailCloseBtn) els.detailCloseBtn.textContent = t("detailBack");
         if (els.detailQtyTitle) els.detailQtyTitle.textContent = t("detailQty");
@@ -2982,27 +3251,25 @@
             });
         });
 
-        els.contactBtn.addEventListener("click", () => {
-            const username = getPrimaryTelegramUsername();
-            const url = `https://t.me/${username}`;
-            if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
-            else window.open(url, "_blank");
-        });
-
-        els.channelBtn.addEventListener("click", () => {
+        if (els.channelBtn) els.channelBtn.addEventListener("click", () => {
             const link = shopChannelLink();
             if (!link) return;
             if (tg && tg.openLink) tg.openLink(link);
             else window.open(link, "_blank");
         });
 
-        // Réseaux de la carte Contact et « Commander sur … » de la fiche produit : lien recalculé depuis la config au clic
-        if (els.infoNetworks) {
-            els.infoNetworks.addEventListener("click", (e) => {
+        // Onglet Contact : tuiles des réseaux (lien recalculé depuis la config au clic) et « Signaler un problème » ;
+        // « Commander sur … » de la fiche produit juste après
+        if (els.contactNetGrid) {
+            els.contactNetGrid.addEventListener("click", (e) => {
                 const btn = e.target.closest("[data-net]");
-                if (btn) openExternalLink(socialOrderLink(btn.dataset.net, ""));
+                if (!btn) return;
+                if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+                if (btn.dataset.net === "telegram") openTelegramContact(btn.dataset.tg);
+                else openExternalLink(socialOrderLink(btn.dataset.net, ""));
             });
         }
+        if (els.contactReportBtn) els.contactReportBtn.addEventListener("click", contactReportProblem);
         if (els.detailOrderLinks) {
             els.detailOrderLinks.addEventListener("click", (e) => {
                 const btn = e.target.closest("[data-net]");
@@ -3074,7 +3341,7 @@
             }
             if (!addToCart(state.selectedProduct, state.selectedWeight, state.selectedPrice)) return;
             // même libellé que la ligne du panier : « Produit (5G) » pour un palier, « Produit » sans palier
-            showToast(`${plainText(cartLineName(state.selectedProduct, state.selectedWeight))} ajouté au panier ! 🛒`);
+            showToast(t("cartAdded", { name: plainText(cartLineName(state.selectedProduct, state.selectedWeight)) }));
             closeProductDetail();
         });
 
@@ -3096,17 +3363,31 @@
             if (e.target === els.detailOverlay) closeProductDetail();
         });
 
-        if (els.languageGrid) {
-            els.languageGrid.addEventListener("click", (event) => {
-                const target = event.target.closest(".lang-option");
+        // Sélecteur de langue (en haut à droite de l'accueil) : menu ouvert / fermé, langue appliquée et mémorisée
+        if (els.shopLang && els.shopLangBtn && els.shopLangMenu) {
+            els.shopLangBtn.addEventListener("click", () => setShopLangMenu(els.shopLangMenu.hidden));
+            els.shopLangMenu.addEventListener("click", (event) => {
+                const target = event.target.closest(".shop-lang-option");
                 if (!target) return;
                 const nextLang = target.dataset.lang;
+                setShopLangMenu(false);
                 if (!["fr", "en", "de"].includes(nextLang)) return;
                 if (nextLang === state.language) return;
                 state.language = nextLang;
+                if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
                 renderLanguageSelection();
                 applyTranslations();
                 saveLocal();
+            });
+            // pointerdown et non click : sur iOS (WKWebView), un tap sur une zone non cliquable n'émet pas de click
+            document.addEventListener("pointerdown", (event) => {
+                if (!els.shopLangMenu.hidden && !els.shopLang.contains(event.target)) setShopLangMenu(false);
+            });
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape" && !els.shopLangMenu.hidden) {
+                    setShopLangMenu(false);
+                    els.shopLangBtn.focus();
+                }
             });
         }
 
@@ -3621,7 +3902,7 @@
                 { page: "image-fond", icon: "🖼️", title: "Image de fond", load: [loadAdminSettingsData, loadBotStatusData], keywords: "fond image arrière-plan ordinateur source lien startapp" },
                 { page: "musique", icon: "🎵", title: "Musique", load: [loadAdminSettingsData, loadBotStatusData], keywords: "musique playlist son mp3 lecteur" },
                 { page: "devise", icon: "💶", title: "Devise", load: [loadAdminSettingsData], keywords: "devise monnaie euro dollar symbole" },
-                { page: "reseaux", icon: "🔗", title: "Réseaux & contact", load: [loadAdminSettingsData], keywords: "réseaux sociaux telegram whatsapp signal snapchat instagram potato luffa contact onglet infos" },
+                { page: "reseaux", icon: "🔗", title: "Réseaux & contact", load: [loadAdminSettingsData], keywords: "réseaux sociaux telegram whatsapp signal snapchat instagram potato luffa contact onglet contact infos signaler problème" },
                 { page: "mode-ferme", icon: "🔒", title: "Mode fermé & horaires", load: [loadAdminSettingsData], keywords: "mode fermé fermeture ouverture horaires programmée fermer la boutique" }
             ]
         },
@@ -4429,8 +4710,8 @@
             const parts = [];
             if (invalid.length) parts.push(`⚠ Format invalide, pas de bouton : ${invalid.join(", ")}.`);
             parts.push(tabToggle && !tabToggle.checked
-                ? "Onglet Infos masqué dans la boutique."
-                : `Onglet Infos : bouton Contacter (Telegram)${shown.length ? ` + ${shown.join(", ")}` : ""}.`);
+                ? "Onglet Contact masqué dans la boutique."
+                : `Onglet Contact : Telegram${shown.length ? ` + ${shown.join(", ")}` : ""}.`);
             note.textContent = parts.join(" ");
         }
     }
@@ -11990,7 +12271,7 @@ class CanvasBackgroundEngine {
                 const nets = SOCIAL_NETWORKS.filter((n) => saved[n.key]).length;
                 const parts = [saved.telegram_username ? `@${saved.telegram_username}` : "Telegram non réglé"];
                 if (nets) parts.push(`+ ${nets} réseau${nets > 1 ? "x" : ""}`);
-                if (saved.contact_tab_enabled === false) parts.push("onglet Infos masqué");
+                if (saved.contact_tab_enabled === false) parts.push("onglet Contact masqué");
                 return { text: parts.join(" · "), tone: saved.telegram_username ? "" : "warn" };
             }
             case "mode-ferme": {
@@ -12310,7 +12591,7 @@ class CanvasBackgroundEngine {
 
     function applyShopLogo(path) {
         const src = shopLogoSrc(path);
-        document.querySelectorAll(".brand-logo, .intro-logo, #gst-logo-img, .gst-loader-logo-img").forEach((img) => {
+        document.querySelectorAll(".brand-logo, .intro-logo, .contact-hero-logo, #gst-logo-img, .gst-loader-logo-img").forEach((img) => {
             // Fichier introuvable (logo remplacé depuis la dernière visite, voir applyStoredIntroAppearance) : logo par défaut
             img.onerror = src === "logo.png" ? null : () => {
                 img.onerror = null;
@@ -12466,7 +12747,7 @@ class CanvasBackgroundEngine {
         return backgroundTargetFor(shopStartSource(), parseBackgroundTargets(adm.background_targets)) || path;
     }
 
-    // ===== SUPPORT CLIENT : tickets SAV depuis la page Infos (équipe Messages) =====
+    // ===== SUPPORT CLIENT : tickets SAV depuis l'onglet Contact (« Signaler un problème », équipe Messages) =====
     // Routes de willy.py (initData signée + accès autorisé, comme une commande) : GET /support/ticket,
     // POST /support/ticket/open, /support/ticket/message, /support/ticket/close. La carte n'existe que si tickets_enabled.
     const SUPPORT_TEXT_MAX = 1000;
@@ -12596,6 +12877,8 @@ class CanvasBackgroundEngine {
         if (!card || !body) return;
         const enabled = supportEnabled();
         card.hidden = !enabled;
+        // onglet Contact : repliée (vue « button »), la carte laisse la place à la ligne « Signaler un problème »
+        card.classList.toggle("is-idle", supportUi.view === "button");
         const title = document.getElementById("support-title");
         const desc = document.getElementById("support-desc");
         if (title) title.textContent = supportT("title");
@@ -12758,6 +13041,44 @@ class CanvasBackgroundEngine {
         }
     }
 
+    // Onglet Contact affiché : ticket en cours chargé tout de suite (la carte repliée n'est pas visible pour l'IntersectionObserver)
+    function supportPreload() {
+        if (supportUi.seen || !supportEnabled() || accessLocked()) return;
+        supportUi.seen = true;
+        supportLoad(true);
+    }
+
+    // « Signaler un problème » : ticket SAV (formulaire, ou fil du ticket en cours) si le support est ouvert, sinon Telegram
+    async function contactReportProblem() {
+        if (contactUi.reportBusy) return;
+        if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+        if (!supportEnabled()) {
+            openTelegramContact();
+            return;
+        }
+        const row = els.contactReportBtn;
+        contactUi.reportBusy = true;
+        if (row) row.classList.add("is-loading");
+        try {
+            supportUi.seen = true;
+            // chargement déjà lancé (onglet ouvert) : on attend sa réponse plutôt que d'en lancer un second
+            for (let i = 0; supportUi.loading && i < 100; i += 1) await new Promise((resolve) => setTimeout(resolve, 150));
+            if (!supportUi.loaded) await supportLoad(false);
+            if (!supportUi.loaded || !supportEnabled()) return;
+            if (supportUi.view === "button") { // une saisie déjà ouverte n'est pas effacée
+                supportUi.view = supportUi.ticket && supportUi.ticket.status === "open" ? "thread" : "form";
+                renderSupportCard(true);
+            }
+            const card = document.getElementById("support-card");
+            if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
+            const field = document.querySelector("#support-body [data-support-text]");
+            if (field && supportUi.view === "form") field.focus({ preventScroll: true });
+        } finally {
+            contactUi.reportBusy = false;
+            if (row) row.classList.remove("is-loading");
+        }
+    }
+
     // Config relue (retour sur l'app, toutes les 45 s…) : la carte suit tickets_enabled ; fil du ticket ouvert rafraîchi
     function syncSupportCard() {
         if (state.config !== supportUi.cfg) {
@@ -12795,11 +13116,12 @@ class CanvasBackgroundEngine {
             });
             observer.observe(card);
         }
-        // Bouton « 💬 Voir le ticket » d'une réponse du support dans Telegram (?support=1) : page Infos, ticket ouvert
+        // Bouton « 💬 Voir le ticket » d'une réponse du support dans Telegram (?support=1) : onglet Contact, ticket ouvert
+        // (seen posé avant switchPage : supportPreload ne lance pas un chargement silencieux qui bloquerait celui-ci)
         try {
             if (new URLSearchParams(window.location.search).get("support") === "1" && supportEnabled() && !accessLocked()) {
-                switchPage("info");
                 supportUi.seen = true;
+                switchPage("info");
                 supportLoad(false).then(() => {
                     if (!supportUi.loaded) return;
                     supportUi.view = supportUi.ticket ? "thread" : "form";
@@ -12826,11 +13148,17 @@ class CanvasBackgroundEngine {
             cityChange: "Changer",
             cityNone: "Aucune ville choisie",
             cityLine: "Ville : {city}",
+            headerProduct: "produit",
+            headerProducts: "produits",
+            headerCategory: "catégorie",
+            headerCategories: "catégories",
+            headerOnline: "En ligne",
             like: "J'aime",
             unlike: "Je n'aime plus",
             liked: "Aimé",
             likeTelegram: "Ouvre la boutique depuis Telegram pour aimer un produit.",
             likeError: "Like non enregistré, réessaie.",
+            likesCount: "{count} j'aime",
             promoDefault: "Promo",
             promoLine: "{label} -{pct}% : -{amount}",
             postal: "Envoi postal",
@@ -12868,11 +13196,17 @@ class CanvasBackgroundEngine {
             cityChange: "Change",
             cityNone: "No city selected",
             cityLine: "City: {city}",
+            headerProduct: "product",
+            headerProducts: "products",
+            headerCategory: "category",
+            headerCategories: "categories",
+            headerOnline: "Online",
             like: "Like",
             unlike: "Unlike",
             liked: "Liked",
             likeTelegram: "Open the shop from Telegram to like a product.",
             likeError: "Like not saved, try again.",
+            likesCount: "{count} likes",
             promoDefault: "Promo",
             promoLine: "{label} -{pct}%: -{amount}",
             postal: "Postal",
@@ -12910,11 +13244,17 @@ class CanvasBackgroundEngine {
             cityChange: "Ändern",
             cityNone: "Keine Stadt gewählt",
             cityLine: "Stadt: {city}",
+            headerProduct: "Produkt",
+            headerProducts: "Produkte",
+            headerCategory: "Kategorie",
+            headerCategories: "Kategorien",
+            headerOnline: "Online",
             like: "Gefällt mir",
             unlike: "Gefällt mir nicht mehr",
             liked: "Gefällt dir",
             likeTelegram: "Öffne den Shop über Telegram, um ein Produkt zu liken.",
             likeError: "Like nicht gespeichert, versuche es erneut.",
+            likesCount: "{count} Likes",
             promoDefault: "Promo",
             promoLine: "{label} -{pct}%: -{amount}",
             postal: "Postversand",
@@ -13127,9 +13467,61 @@ class CanvasBackgroundEngine {
         if (name) name.textContent = city ? `📍 ${city.name}` : ct("cityNone");
     }
 
+    // ---- En-tête de la boutique : pastille « en ligne », compteur du catalogue, ville du client ----
+    // Boutique ouverte = ni fermeture manuelle ni fermeture programmée (closed_state de willy.py). Config de la gestion :
+    // closed_now (admin_status_fields) ; sinon closed_mode_enabled, et pour l'horaire la dernière décision du serveur
+    // (gate « closed » d'un client bloqué, access.bypassed d'un admin)
+    function shopOnlineNow() {
+        const adm = catalogueAdminCfg();
+        if (typeof adm.closed_now === "boolean") return !adm.closed_now;
+        if (isOn(adm.closed_mode_enabled)) return false;
+        if (!isOn(adm.closed_schedule_enabled)) return true;
+        const access = state.access || readAccess(null);
+        return !((access.gate && access.gate.code === "closed") || access.bypassed.includes("closed"));
+    }
+
+    function renderShopHeader() {
+        // Pastille « en ligne » : celle du logo et toute autre .shop-online-dot de la page (ex. carte Contact)
+        const online = shopOnlineNow();
+        document.querySelectorAll(".shop-online-dot").forEach((dot) => {
+            dot.hidden = !online;
+            dot.setAttribute("aria-label", ct("headerOnline"));
+            dot.title = ct("headerOnline");
+        });
+        // Compteur : produits et catégories affichés (même filtre ville que la grille et les onglets) ; rien si vide
+        const products = state.products.filter(catalogueProductVisible).length;
+        const categories = state.categories.filter(catalogueCategoryVisible).length;
+        const pill = document.getElementById("shop-stats-pill");
+        const text = document.getElementById("shop-stats-text");
+        if (pill) pill.hidden = products === 0;
+        if (text && products) {
+            text.innerHTML = `<strong>${products}</strong> ${escapeHtml(ct(products === 1 ? "headerProduct" : "headerProducts"))}`
+                + (categories ? `<span class="shop-stats-sep" aria-hidden="true">·</span><strong>${categories}</strong> ${escapeHtml(ct(categories === 1 ? "headerCategory" : "headerCategories"))}` : "");
+        }
+        // Ville du client (option Villes active) et « changer » qui rouvre l'écran de choix ; mêmes conditions que le profil
+        const row = document.getElementById("shop-city-row");
+        const showCity = multicityActive() && Boolean(getAdminInitData());
+        if (row) {
+            row.hidden = !showCity;
+            if (showCity) {
+                const city = currentCity();
+                const name = document.getElementById("shop-city-name");
+                const change = document.getElementById("shop-city-change");
+                if (name) name.textContent = city ? city.name : ct("cityNone");
+                if (change) {
+                    change.textContent = ct("cityChange");
+                    change.setAttribute("aria-label", `${ct("cityChange")} — ${ct("cityMine")}`);
+                }
+            }
+        }
+        const meta = document.getElementById("shop-meta");
+        if (meta) meta.hidden = (!pill || pill.hidden) && (!row || row.hidden);
+    }
+
     // Appelé à chaque application de la config (applyShopTexts) : profil, écran de choix obligatoire si besoin
     function applyCatalogueShop() {
         renderProfileCity();
+        renderShopHeader(); // en-tête : pastille en ligne, compteur produits/catégories, ville + « changer »
         if (cityPickerNeeded()) {
             if (!catalogue.pickerOpen) openCityPicker(false);
             else renderCityPicker();
@@ -13159,8 +13551,10 @@ class CanvasBackgroundEngine {
 
     function cataloguePriceChip(start) {
         const pct = promoPercent();
-        if (!pct || start <= 0) return `<span class="price-chip">${t("fromPrice", { price: formatPrice(start) })}</span>`;
-        return `<span class="price-chip price-chip-promo"><s class="price-old">${formatPrice(start)}</s> ${t("fromPrice", { price: formatPrice(promoPrice(start)) })}</span>`;
+        // montant et devise insécables : seul l'espace après « Dès » peut passer à la ligne
+        const nb = (v) => formatPrice(v).replace(/ (?=\S+$)/, "\u00a0");
+        if (!pct || start <= 0) return `<span class="price-chip">${t("fromPrice", { price: nb(start) })}</span>`;
+        return `<span class="price-chip price-chip-promo"><s class="price-old">${nb(start)}</s> ${t("fromPrice", { price: nb(promoPrice(start)) })}</span>`;
     }
 
     // Prix d'un palier dans la fiche produit : barré + prix remisé pendant la promotion
@@ -13182,17 +13576,27 @@ class CanvasBackgroundEngine {
         return Math.max(0, Number(catalogue.likes[String(pid)]) || 0);
     }
 
+    // Cœur SVG : contour, plein une fois aimé ; partagé par le bouton rond et la pastille « ♥ N » des cartes
+    const LIKE_HEART_SVG = `<svg class="like-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20.5C12 20.5 3 15 3 9.2 3 6.3 5.2 4.2 7.8 4.2c1.8 0 3.3 1 4.2 2.5.9-1.5 2.4-2.5 4.2-2.5 2.6 0 4.8 2.1 4.8 5 0 5.8-9 11.3-9 11.3z"/></svg>`;
+
+    // Bouton rond (haut à droite de l'image) : aimer / ne plus aimer
     function likeButtonHtml(pid) {
         const liked = catalogue.myLikes.has(Number(pid));
-        return `<button class="card-like-btn${liked ? " is-liked" : ""}" data-like-pid="${escapeHtml(String(pid))}" type="button" aria-pressed="${liked}" aria-label="${escapeHtml(ct(liked ? "unlike" : "like"))}"><span class="like-heart" aria-hidden="true">${liked ? "♥" : "♡"}</span><span class="like-count">${likeCount(pid)}</span></button>`;
+        return `<button class="card-like-btn${liked ? " is-liked" : ""}" data-like-pid="${escapeHtml(String(pid))}" type="button" aria-pressed="${liked}" aria-label="${escapeHtml(ct(liked ? "unlike" : "like"))}">${LIKE_HEART_SVG}</button>`;
     }
 
-    // Pastille de la promotion et cœur sur la carte produit
+    // Pastille « ♥ N » (likes de tous les clients), masquée tant que personne n'a aimé le produit
+    function likeCountHtml(pid) {
+        const count = likeCount(pid);
+        return `<span class="card-like-count" data-like-count-pid="${escapeHtml(String(pid))}" role="img" aria-label="${escapeHtml(ct("likesCount", { count }))}"${count > 0 ? "" : " hidden"}>${LIKE_HEART_SVG}<span class="like-count" aria-hidden="true">${count}</span></span>`;
+    }
+
+    // Carte produit : pastilles en bas de l'image (promotion « -X% », likes « ♥ N ») et cœur rond en haut à droite
     function catalogueCardExtras(product) {
         const pct = promoPercent();
-        let html = pct ? `<span class="promo-pill">-${pct}%</span>` : "";
-        if (likesEnabled() && product && product.id != null) html += likeButtonHtml(product.id);
-        return html;
+        const likes = likesEnabled() && Boolean(product) && product.id != null;
+        const pills = (pct ? `<span class="promo-pill">-${pct}%</span>` : "") + (likes ? likeCountHtml(product.id) : "");
+        return (pills ? `<div class="card-media-pills">${pills}</div>` : "") + (likes ? likeButtonHtml(product.id) : "");
     }
 
     function renderDetailLike(product) {
@@ -13216,10 +13620,15 @@ class CanvasBackgroundEngine {
             btn.classList.toggle("is-liked", liked);
             btn.setAttribute("aria-pressed", String(liked));
             btn.setAttribute("aria-label", ct(liked ? "unlike" : "like"));
-            const heart = btn.querySelector(".like-heart");
-            const count = btn.querySelector(".like-count");
-            if (heart) heart.textContent = liked ? "♥" : "♡";
-            if (count) count.textContent = String(likeCount(pid));
+        });
+        // Pastilles « ♥ N » des cartes : compteur à jour, masquées à 0
+        document.querySelectorAll(".card-like-count[data-like-count-pid]").forEach((pill) => {
+            if (Number(pill.dataset.likeCountPid) !== pid) return;
+            const count = likeCount(pid);
+            pill.hidden = count <= 0;
+            pill.setAttribute("aria-label", ct("likesCount", { count }));
+            const num = pill.querySelector(".like-count");
+            if (num) num.textContent = String(count);
         });
         if (state.selectedProduct && Number(state.selectedProduct.id) === pid) renderDetailLike(state.selectedProduct);
     }
@@ -13241,6 +13650,8 @@ class CanvasBackgroundEngine {
             refreshLikeButtons(pid);
         };
         apply(!wasLiked, before + (wasLiked ? -1 : 1));
+        // petit « pop » du cœur des cartes quand le produit vient d'être aimé
+        if (!wasLiked) document.querySelectorAll(`.card-like-btn[data-like-pid="${pid}"]`).forEach((b) => replayAnimationClass(b, "is-popping"));
         if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
         catalogue.likeBusy.add(pid);
         try {
@@ -13443,12 +13854,7 @@ class CanvasBackgroundEngine {
             note.hidden = s.ordersEnabled;
             note.textContent = t("ordersClosedToast");
         }
-        // Page Infos : moyens de paiement réellement acceptés
-        if (els.infoPaymentDesc) {
-            els.infoPaymentDesc.textContent = s.crypto
-                ? ct("paymentInfoCrypto", { coins: s.wallets.map((w) => w.coin).join(", ") })
-                : t("cashOnly");
-        }
+        // Moyens de paiement acceptés : ligne « Paiement » de l'onglet Contact (renderContactCard)
     }
 
     // Champs du mode choisi, vérifiés comme le fera willy.py : { error } ou { fields, lines } (lignes du message Telegram)
@@ -13505,9 +13911,16 @@ class CanvasBackgroundEngine {
     }
 
     function initCatalogueShop() {
-        // Cœurs des cartes : pris avant le clic de la carte (qui ouvrirait la fiche produit)
+        // Cœurs et boutons panier des cartes : pris avant le clic de la carte (qui ouvrirait la fiche produit)
         if (els.productGrid) {
             els.productGrid.addEventListener("click", (e) => {
+                const cartBtn = e.target.closest("[data-cart-pid]");
+                if (cartBtn) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    addFromProductCard(cartBtn.dataset.cartPid, cartBtn);
+                    return;
+                }
                 const btn = e.target.closest("[data-like-pid]");
                 if (!btn) return;
                 e.stopPropagation();
@@ -13528,6 +13941,13 @@ class CanvasBackgroundEngine {
         }
         const changeCity = document.getElementById("profile-city-change");
         if (changeCity) changeCity.addEventListener("click", () => openCityPicker(true));
+        // « changer » de l'en-tête : même écran de choix que le profil (fermable)
+        const headerCity = document.getElementById("shop-city-change");
+        if (headerCity) headerCity.addEventListener("click", () => {
+            if (accessLocked()) return;
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+            openCityPicker(true);
+        });
         // Panier : type d'envoi (frais), date du créneau (heures passées), paiement, copie de l'adresse crypto
         const postalSelect = document.getElementById("cart-postal-option");
         if (postalSelect) postalSelect.addEventListener("change", renderCart);
@@ -13562,7 +13982,7 @@ class CanvasBackgroundEngine {
     const fid = {
         me: null, loading: null, lastLoad: 0, clockOffset: 0, flagsKey: "",
         selection: { points: 0, code: "" }, spinning: false, rotation: 0, lastWin: null,
-        startRefTried: false, reviewPhoto: "", reviewPhotoBusy: false, reviewPreviewUrl: "", dom: false, slotHtml: {}
+        startRefTried: false, reviewPhoto: "", reviewPhotoBusy: false, reviewPreviewUrl: "", dom: false, slotHtml: {}, wheelOpen: false
     };
     const FID_REFRESH_MS = 15000;
     const FID_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
@@ -13575,7 +13995,7 @@ class CanvasBackgroundEngine {
             shareText: "Rejoins la boutique avec mon lien 🎁", enterCode: "Tu as un code parrain ?", codePlaceholder: "Code à 6 caractères",
             validate: "Valider", rewardsTitle: "Tes points en réductions", rewardLine: "{points} pts → −{amount}",
             rewardsHint: "À choisir dans ton panier.", codesTitle: "Mes codes de réduction", codeUntil: "jusqu'au {date}",
-            wheelTitle: "Roue de la fortune", spin: "Tourner la roue", spinning: "La roue tourne…", nextSpin: "Prochain tour dans {wait}",
+            wheelTitle: "Roue de la fortune", wheelAvailable: "Un spin disponible — tente ta chance !", spin: "Tourner la roue", spinning: "La roue tourne…", nextSpin: "Prochain tour dans {wait}",
             wheelReady: "Un tour t'attend !", wheelWon: "Gagné : {label} 🎉", wheelLost: "Pas de chance cette fois…",
             wheelCode: "Ton code {code} t'attend dans ton panier (jusqu'au {date}).", wheelPoints: "Solde : {n} points.",
             wheelManual: "Le bot t'a envoyé les détails pour récupérer ton lot.", contestTitle: "Jeu concours",
@@ -13599,7 +14019,7 @@ class CanvasBackgroundEngine {
             shareText: "Join the shop with my link 🎁", enterCode: "Got a referral code?", codePlaceholder: "6-character code",
             validate: "Apply", rewardsTitle: "Your points as discounts", rewardLine: "{points} pts → −{amount}",
             rewardsHint: "Pick one in your cart.", codesTitle: "My discount codes", codeUntil: "until {date}",
-            wheelTitle: "Wheel of fortune", spin: "Spin the wheel", spinning: "Spinning…", nextSpin: "Next spin in {wait}",
+            wheelTitle: "Wheel of fortune", wheelAvailable: "A spin is available — try your luck!", spin: "Spin the wheel", spinning: "Spinning…", nextSpin: "Next spin in {wait}",
             wheelReady: "A spin is waiting for you!", wheelWon: "You won: {label} 🎉", wheelLost: "No luck this time…",
             wheelCode: "Your code {code} is waiting in your cart (until {date}).", wheelPoints: "Balance: {n} points.",
             wheelManual: "The bot sent you how to get your prize.", contestTitle: "Giveaway",
@@ -13623,7 +14043,7 @@ class CanvasBackgroundEngine {
             shareText: "Komm mit meinem Link in den Shop 🎁", enterCode: "Hast du einen Empfehlungscode?", codePlaceholder: "Code mit 6 Zeichen",
             validate: "Einlösen", rewardsTitle: "Deine Punkte als Rabatt", rewardLine: "{points} Pkt → −{amount}",
             rewardsHint: "Im Warenkorb auswählen.", codesTitle: "Meine Rabattcodes", codeUntil: "bis {date}",
-            wheelTitle: "Glücksrad", spin: "Rad drehen", spinning: "Das Rad dreht sich…", nextSpin: "Nächste Drehung in {wait}",
+            wheelTitle: "Glücksrad", wheelAvailable: "Eine Drehung verfügbar — versuch dein Glück!", spin: "Rad drehen", spinning: "Das Rad dreht sich…", nextSpin: "Nächste Drehung in {wait}",
             wheelReady: "Eine Drehung wartet auf dich!", wheelWon: "Gewonnen: {label} 🎉", wheelLost: "Diesmal kein Glück…",
             wheelCode: "Dein Code {code} wartet im Warenkorb (bis {date}).", wheelPoints: "Guthaben: {n} Punkte.",
             wheelManual: "Der Bot hat dir die Details zu deinem Gewinn geschickt.", contestTitle: "Gewinnspiel",
@@ -13711,6 +14131,10 @@ class CanvasBackgroundEngine {
             });
             fideliteApplyConfig();
             fidRefresh(true);
+            // Roue (profil) : temps restant et pastille « tour disponible » tenus à jour pendant que le profil est affiché
+            setInterval(() => {
+                if (document.visibilityState === "visible" && document.body.dataset.page === "profile" && !fid.spinning) fidRenderProfile();
+            }, 30000);
         } catch (err) {
             console.warn("Fidélité :", err);
         }
@@ -13758,7 +14182,8 @@ class CanvasBackgroundEngine {
             zone.className = "loyalty-zone";
             zone.id = "loyalty-zone";
             zone.innerHTML = ["rank", "codes", "wheel", "contest", "review"].map((k) => `<div id="loyalty-slot-${k}"></div>`).join("");
-            const anchor = profileWrap.querySelector(".profile-language-card");
+            // Avant la carte Notifications (sinon avant Mes Commandes) : roue et concours restent au-dessus des alertes
+            const anchor = profileWrap.querySelector(":scope > .profile-watch-card") || profileWrap.querySelector(":scope > .profile-orders-card");
             profileWrap.insertBefore(zone, anchor || null);
             zone.addEventListener("click", fidOnZoneClick);
             zone.addEventListener("submit", fidOnZoneSubmit);
@@ -13857,7 +14282,9 @@ class CanvasBackgroundEngine {
         };
         slot("rank", me && me.account ? fidRankHtml(me) : "");
         slot("codes", me && Array.isArray(me.codes) && me.codes.length ? fidCodesHtml(me.codes) : "");
-        if (!fid.spinning) slot("wheel", me && me.wheel && me.wheel.enabled && me.wheel.prizes.length ? fidWheelCardHtml(me.wheel) : "");
+        const wheelOn = Boolean(me && me.wheel && me.wheel.enabled && me.wheel.prizes.length);
+        if (!wheelOn) fid.wheelOpen = false; // roue coupée dans la gestion : repliée la prochaine fois
+        if (!fid.spinning) slot("wheel", wheelOn ? fidWheelCardHtml(me.wheel) : "");
         slot("contest", me && me.contest ? fidContestHtml(me.contest) : "");
         slot("review", f.reviews && !f.tab ? `
             <article class="card panel loyalty-card">
@@ -13953,21 +14380,37 @@ class CanvasBackgroundEngine {
             </div>`;
     }
 
+    // Icône de la carte Roue (pièce), traits en currentColor
+    const FID_WHEEL_ICON = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2c-.4-1-1.5-1.7-2.8-1.7-1.6 0-2.8.9-2.8 2.1 0 2.9 5.6 1.6 5.6 4.6 0 1.2-1.2 2.2-2.8 2.2-1.4 0-2.5-.7-2.9-1.8M12 6v1.5M12 16.5V18"/></svg>';
+
+    // Roue (profil) : ligne compacte (icône, titre, « un spin disponible » ou temps restant, chevron, pastille quand un
+    // tour attend) ; la roue existante se déplie dessous au toucher et reste ouverte pendant qu'elle tourne
     function fidWheelCardHtml(w) {
         const wait = w.next_spin_at ? w.next_spin_at - fidNow() : 0;
         const ready = wait <= 0;
+        const open = fid.wheelOpen || fid.spinning;
         let result = "";
         if (fid.lastWin) {
             const r = fid.lastWin;
             result = `<p class="loyalty-wheel-result">${escapeHtml(r.title)}</p>${r.detail ? `<p class="muted">${escapeHtml(r.detail)}</p>` : ""}`;
         }
+        const sub = ready ? fidT("wheelAvailable") : fidT("nextSpin", { wait: fidWait(wait) });
         return `
-            <article class="card panel loyalty-card loyalty-wheel-card">
-                <div class="profile-section-head"><h4>🎡 ${escapeHtml(fidT("wheelTitle"))}</h4></div>
-                ${fidWheelHtml(w.prizes)}
-                <button class="btn primary loyalty-wide-btn" data-fid-action="spin" type="button" ${ready && !fid.spinning ? "" : "disabled"}>${escapeHtml(fid.spinning ? fidT("spinning") : fidT("spin"))}</button>
-                <p class="muted loyalty-center">${escapeHtml(ready ? fidT("wheelReady") : fidT("nextSpin", { wait: fidWait(wait) }))}</p>
-                ${result}
+            <article class="card panel loyalty-card loyalty-wheel-card${open ? " is-open" : ""}">
+                <button class="wheel-entry" data-fid-action="wheel-toggle" type="button" aria-expanded="${open ? "true" : "false"}">
+                    <span class="wheel-entry-icon" aria-hidden="true">${FID_WHEEL_ICON}${ready ? `<span class="wheel-entry-dot"></span>` : ""}</span>
+                    <span class="wheel-entry-text">
+                        <strong>${escapeHtml(fidT("wheelTitle"))}</strong>
+                        <span class="wheel-entry-sub${ready ? " is-ready" : ""}">${escapeHtml(sub)}</span>
+                    </span>
+                    <span class="wheel-entry-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+                </button>
+                ${open ? `
+                <div class="loyalty-wheel-body">
+                    ${fidWheelHtml(w.prizes)}
+                    <button class="btn primary loyalty-wide-btn" data-fid-action="spin" type="button" ${ready && !fid.spinning ? "" : "disabled"}>${escapeHtml(fid.spinning ? fidT("spinning") : fidT("spin"))}</button>
+                    ${result}
+                </div>` : ""}
             </article>`;
     }
 
@@ -14001,6 +14444,13 @@ class CanvasBackgroundEngine {
             const url = `https://t.me/share/url?url=${encodeURIComponent(a.link)}&text=${encodeURIComponent(fidT("shareText"))}`;
             if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
             else window.open(url, "_blank");
+        } else if (action === "wheel-toggle") {
+            if (fid.spinning) return;
+            fid.wheelOpen = !fid.wheelOpen;
+            fidRenderProfile();
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+            const body = fid.wheelOpen ? document.querySelector("#loyalty-slot-wheel .loyalty-wheel-body") : null;
+            if (body && body.scrollIntoView) body.scrollIntoView({ behavior: "smooth", block: "nearest" });
         } else if (action === "spin") {
             fidSpin();
         } else if (action === "join") {
@@ -14325,6 +14775,115 @@ class CanvasBackgroundEngine {
         return fid.reviewPhoto ? { photo: fid.reviewPhoto } : {};
     }
 
+    // ===== ALERTES — BOUTIQUE (profil › Notifications : nouveaux produits, promotions) =====
+    // Préférences lues par POST /watch/prefs et enregistrées dès qu'un interrupteur bouge (POST /watch/save) :
+    // initData signée, accès autorisé et limite de fréquence vérifiés par willy.py, qui seul envoie les messages du
+    // bot. Alertes coupées par défaut ; carte masquée hors de Telegram, accès refusé ou serveur injoignable.
+    const watch = { prefs: null, loading: null, lastLoad: 0, busy: {}, bound: false };
+    const WATCH_REFRESH_MS = 15000;
+    const WATCH_KINDS = ["new_products", "promos"];
+
+    function watchAvailable() {
+        return Boolean(getAdminInitData()) && !(state.access && state.access.allowed === false);
+    }
+
+    function initWatchShop() {
+        try {
+            const card = document.getElementById("profile-watch-card");
+            if (!card || watch.bound) return;
+            watch.bound = true;
+            card.addEventListener("change", (e) => {
+                const input = e.target.closest("input[data-watch-kind]");
+                if (input) watchSave(input.dataset.watchKind, input.checked, input);
+            });
+            // Profil ouvert ou mini-app revenue au premier plan : préférences relues (au plus toutes les 15 s)
+            document.querySelectorAll('.tab-btn[data-page="profile"]').forEach((btn) => {
+                btn.addEventListener("click", () => watchRefresh(false));
+            });
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "visible") watchRefresh(false);
+            });
+            watchApplyConfig();
+            watchRefresh(true);
+        } catch (err) {
+            console.warn("Alertes :", err);
+        }
+    }
+
+    function watchRefresh(force) {
+        if (watch.loading) return watch.loading;
+        if (!force && Date.now() - watch.lastLoad < WATCH_REFRESH_MS) return Promise.resolve();
+        if (!watchAvailable()) {
+            watchRender();
+            return Promise.resolve();
+        }
+        watch.loading = (async () => {
+            const res = await fidPost("/watch/prefs", {});
+            watch.lastLoad = Date.now();
+            if (res.ok && res.data && res.data.prefs) watch.prefs = res.data.prefs;
+            watchRender();
+        })().finally(() => { watch.loading = null; });
+        return watch.loading;
+    }
+
+    async function watchSave(kind, enabled, input) {
+        if (!WATCH_KINDS.includes(kind) || watch.busy[kind]) return;
+        watch.busy[kind] = true;
+        input.disabled = true;
+        const res = await fidPost("/watch/save", { kind, enabled });
+        watch.busy[kind] = false;
+        input.disabled = false;
+        if (res.ok && res.data && res.data.prefs) {
+            watch.prefs = res.data.prefs;
+            watch.lastLoad = Date.now();
+            showToast(enabled ? t("watchOn") : t("watchOff"), enabled ? undefined : "info");
+            if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+            // Client inconnu des bots (jamais de /start) : Telegram propose d'autoriser leurs messages (Bot API 6.9+)
+            const user = getTelegramUser();
+            if (enabled && res.data.reach === false && !(user && user.allows_write_to_pm === true)
+                && tg && typeof tg.requestWriteAccess === "function" && tgSupports("6.9")) {
+                try {
+                    tg.requestWriteAccess((granted) => {
+                        if (!granted) showToast(t("watchNeedBot"), "info");
+                    });
+                } catch (_) { }
+            }
+        } else if (res.error) {
+            showToast(res.error, "error");
+        }
+        watchRender(); // interrupteur réaligné sur l'état enregistré (échec = position d'avant)
+    }
+
+    // Appelé par applyShopTexts (rechargement de /config, changement de langue) et au démarrage
+    function watchApplyConfig() {
+        try {
+            const texts = {
+                "watch-title": "watchTitle", "watch-subtitle": "watchSubtitle", "watch-new-title": "watchNewTitle",
+                "watch-new-desc": "watchNewDesc", "watch-promo-title": "watchPromoTitle", "watch-promo-desc": "watchPromoDesc",
+                "watch-hint": "watchHint"
+            };
+            Object.keys(texts).forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = t(texts[id]);
+            });
+            // Accès autorisé après coup (écran d'accès levé) : préférences relues (au plus toutes les 15 s)
+            if (watch.bound && !watch.prefs && watchAvailable()) watchRefresh(false);
+            watchRender();
+        } catch (err) {
+            console.warn("Alertes :", err);
+        }
+    }
+
+    function watchRender() {
+        const card = document.getElementById("profile-watch-card");
+        if (!card) return;
+        card.hidden = !watchAvailable() || !watch.prefs;
+        const prefs = watch.prefs || {};
+        card.querySelectorAll("input[data-watch-kind]").forEach((input) => {
+            if (!watch.busy[input.dataset.watchKind]) input.checked = prefs[input.dataset.watchKind] === true;
+        });
+    }
+
     async function bootstrap() {
         try {
             // Lecture du CloudStorage pendant le chargement de la config (adresse du tunnel changée = localStorage vide)
@@ -14350,9 +14909,10 @@ class CanvasBackgroundEngine {
             bindMusicPlayer();
             initBotShop();
             initFideliteShop(); // fidelite : profil (rang, parrainage, roue, concours), panier et avis
+            initWatchShop(); // alertes : carte Notifications du profil (nouveaux produits, promotions)
             // Accès refusé par le serveur : écran d'accès sous l'intro (le catalogue n'a pas été envoyé)
             applyAccessState();
-            initMessagesShop(); // équipe Messages : carte Support (tickets SAV) de la page Infos
+            initMessagesShop(); // équipe Messages : carte Support (tickets SAV) de l'onglet Contact
         } catch (error) {
             document.body.innerHTML = `<div style="padding:20px;color:#fff">Erreur: ${escapeHtml(error.message)}</div>`;
             return;

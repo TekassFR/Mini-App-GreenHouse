@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20261013_v15">
-    <link rel="stylesheet" href="access.css?v=20261013_v15">
-    <link rel="preload" href="script.js?v=20261013_v15" as="script">
+    <link rel="stylesheet" href="style.css?v=20261014_v16">
+    <link rel="stylesheet" href="access.css?v=20261014_v16">
+    <link rel="preload" href="script.js?v=20261014_v16" as="script">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
@@ -44,7 +44,19 @@
             </div>
         </div>
         <div class="logo-above">
-            <img class="brand-logo" src="logo.png" alt="GreenHouse 68 logo" loading="lazy">
+            <!-- Logo + pastille « en ligne » (masquée en mode fermé, script.js renderShopHeader) -->
+            <span class="brand-logo-wrap">
+                <img class="brand-logo" src="logo.png" alt="GreenHouse 68 logo" loading="lazy">
+                <span class="shop-online-dot" id="brand-online-dot" role="img" aria-label="En ligne" title="En ligne" hidden></span>
+            </span>
+            <!-- Langue de la boutique : drapeau + ▾ en haut à droite (accueil), menu Français / Anglais / Allemand rempli par script.js -->
+            <div class="shop-lang" id="shop-lang">
+                <button class="shop-lang-btn" id="shop-lang-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="shop-lang-menu" aria-label="Langue">
+                    <span class="shop-lang-flag" id="shop-lang-flag" aria-hidden="true"></span>
+                    <span class="shop-lang-caret" aria-hidden="true">▾</span>
+                </button>
+                <div class="shop-lang-menu" id="shop-lang-menu" role="menu" aria-label="Langue" hidden></div>
+            </div>
         </div>
         <header class="app-header">
             <div class="brand-wrap">
@@ -52,6 +64,17 @@
                     <h1 class="brand-title">GreenHouse 68</h1>
                 </div>
                 <p class="brand-subtitle" id="brand-subtitle">Menu premium 2026</p>
+            </div>
+            <!-- Compteur du catalogue et ville du client (option Villes de la gestion), rendus par script.js (renderShopHeader) -->
+            <div class="shop-meta" id="shop-meta" hidden>
+                <p class="shop-stats-pill" id="shop-stats-pill" hidden>
+                    <span class="shop-stats-dot" aria-hidden="true"></span>
+                    <span class="shop-stats-text" id="shop-stats-text"></span>
+                </p>
+                <div class="shop-city-row" id="shop-city-row" hidden>
+                    <span class="shop-city-pill"><span aria-hidden="true">📍</span><span class="shop-city-name" id="shop-city-name"></span></span>
+                    <button class="shop-city-change" id="shop-city-change" type="button">changer</button>
+                </div>
             </div>
             <div class="user-chip" id="user-chip">Bienvenue</div>
         </header>
@@ -217,24 +240,40 @@
                         <p class="profile-city-name" id="profile-city-name"></p>
                     </article>
 
-                    <article class="card panel profile-language-card">
-                        <div class="profile-section-head">
-                            <h4 id="profile-language-title">Langue</h4>
+                    <!-- Notifications : alertes privées du bot (nouveaux produits, promotions), enregistrées dès qu'un interrupteur bouge (script.js, POST /watch/save) -->
+                    <article class="card panel profile-watch-card" id="profile-watch-card" hidden>
+                        <div class="watch-head">
+                            <span class="watch-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span>
+                            <div class="watch-head-text">
+                                <h4 id="watch-title">Notifications</h4>
+                                <p class="muted" id="watch-subtitle">Sois alerté en temps réel</p>
+                            </div>
                         </div>
-                        <div class="lang-grid" id="language-grid">
-                            <button class="lang-option active" data-lang="fr" type="button">
-                                <span class="lang-flag">🇫🇷</span>
-                                <span class="lang-name">Francais</span>
-                            </button>
-                            <button class="lang-option" data-lang="en" type="button">
-                                <span class="lang-flag">🇬🇧</span>
-                                <span class="lang-name">English</span>
-                            </button>
-                            <button class="lang-option" data-lang="de" type="button">
-                                <span class="lang-flag">🇩🇪</span>
-                                <span class="lang-name">Deutsch</span>
-                            </button>
+                        <div class="watch-list">
+                            <label class="watch-row">
+                                <span class="watch-row-icon watch-row-icon-new" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+                                <span class="watch-row-text">
+                                    <strong id="watch-new-title">Nouveaux produits</strong>
+                                    <span class="muted" id="watch-new-desc">Quand un produit est ajouté</span>
+                                </span>
+                                <span class="watch-switch">
+                                    <input type="checkbox" role="switch" id="watch-new-products" data-watch-kind="new_products">
+                                    <span class="watch-slider" aria-hidden="true"></span>
+                                </span>
+                            </label>
+                            <label class="watch-row">
+                                <span class="watch-row-icon watch-row-icon-promo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/><path d="M18 15l.8 2.2 2.2.8-2.2.8L18 21l-.8-2.2-2.2-.8 2.2-.8z"/></svg></span>
+                                <span class="watch-row-text">
+                                    <strong id="watch-promo-title">Promotions</strong>
+                                    <span class="muted" id="watch-promo-desc">Nouvelles promos et réductions</span>
+                                </span>
+                                <span class="watch-switch">
+                                    <input type="checkbox" role="switch" id="watch-promos" data-watch-kind="promos">
+                                    <span class="watch-slider" aria-hidden="true"></span>
+                                </span>
+                            </label>
                         </div>
+                        <p class="muted watch-hint" id="watch-hint">Les alertes arrivent en message privé du bot.</p>
                     </article>
 
                     <article class="card panel profile-orders-card">
@@ -252,43 +291,55 @@
                 </div>
             </section>
 
+            <!-- Onglet Contact (ancien onglet Infos, page « info ») : réseaux réglés dans la gestion, signalement (tickets SAV),
+                 infos et conditions tirées des réglages (script.js, renderContactCard). Aucun <p>/<h3> dans les .card.panel
+                 hors carte Support : style.css (#page-info .card.panel p) les met en lignes bordées -->
             <section class="page" id="page-info">
-                <div class="page-head">
-                    <h2 id="info-title">Infos</h2>
-                    <p id="info-desc">Horaires, contact et paiement.</p>
-                </div>
-
-                <div class="stack">
-                    <article class="card panel">
-                        <h3 id="info-delivery-title">Livraison</h3>
-                        <p><strong id="info-hours-label">Horaires:</strong> 10H-22H Lun-Dim</p>
-                        <p><strong id="info-delay-label">Delai:</strong> 30-45mn</p>
-                        <p><strong id="info-zone-label">Zone:</strong> 68 (et ses Alentours)</p>
-                    </article>
-
-                    <article class="card panel">
-                        <h3 id="info-contact-title">Contact</h3>
-                        <p id="info-contact-username">Telegram: @GreenHouse682</p>
-                        <!-- Texte libre (contact_text) et autres réseaux réglés dans la gestion (script.js) -->
-                        <p class="contact-note" id="info-contact-text" hidden></p>
-                        <div class="inline-actions">
-                            <button class="btn primary" id="contact-btn" type="button">Contacter</button>
-                            <button class="btn ghost" id="channel-btn" type="button">Canal</button>
+                <div class="stack contact-page">
+                    <article class="card panel contact-hero">
+                        <div class="contact-hero-head">
+                            <span class="contact-hero-avatar">
+                                <img class="contact-hero-logo" id="contact-hero-logo" src="logo.png" alt="">
+                                <!-- Pastille « en ligne » : même règle que celle du logo de l'en-tête (script.js, renderShopHeader) -->
+                                <span class="shop-online-dot contact-online-dot" id="contact-online-dot" role="img" aria-label="En ligne" title="En ligne" hidden></span>
+                            </span>
+                            <h2 class="contact-hero-title" id="contact-hero-title">Contactez-nous</h2>
                         </div>
-                        <div class="contact-networks" id="info-networks" hidden></div>
+                        <div class="contact-bubbles">
+                            <div class="contact-bubble is-me" id="contact-bubble-ask">Une question ?</div>
+                            <div class="contact-bubble" id="contact-bubble-reply">Notre équipe te répond rapidement sur le réseau de ton choix.</div>
+                            <!-- Texte libre réglé dans la gestion (contact_text) -->
+                            <div class="contact-bubble" id="contact-text" hidden></div>
+                        </div>
                     </article>
 
-                    <article class="card panel">
-                        <h3 id="info-payment-title">Paiement</h3>
-                        <p id="info-payment-desc">Paiement en especes uniquement.</p>
-                    </article>
+                    <h3 class="contact-section-title" id="contact-write-title">Nous écrire</h3>
+                    <div class="contact-net-grid" id="contact-net-grid"></div>
 
-                    <!-- Support client (tickets SAV) : affiché si tickets_enabled, rendu par script.js (équipe Messages) -->
+                    <button class="contact-row contact-report-row" id="contact-report-btn" type="button">
+                        <span class="contact-row-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg></span>
+                        <span class="contact-row-label" id="contact-report-label">Signaler un problème</span>
+                        <span class="contact-row-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
+                    </button>
+
+                    <!-- Support client (tickets SAV) : ouvert par « Signaler un problème » si tickets_enabled, rendu par script.js (équipe Messages) -->
                     <article class="card panel support-card" id="support-card" hidden>
                         <h3 id="support-title">Support</h3>
                         <p class="support-desc" id="support-desc"></p>
                         <div class="support-body" id="support-body" aria-live="polite"></div>
                     </article>
+
+                    <h3 class="contact-section-title" id="contact-info-title">Infos &amp; conditions</h3>
+                    <div class="card panel contact-info-card">
+                        <div class="contact-info-list" id="contact-info-list"></div>
+                    </div>
+
+                    <!-- Canal de la boutique (channel_link) : masqué sans lien réglé (script.js, applyShopTexts) -->
+                    <button class="contact-row contact-channel-row" id="channel-btn" type="button">
+                        <span class="contact-row-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span>
+                        <span class="contact-row-label" id="channel-btn-label">Rejoindre le canal</span>
+                        <span class="contact-row-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
+                    </button>
                 </div>
             </section>
         </main>
@@ -322,9 +373,10 @@
                 </span>
                 <span class="tab-label">Profil</span>
             </button>
+            <!-- Onglet Contact : page « info » gardée (support, lien ?support=1, contact_tab_enabled) -->
             <button class="tab-btn" data-page="info" type="button">
-                <span class="tab-icon" aria-hidden="true">✉</span>
-                <span class="tab-label">Infos</span>
+                <span class="tab-icon" aria-hidden="true">💬</span>
+                <span class="tab-label">Contact</span>
             </button>
         </nav>
 
@@ -1300,7 +1352,7 @@
                                     <span class="gst-circ-icon">🎫</span>
                                     <div>
                                         <div class="gst-row-title">Tickets SAV</div>
-                                        <div class="gst-row-sub">Les clients ouvrent un ticket depuis la boutique (Infos › Support) ou avec /sav dans le bot</div>
+                                        <div class="gst-row-sub">Les clients ouvrent un ticket depuis la boutique (Contact › Signaler un problème) ou avec /sav dans le bot</div>
                                     </div>
                                 </div>
                                 <label class="gst-switch">
@@ -1590,11 +1642,11 @@
                                     <p class="gst-caption" id="gst-social-preview-note"></p>
                                 </div>
 
-                                <!-- Onglet Infos (contact) de la boutique -->
+                                <!-- Onglet Contact de la boutique -->
                                 <div class="gst-toggle-row" style="margin-top:14px;">
                                     <div>
-                                        <div class="gst-label-sm">Afficher l'onglet Infos (contact)</div>
-                                        <div class="gst-caption">Désactivé : l'onglet « Infos » disparaît de la barre du bas de la boutique (il reste affiché tant que le support client est activé : la carte Support s'y trouve).</div>
+                                        <div class="gst-label-sm">Afficher l'onglet Contact</div>
+                                        <div class="gst-caption">Désactivé : l'onglet « Contact » disparaît de la barre du bas de la boutique (il reste affiché tant que le support client est activé : « Signaler un problème » s'y trouve).</div>
                                     </div>
                                     <label class="gst-switch">
                                         <input type="checkbox" id="gst-contact-tab-toggle" checked>
@@ -1603,11 +1655,11 @@
                                 </div>
                                 <div class="gst-field-group" style="margin-top:10px;">
                                     <div class="gst-label-with-count">
-                                        <label class="gst-field-subtitle" for="gst-contact-text">Texte de la carte Contact</label>
+                                        <label class="gst-field-subtitle" for="gst-contact-text">Texte de l'onglet Contact</label>
                                         <span class="gst-counter" id="gst-contact-text-count">0/2000</span>
                                     </div>
                                     <textarea class="gst-textarea" id="gst-contact-text" rows="3" maxlength="2000" placeholder="Ex : Dispo de 10h à 22h, réponse sous 5 min..."></textarea>
-                                    <p class="gst-caption">Affiché dans la carte Contact de l'onglet Infos, au-dessus des boutons des réseaux.</p>
+                                    <p class="gst-caption">Affiché dans l'onglet Contact, sous « Une question ? », au-dessus des boutons des réseaux.</p>
                                 </div>
                             </div>
                         </section>
@@ -2760,7 +2812,7 @@
                 if (started) return;
                 started = true;
                 var s = document.createElement("script");
-                s.src = "script.js?v=20261013_v15";
+                s.src = "script.js?v=20261014_v16";
                 document.body.appendChild(s);
             }
             requestAnimationFrame(function () { requestAnimationFrame(load); });

@@ -8,8 +8,6 @@
 /* ---------- Boutique : éléments masqués par l'attribut hidden (script.js) ---------- */
 .access-screen[hidden],
 .access-staff-note[hidden],
-.contact-note[hidden],
-.contact-networks[hidden],
 .detail-order-links[hidden] {
     display: none !important;
 }
@@ -377,44 +375,7 @@ body.access-locked .app-shell {
     cursor: pointer;
 }
 
-/* ---------- Page Infos : texte libre et réseaux de contact ---------- */
-.contact-note {
-    margin-top: 8px;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    color: var(--text);
-    white-space: pre-line;
-    overflow-wrap: anywhere;
-}
-
-.contact-networks {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--line);
-}
-
-.contact-networks-label {
-    grid-column: 1 / -1;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-}
-
-.contact-net-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-width: 0;
-    padding: 11px 10px;
-}
-
-/* Onglet Infos désactivé dans la gestion (contact_tab_enabled = "false") : 5 onglets */
+/* Onglet Contact désactivé dans la gestion (contact_tab_enabled = "false") : 5 onglets (styles de l'onglet : « Contact » en fin de fichier) */
 .bottom-nav.contact-tab-off {
     grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -1157,7 +1118,7 @@ button.gst-day-chip {
     margin-top: 8px;
 }
 
-/* ---------- Boutique : carte Support (page Infos) ---------- */
+/* ---------- Boutique : carte Support (onglet Contact, ouverte par « Signaler un problème ») ---------- */
 .support-desc {
     margin-top: 4px;
     color: var(--muted);
@@ -1201,7 +1162,7 @@ button.gst-day-chip {
     color: var(--muted);
 }
 
-/* les <p> des cartes de la page Infos sont en flex : alignement par justify-content */
+/* les <p> des cartes de l'onglet Contact (#page-info) sont en flex : alignement par justify-content */
 .support-count {
     justify-content: flex-end;
     text-align: right;
@@ -1313,6 +1274,10 @@ button.gst-day-chip {
 .cart-pay-group[hidden],
 .cart-wallet[hidden],
 .cart-promo-line[hidden],
+.shop-meta[hidden],
+.shop-online-dot[hidden],
+.shop-stats-pill[hidden],
+.shop-city-row[hidden],
 .profile-city-card[hidden],
 .detail-like-btn[hidden],
 .gst-multicity-warning[hidden] {
@@ -1410,6 +1375,158 @@ body.city-locked .app-shell {
     color: var(--text);
 }
 
+/* ---------- En-tête de la boutique : pastille « en ligne », compteur du catalogue, ville du client ---------- */
+.brand-logo-wrap {
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+}
+
+/* Boutique ouverte (ni fermeture manuelle ni fermeture programmée) */
+.shop-online-dot {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    z-index: 1;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #3ddc6f;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 10px rgba(61, 220, 111, 0.55);
+}
+
+.shop-online-dot::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 2px solid rgba(61, 220, 111, 0.6);
+    animation: shopOnlinePulse 2.2s ease-out infinite;
+}
+
+@keyframes shopOnlinePulse {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.9;
+    }
+
+    100% {
+        transform: scale(1.9);
+        opacity: 0;
+    }
+}
+
+.shop-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+/* « ● 6 PRODUITS · 3 CATÉGORIES » */
+.shop-stats-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: rgba(13, 15, 12, 0.55);
+    color: var(--muted);
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.shop-stats-pill strong {
+    color: var(--text);
+    font-weight: 800;
+}
+
+.shop-stats-dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #3ddc6f;
+    box-shadow: 0 0 8px rgba(61, 220, 111, 0.7);
+}
+
+.shop-stats-sep {
+    margin: 0 6px;
+    opacity: 0.6;
+}
+
+/* « 📍 VILLE » + « changer » (option Villes de la gestion) */
+.shop-city-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.shop-city-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--accent-rgb), 0.45);
+    background: rgba(var(--accent-rgb), 0.16);
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.shop-city-name {
+    min-width: 0;
+    max-width: 60vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.shop-city-change {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: rgba(241, 238, 228, 0.06);
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: lowercase;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.08s ease, border-color 0.15s ease;
+}
+
+.shop-city-change:hover {
+    border-color: rgba(var(--accent-rgb), 0.6);
+}
+
+.shop-city-change:active {
+    transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shop-online-dot::after {
+        animation: none;
+        opacity: 0;
+    }
+}
+
 /* ---------- Promotion globale : prix barrés ---------- */
 .price-old {
     color: var(--muted);
@@ -1455,14 +1572,21 @@ body.city-locked .app-shell {
     transition: transform 0.12s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
 
+/* Carte : cœur rond en verre sombre, en haut à droite de l'image */
 .card-like-btn {
     position: absolute;
+    top: 8px;
     right: 8px;
-    bottom: 8px;
     z-index: 3;
-    min-height: 30px;
-    padding: 4px 9px;
-    font-size: 0.78rem;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    background: rgba(13, 15, 12, 0.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .detail-like-btn {
@@ -1495,6 +1619,244 @@ body.city-locked .app-shell {
 .like-word {
     color: var(--muted);
     font-weight: 600;
+}
+
+/* ---------- Cartes produit : cœur rond, compteur « ♥ N », ajout direct au panier ---------- */
+.like-svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+/* aimé : cœur plein couleur d'accent, le verre sombre reste (lisible sur toutes les photos) */
+.card-like-btn.is-liked {
+    color: var(--accent);
+    border-color: rgba(var(--accent-rgb), 0.75);
+    background: rgba(13, 15, 12, 0.62);
+}
+
+.card-like-btn.is-liked .like-svg {
+    fill: currentColor;
+}
+
+.card-like-btn.is-popping {
+    animation: likePop 0.32s ease;
+}
+
+@keyframes likePop {
+    0% {
+        transform: scale(1);
+    }
+
+    45% {
+        transform: scale(1.25);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* la pastille « ▶ Vidéo » descend sous le cœur */
+.product-media.has-like .badge.video-pill {
+    top: 50px;
+}
+
+/* Pastilles en bas de l'image : promotion « -X% » puis likes « ♥ N » */
+.card-media-pills {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    pointer-events: none;
+}
+
+.card-media-pills .promo-pill {
+    position: static;
+}
+
+.card-like-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: var(--accent-ink);
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.2;
+    box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.35);
+}
+
+.card-like-count .like-svg {
+    width: 11px;
+    height: 11px;
+    fill: currentColor;
+    stroke: none;
+}
+
+.card-like-count[hidden] {
+    display: none !important;
+}
+
+/* Cartes d'une même rangée : prix et bouton panier alignés en bas, quelle que soit la longueur du titre */
+.product-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card > .product-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-body > .card-foot {
+    margin-top: auto;
+}
+
+/* Bas de carte : prix à gauche, bouton panier rond à droite */
+.card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.card-foot .price-chip {
+    min-width: 0;
+    flex: 1 1 auto;
+    line-height: 1.2;
+}
+
+@media (max-width: 360px) {
+    .card-foot .price-chip {
+        font-size: 0.82rem;
+    }
+}
+
+/* promotion : ancien prix barré au-dessus, « Dès X » en dessous (la place est prise par le bouton panier) */
+.card-foot .price-chip-promo .price-old {
+    display: block;
+}
+
+.card-cart-btn {
+    flex-shrink: 0;
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.22), transparent 60%), var(--accent);
+    color: var(--accent-ink);
+    box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.card-cart-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.card-cart-btn:active {
+    transform: scale(0.88);
+}
+
+.card-like-btn:focus-visible,
+.card-cart-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.card-cart-btn.is-added {
+    animation: cardCartAdded 0.45s ease;
+}
+
+@keyframes cardCartAdded {
+    0% {
+        transform: scale(1);
+    }
+
+    40% {
+        transform: scale(1.18);
+        box-shadow: 0 0 0 6px rgba(var(--accent-rgb), 0.25);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Produit épuisé : bouton grisé (le clic affiche « épuisé ») */
+.card-cart-btn.is-disabled {
+    background: #2a2d33;
+    color: #9ca3af;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.card-cart-btn.is-disabled:active {
+    transform: none;
+}
+
+/* Pastille du panier (barre d'onglets) : petit rebond à chaque ajout depuis une carte */
+.tab-badge.is-bumping {
+    animation: cartBadgeBump 0.4s ease;
+}
+
+@keyframes cartBadgeBump {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    45% {
+        transform: scale(1.35);
+    }
+}
+
+/* le clic sur le cœur ou le panier ne « presse » pas toute la carte */
+.product-card:has(.card-like-btn:active, .card-cart-btn:active) {
+    transform: none;
+}
+
+@media (max-width: 420px) {
+    .card-cart-btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    .card-cart-btn svg {
+        width: 17px;
+        height: 17px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card-like-btn.is-popping,
+    .card-cart-btn.is-added,
+    .tab-badge.is-bumping {
+        animation: none;
+    }
 }
 
 /* ---------- Panier : envoi postal, créneau, paiement, commandes fermées ---------- */
@@ -1917,7 +2279,7 @@ body.city-locked .app-shell {
     display: none !important;
 }
 
-/* Onglet Avis masqué (reviews_enabled ou reviews_tab_enabled coupé) : 5 onglets, 4 si l'onglet Infos l'est aussi */
+/* Onglet Avis masqué (reviews_enabled ou reviews_tab_enabled coupé) : 5 onglets, 4 si l'onglet Contact l'est aussi */
 .bottom-nav.reviews-tab-off {
     grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -2464,6 +2826,244 @@ body.city-locked .app-shell {
 @media (prefers-reduced-motion: reduce) {
     .loyalty-wheel-disc {
         transition: none !important;
+    }
+}
+
+/* === Profil : roue de la fortune (entrée compacte) et alertes === */
+/* Roue : ligne icône · titre · sous-titre · chevron, roue dépliée dessous (script.js : fidWheelCardHtml).
+   Alertes (Notifications) : deux interrupteurs enregistrés tout de suite (script.js : initWatchShop). */
+.loyalty-wheel-card {
+    border-color: rgba(var(--accent-rgb), 0.3);
+}
+
+.wheel-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.wheel-entry-icon,
+.watch-icon {
+    position: relative;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    background: rgba(var(--accent-rgb), 0.14);
+    color: var(--accent);
+}
+
+.wheel-entry-icon svg,
+.wheel-entry-chevron svg,
+.watch-icon svg,
+.watch-row-icon svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.wheel-entry-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--card), 0 0 8px rgba(var(--accent-rgb), 0.8);
+}
+
+.wheel-entry-text,
+.watch-row-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+}
+
+.wheel-entry-text strong,
+.watch-row-text strong {
+    font-family: var(--font-display);
+    font-size: 0.98rem;
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.wheel-entry-sub {
+    font-size: 0.8rem;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+.wheel-entry-sub.is-ready {
+    color: var(--accent);
+}
+
+.wheel-entry-chevron {
+    flex: 0 0 auto;
+    display: grid;
+    color: var(--muted);
+    transition: transform 0.2s ease;
+}
+
+.loyalty-wheel-card.is-open .wheel-entry-chevron {
+    transform: rotate(90deg);
+}
+
+.loyalty-wheel-body {
+    display: grid;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+.profile-watch-card {
+    display: grid;
+    gap: 12px;
+}
+
+.profile-watch-card[hidden] {
+    display: none !important;
+}
+
+.watch-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.watch-head h4 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.watch-head p {
+    margin-top: 3px;
+}
+
+.watch-list {
+    display: grid;
+    gap: 8px;
+}
+
+.watch-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.watch-row-icon {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+}
+
+.watch-row-icon-new {
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.12);
+}
+
+.watch-row-icon-promo {
+    color: #f0a63a;
+    background: rgba(240, 166, 58, 0.12);
+}
+
+.watch-row-text .muted {
+    font-size: 0.78rem;
+}
+
+.watch-switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 46px;
+    height: 26px;
+}
+
+.watch-switch input {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.watch-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: var(--card-2);
+    pointer-events: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.watch-slider::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text);
+    transition: transform 0.2s ease;
+}
+
+.watch-switch input:checked + .watch-slider {
+    border-color: var(--accent);
+    background: var(--accent);
+}
+
+.watch-switch input:checked + .watch-slider::before {
+    transform: translateX(20px);
+    background: #fff;
+}
+
+.watch-switch input:focus-visible + .watch-slider {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.watch-switch input:disabled + .watch-slider {
+    opacity: 0.55;
+}
+
+.watch-hint {
+    font-size: 0.74rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wheel-entry-chevron,
+    .watch-slider,
+    .watch-slider::before {
+        transition: none;
     }
 }
 
@@ -3192,4 +3792,365 @@ button.gst-dash-row:hover {
 
 .intro-logo[class*="anim-"] {
     filter: drop-shadow(0 0 18px rgba(var(--accent-rgb), 0.55)) !important;
+}
+
+/* === Contact === */
+/* Boutique : onglet Contact (ancienne page Infos, #page-info) : carte d'accueil, « Nous écrire » (réseaux réglés dans la
+   gestion), « Signaler un problème » (tickets SAV), « Infos & conditions », canal (script.js : renderContactCard).
+   Aucun <p>/<h3> dans les .card.panel de la page hors carte Support (style.css : #page-info .card.panel p). */
+.contact-bubble[hidden],
+.contact-row[hidden] {
+    display: none !important;
+}
+
+/* Carte Support repliée (vue « button ») : la ligne « Signaler un problème » la remplace */
+.support-card.is-idle {
+    display: none !important;
+}
+
+.contact-page {
+    gap: 12px;
+}
+
+/* ---------- Carte d'accueil : logo + pastille « en ligne », bulles de discussion ---------- */
+.contact-hero {
+    padding: 16px;
+    border-color: rgba(var(--accent-rgb), 0.22);
+    background: linear-gradient(160deg, rgba(var(--accent-rgb), 0.12), var(--card) 60%);
+}
+
+.contact-hero-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.contact-hero-avatar {
+    position: relative;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+}
+
+.contact-hero-logo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(var(--accent-rgb), 0.45);
+    background: var(--bg-soft);
+}
+
+/* pastille de l'en-tête (.shop-online-dot) en plus petit, sur le bord du logo rond */
+.contact-hero-avatar .contact-online-dot {
+    right: -1px;
+    bottom: -1px;
+    width: 15px;
+    height: 15px;
+    border-width: 2px;
+    border-color: var(--card);
+}
+
+.contact-hero-title {
+    min-width: 0;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.contact-bubbles {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.contact-bubble {
+    align-self: flex-start;
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 16px 16px 16px 4px;
+    border: 1px solid var(--line);
+    background: var(--card-2);
+    color: var(--text);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.contact-bubble.is-me {
+    align-self: flex-end;
+    border-color: transparent;
+    border-radius: 16px 16px 4px 16px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: var(--font-display);
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.25);
+}
+
+.contact-section-title {
+    margin: 8px 2px 0;
+    font-size: 1.02rem;
+    font-weight: 800;
+}
+
+/* ---------- « Nous écrire » : une tuile par réseau, icône aux couleurs de la marque ---------- */
+.contact-net-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.contact-net-tile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.08s ease, border-color 0.15s ease;
+}
+
+/* nombre impair de réseaux : la dernière tuile prend toute la largeur */
+.contact-net-tile:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
+
+.contact-net-tile:hover {
+    border-color: var(--line-strong);
+}
+
+.contact-net-tile:active,
+.contact-row:active {
+    transform: scale(0.97);
+}
+
+.contact-net-icon {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--card-2);
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.contact-net-icon svg,
+.contact-row-icon svg,
+.contact-row-chevron svg,
+.contact-info-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.contact-net-emoji {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.contact-net-text,
+.contact-info-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.contact-net-name {
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contact-net-sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contact-net-tile[data-net="telegram"] .contact-net-icon {
+    background: linear-gradient(135deg, #37aee2, #1e88c8);
+}
+
+.contact-net-tile[data-net="whatsapp"] .contact-net-icon {
+    background: linear-gradient(135deg, #5fe08a, #1ebe5d);
+}
+
+.contact-net-tile[data-net="signal"] .contact-net-icon {
+    background: linear-gradient(135deg, #5b8ff5, #2c6bed);
+}
+
+.contact-net-tile[data-net="snapchat"] .contact-net-icon {
+    background: #fffc00;
+    color: #111;
+}
+
+.contact-net-tile[data-net="instagram"] .contact-net-icon {
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+}
+
+.contact-net-tile[data-net="potato"] .contact-net-icon {
+    background: linear-gradient(135deg, #f5b04c, #c9782c);
+}
+
+.contact-net-tile[data-net="luffa"] .contact-net-icon {
+    background: linear-gradient(135deg, #4fd1c5, #2b8a83);
+}
+
+/* ---------- Lignes « Signaler un problème » et canal : icône, libellé, chevron ---------- */
+.contact-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 0.94rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.08s ease, opacity 0.15s ease;
+}
+
+.contact-row-icon {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+}
+
+.contact-row-label {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.contact-row-chevron {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    opacity: 0.8;
+}
+
+.contact-report-row {
+    border-color: rgba(255, 106, 77, 0.45);
+    background: rgba(255, 106, 77, 0.07);
+    color: var(--danger);
+}
+
+.contact-report-row .contact-row-icon {
+    background: rgba(255, 106, 77, 0.12);
+}
+
+/* ticket en cours de chargement après l'appui */
+.contact-report-row.is-loading {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.contact-channel-row {
+    border-color: rgba(var(--accent-rgb), 0.35);
+    background: rgba(var(--accent-rgb), 0.08);
+}
+
+.contact-channel-row .contact-row-icon {
+    background: rgba(var(--accent-rgb), 0.16);
+    color: var(--accent);
+}
+
+.contact-channel-row .contact-row-chevron {
+    color: var(--accent);
+}
+
+/* ---------- « Infos & conditions » : une ligne par réglage (icône teintée, titre, détail) ---------- */
+.contact-info-card {
+    padding: 4px 14px;
+}
+
+.contact-info-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.contact-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+}
+
+.contact-info-row:first-child {
+    border-top: 0;
+}
+
+.contact-info-icon {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
+    background: rgba(var(--accent-rgb), 0.12);
+    color: var(--accent);
+}
+
+.contact-info-name {
+    font-family: var(--font-display);
+    font-size: 0.94rem;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.contact-info-sub {
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+/* très petits écrans : une tuile par ligne */
+@media (max-width: 340px) {
+    .contact-net-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .contact-net-tile,
+    .contact-row {
+        transition: none;
+    }
 }
