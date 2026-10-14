@@ -13585,10 +13585,10 @@ class CanvasBackgroundEngine {
         return `<button class="card-like-btn${liked ? " is-liked" : ""}" data-like-pid="${escapeHtml(String(pid))}" type="button" aria-pressed="${liked}" aria-label="${escapeHtml(ct(liked ? "unlike" : "like"))}">${LIKE_HEART_SVG}</button>`;
     }
 
-    // Pastille « ♥ N » (likes de tous les clients), masquée tant que personne n'a aimé le produit
+    // Pastille « ♥ N » (likes de tous les clients), affichée dès 0
     function likeCountHtml(pid) {
         const count = likeCount(pid);
-        return `<span class="card-like-count" data-like-count-pid="${escapeHtml(String(pid))}" role="img" aria-label="${escapeHtml(ct("likesCount", { count }))}"${count > 0 ? "" : " hidden"}>${LIKE_HEART_SVG}<span class="like-count" aria-hidden="true">${count}</span></span>`;
+        return `<span class="card-like-count" data-like-count-pid="${escapeHtml(String(pid))}" role="img" aria-label="${escapeHtml(ct("likesCount", { count }))}">${LIKE_HEART_SVG}<span class="like-count" aria-hidden="true">${count}</span></span>`;
     }
 
     // Carte produit : pastilles en bas de l'image (promotion « -X% », likes « ♥ N ») et cœur rond en haut à droite
@@ -13621,11 +13621,11 @@ class CanvasBackgroundEngine {
             btn.setAttribute("aria-pressed", String(liked));
             btn.setAttribute("aria-label", ct(liked ? "unlike" : "like"));
         });
-        // Pastilles « ♥ N » des cartes : compteur à jour, masquées à 0
+        // Pastilles « ♥ N » des cartes : compteur à jour, affichées dès 0
         document.querySelectorAll(".card-like-count[data-like-count-pid]").forEach((pill) => {
             if (Number(pill.dataset.likeCountPid) !== pid) return;
             const count = likeCount(pid);
-            pill.hidden = count <= 0;
+            pill.hidden = false;
             pill.setAttribute("aria-label", ct("likesCount", { count }));
             const num = pill.querySelector(".like-count");
             if (num) num.textContent = String(count);
